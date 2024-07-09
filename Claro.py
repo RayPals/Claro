@@ -2,8 +2,6 @@ import sys
 from typing import List, Dict, Tuple
 from enum import Enum
 import textwrap
-import ast
-import astor
 
 class StmtType(Enum):
     """Statement types"""
@@ -34,7 +32,7 @@ def parse_code(code: str) -> List[str]:
     """Parse the code into lines"""
     return [line.strip() for line in code.split('\n') if line.strip()]
 
-def execute_line(line: str, variables: Dict[str, str], line_number: int, output: List[str]) -> None:
+def execute_line(line: str, variables: Dict[str, str], line_number: int, output: List[str], context: Dict) -> None:
     """Execute a single line of code"""
     print(f"Executing line {line_number}: {line}")
     words = line.split()
@@ -63,63 +61,82 @@ def execute_line(line: str, variables: Dict[str, str], line_number: int, output:
         if len(words) < 2:
             raise MissingArgumentError("IF statement requires a condition", line_number)
         condition = ' '.join(words[1:])
-        if eval(condition, {}, variables):
-            pass
+        context['if_condition'] = eval(condition, {}, variables)
+        context['in_if_block'] = True
+        context['if_block_executed'] = False
 
     elif stmt_type == StmtType.ELSE:
-        pass
+        if not context.get('in_if_block'):
+            raise InvalidStatementError("ELSE without IF", line_number)
+        context['in_else_block'] = True
 
     elif stmt_type == StmtType.WHILE:
-        pass
+        if len(words) < 2:
+            raise MissingArgumentError("WHILE statement requires a condition", line_number)
+        condition = ' '.join(words[1:])
+        context['while_condition'] = condition
+        context['while_start'] = line_number
 
     elif stmt_type == StmtType.END:
-        pass
+        if context.get('in_if_block'):
+            context['in_if_block'] = False
+            context['in_else_block'] = False
+        elif context.get('in_else_block'):
+            context['in_else_block'] = False
+        elif context.get('while_condition'):
+            if eval(context['while_condition'], {}, variables):
+                context['while_end'] = line_number
+            else:
+                context.pop('while_condition', None)
+                context.pop('while_start', None)
+                context.pop('while_end', None)
 
     elif stmt_type == StmtType.INPUT:
         if len(words) < 2:
             raise MissingArgumentError("INPUT statement requires a variable name", line_number)
-        name = words[1]
-        variables[name] = input("Input value: ")
+        var_name = words[1]
+        user_input = input(f"Enter value for {var_name}: ")
+        variables[var_name] = user_input
 
-def print_executed_code_ast(lines: List[str], variables: Dict[str, str], output: List[str]) -> None:
-    """Print the executed code and its result"""
-    print("\nExecuted Code Result:")
-    for i, line in enumerate(lines):
-        if line.startswith(('VARIABLE', 'PRINT')):
-            print(f"{i+1:03}: {line}")
-    print("\nOutput:")
-    print(f"{'':<3}{''.join(output)}")
-
-def execute_code_ast(lines: List[str]) -> Tuple[Dict[str, str], List[str]]:
-    """Execute the code"""
+def execute_code(code: List[str]) -> Tuple[Dict[str, str], List[str]]:
+    """Execute the given code"""
     variables = {}
     output = []
-    for i, line in enumerate(lines):
+    context = {}
+    i = 0
+    while i < len(code):
         try:
-            execute_line(line, variables, i + 1, output)
+            execute_line(code[i], variables, i+1, output, context)
+            if 'while_end' in context:
+                i = context['while_start'] - 1
+                context.pop('while_end', None)
+            i += 1
         except ClaroError as e:
-            print(f"Error at line {e.line_number}: {e.message}")
+            print(f"Error at line {i+1}: {e}")
+            break
         except Exception as e:
             print(f"Error at line {i+1}: {e}")
+            break
     return variables, output
 
 def execute_file(file_path: str) -> None:
     with open(file_path, 'r') as file:
         code = file.read()
     lines = parse_code(code)
-    variables, output = execute_code_ast(lines)
-    print_executed_code_ast(lines, variables, output)
+    variables, output = execute_code(lines)
+    print("\n".join(output))
 
 def interactive_mode() -> None:
     print("Entering interactive mode (type 'exit' to quit)")
     variables = {}
     output = []
+    context = {}
     while True:
         try:
             line = input("> ")
             if line.lower() == 'exit':
                 break
-            execute_line(line, variables, 0, output)
+            execute_line(line, variables, 0, output, context)
             print("\n".join(output))
             output.clear()
         except ClaroError as e:
@@ -130,7 +147,7 @@ def interactive_mode() -> None:
 def print_help() -> None:
     print(textwrap.dedent("""
         Usage: claro.py [options]
-        
+
         Options:
             -e <file>      Execute the code from the specified file
             -i             Enter interactive mode
