@@ -76,10 +76,11 @@ def execute_line(line: str, variables: Dict[str, Any], line_number: int, output:
         output.append(str(evaluate_expression(arg, variables)))
 
     elif stmt_type == StmtType.VARIABLE:
-        if len(words) < 3:
-            raise MissingArgumentError("VARIABLE statement requires a name and a value", line_number)
-        name = words[1]
-        value = ' '.join(words[2:])
+        if '=' not in line:
+            raise MissingArgumentError("VARIABLE statement requires a name and a value separated by '='", line_number)
+        name, value = line.split('=', 1)
+        name = name.split()[1].strip()
+        value = value.strip()
         variables[name] = evaluate_expression(value, variables)
 
     elif stmt_type == StmtType.IF:
