@@ -24,11 +24,12 @@ class StmtType(Enum):
     BREAK = 'BREAK'
     CONTINUE = 'CONTINUE'
     FILE = 'FILE'
+    FOR = 'FOR'
 
 class ClaroError(Exception):
     """Base error class for Claro interpreter"""
     def __init__(self, message, line_number):
-        self.message = message
+        self.message = f"Error on line {line_number}: {message}"
         self.line_number = line_number
         super().__init__(self.message)
 
@@ -59,8 +60,15 @@ def evaluate_expression(expression: str, variables: Dict[str, Any]) -> Any:
     except Exception as e:
         raise ClaroError(f"Error evaluating expression: {expression}", 0)
 
+def parse_function_signature(signature: str) -> Tuple[str, List[str]]:
+    parts = signature.split()
+    if len(parts) < 2:
+        raise FunctionDefinitionError(f"Invalid function signature: {signature}", 0)
+    func_name = parts[1]
+    params = parts[2:]
+    return func_name, params
+
 def execute_line(line: str, variables: Dict[str, Any], line_number: int, output: List[str], lines: List[str]) -> int:
-    """Execute a single line of code"""
     global break_loop, continue_loop
     print(f"Executing line {line_number}: {line}")
     words = line.split()
@@ -112,13 +120,11 @@ def execute_line(line: str, variables: Dict[str, Any], line_number: int, output:
         variables[var_name] = input(f"{var_name}: ")
 
     elif stmt_type == StmtType.FUNC:
-        if len(words) < 2:
-            raise FunctionDefinitionError("FUNC statement requires a function name", line_number)
-        func_name = words[1]
-        functions[func_name] = []
+        func_name, params = parse_function_signature(' '.join(words))
+        functions[func_name] = (params, [])
         i = line_number + 1
         while i < len(lines) and not lines[i].startswith('END'):
-            functions[func_name].append(lines[i])
+            functions[func_name][1].append(lines[i])
             i += 1
         if i >= len(lines) or not lines[i].startswith('END'):
             raise FunctionDefinitionError(f"Function '{func_name}' not properly closed with END", line_number)
@@ -128,10 +134,17 @@ def execute_line(line: str, variables: Dict[str, Any], line_number: int, output:
         if len(words) < 2:
             raise MissingArgumentError("CALL statement requires a function name", line_number)
         func_name = words[1]
+        args = [evaluate_expression(arg, variables) for arg in words[2:]]
         if func_name not in functions:
             raise ClaroError(f"Function '{func_name}' not defined", line_number)
-        for func_line in functions[func_name]:
-            execute_line(func_line, variables, line_number, output, lines)
+        func_params, func_lines = functions[func_name]
+        if len(args) != len(func_params):
+            raise ClaroError(f"Function '{func_name}' expected {len(func_params)} arguments, got {len(args)}", line_number)
+        local_vars = variables.copy()
+        local_vars.update(dict(zip(func_params, args)))
+        for func_line in func_lines:
+            execute_line(func_line, local_vars, line_number, output, func_lines)
+        variables.update(local_vars)
 
     elif stmt_type == StmtType.LIST:
         if len(words) < 3:
@@ -222,6 +235,27 @@ def execute_line(line: str, variables: Dict[str, Any], line_number: int, output:
     elif stmt_type == StmtType.END:
         return line_number
 
+    elif stmt_type == StmtType.FOR:
+        if len(words) < 4 or words[2] != 'IN':
+            raise MissingArgumentError("FOR loop requires a variable, 'IN', and an iterable", line_number)
+        var_name = words[1]
+        iterable = evaluate_expression(' '.join(words[3:]), variables)
+        if not hasattr(iterable, '__iter__'):
+            raise ClaroError(f"'{iterable}' is not iterable", line_number)
+        start_line = line_number
+        for item in iterable:
+            variables[var_name] = item
+            line_number = start_line + 1
+            while line_number < len(lines):
+                if lines[line_number].strip().upper() == 'END':
+                    break
+                line_number = execute_line(lines[line_number], variables, line_number, output, lines)
+                if break_loop:
+                    break
+                if continue_loop:
+                    continue_loop = False
+        return find_corresponding_end(start_line, lines)
+
     return line_number + 1
 
 def find_corresponding_else_or_end(start_line: int, lines: List[str]) -> int:
@@ -244,7 +278,7 @@ def find_corresponding_end(start_line: int, lines: List[str]) -> int:
     nested_count = 0
     for i in range(start_line, len(lines)):
         words = lines[i].split()
-        if words[0].upper() in ['IF', 'WHILE', 'FUNC', 'TRY']:
+        if words[0].upper() in ['IF', 'WHILE', 'FUNC', 'TRY', 'FOR']:
             nested_count += 1
         elif words[0].upper() == 'END':
             if nested_count == 0:
@@ -274,9 +308,9 @@ def execute_code_ast(lines: List[str]) -> Tuple[Dict[str, Any], List[str]]:
         try:
             line_number = execute_line(line, variables, line_number, output, lines)
         except ClaroError as e:
-            print(f"Error at line {line_number+1}: {e.message}")
+            print(e.message)
         except Exception as e:
-            print(f"Error at line {line_number+1}: {e}")
+            print(f"Unexpected error on line {line_number}: {e}")
             break
     return variables, output
 
@@ -308,9 +342,9 @@ def interactive_mode() -> None:
             print("\n".join(output))
             output.clear()
         except ClaroError as e:
-            print(f"Error: {e.message}")
+            print(e.message)
         except Exception as e:
-            print(f"Error: {e}")
+            print(f"Unexpected error: {e}")
 
 def print_help() -> None:
     print(textwrap.dedent("""
