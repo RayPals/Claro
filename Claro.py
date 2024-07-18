@@ -25,6 +25,7 @@ class StmtType(Enum):
     CONTINUE = 'CONTINUE'
     FILE = 'FILE'
     FOR = 'FOR'
+    IMPORT = 'IMPORT'
 
 class ClaroError(Exception):
     """Base error class for Claro interpreter"""
@@ -255,6 +256,16 @@ def execute_line(line: str, variables: Dict[str, Any], line_number: int, output:
                 if continue_loop:
                     continue_loop = False
         return find_corresponding_end(start_line, lines)
+
+    elif stmt_type == StmtType.IMPORT:
+        if len(words) < 2:
+            raise MissingArgumentError("IMPORT statement requires a module name", line_number)
+        module_name = words[1]
+        try:
+            module = __import__(module_name)
+            variables[module_name] = module
+        except ImportError:
+            raise ClaroError(f"Failed to import module: {module_name}", line_number)
 
     return line_number + 1
 
