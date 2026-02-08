@@ -1,4 +1,4 @@
-# Claro_C
-Version of Claro written in the C programming language
+# Claro
+Claro - An easy to learn scripting language for those with learning disabilities
 
 Version Number = 
