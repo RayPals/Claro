@@ -16,10 +16,6 @@ It uses clear, English-style commands and friendly error messages so you can foc
 
 https://codeberg.org/RayPals/Claro
 
-## Download
-
-https://codeberg.org/RayPals/Claro/releases
-
 ---
 
 ## Features
