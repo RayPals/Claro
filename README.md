@@ -1,4 +1,4 @@
-# Claro 1.0 Release Candidate
+# Claro 1.0 - Release Candidate
 
 Beginner-friendly programming for everyone.
 
