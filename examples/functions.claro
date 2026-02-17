@@ -1,4 +1,3 @@
-
 TEACH add TAKES a, b
     RETURN a + b
 LEARNED
