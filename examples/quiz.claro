@@ -1,0 +1,4 @@
+
+ASK "What is your name?" AS name
+SAY "Hello"
+SAY name
