@@ -1,0 +1,36 @@
+# SDL 1.2 demo: sprite-sheet animation using BLITCLIP
+# Provide sheet.bmp (e.g., 4 frames in a row, each 32x32)
+
+SDL OPEN 640 480 "Claro SDL1.2 SpriteSheet"
+SDL LOADBMP "sheet.bmp" AS sheet
+
+SET x TO 300
+SET y TO 220
+SET frame TO 0
+SET running TO YES
+
+FOR tick FROM 1 TO 1000000
+    SDL POLL
+    IF SDLEVENT = "QUIT"
+        SET running TO NO
+    ENDIF
+
+    # mouse values
+    SDL MOUSE AS mx my mb
+
+    # animate
+    SET frame TO frame + 1
+    IF frame > 3
+        SET frame TO 0
+    ENDIF
+    SET sx TO (frame * 32)
+
+    SDL CLEAR 20 20 30
+    SDL BLITCLIP sheet SRC sx 0 32 32 AT x y
+    SDL PRESENT
+    SDL DELAY 120
+
+    IF running = NO
+        RAISE "quit"
+    ENDIF
+DONE
