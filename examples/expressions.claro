@@ -1,0 +1,3 @@
+SET name TO "Alex"
+SAY "Hello " + name
+SAY (2 + 3) * 4
