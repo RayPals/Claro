@@ -1,0 +1,8 @@
+SET p TO "tests/out file.txt"
+WRITE FILE p WITH "line one"
+APPEND FILE p WITH "\nline two"
+READ FILE p AS t
+SAY t
+DELETE FILE p
+EXISTS FILE p AS e
+SAY e
