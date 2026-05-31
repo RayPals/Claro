@@ -1,0 +1,9 @@
+SAY "Text helper example"
+
+TEXT STARTS "Claro language" WITH "Claro" AS startsRight
+TEXT ENDS "Claro language" WITH "age" AS endsRight
+TEXT REPLACE "Hello world" FROM "world" TO "Claro" AS changed
+
+SAY startsRight
+SAY endsRight
+SAY changed
