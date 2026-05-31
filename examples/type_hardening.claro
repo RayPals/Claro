@@ -1,0 +1,21 @@
+SAY "Claro type example"
+
+SET score NUMBER 10
+SET name TEXT "Jon"
+SET ready YESNO YES
+
+TYPE OF score AS scoreType
+TYPE OF name AS nameType
+TYPE OF ready AS readyType
+
+SAY scoreType
+SAY nameType
+SAY readyType
+
+CHECK TYPE score IS NUMBER
+CHECK TYPE name IS TEXT
+CHECK TYPE ready IS YESNO
+
+NEW Player player
+TYPE OF player AS playerType
+SAY playerType
