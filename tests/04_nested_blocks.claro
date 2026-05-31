@@ -1,0 +1,10 @@
+SET x TO 0
+DO 3 TIMES
+    SET x TO x + 1
+    IF x IS 2
+        SAY "two"
+    ELSE
+        SAY "not-two"
+    ENDIF
+DONE
+SAY x
