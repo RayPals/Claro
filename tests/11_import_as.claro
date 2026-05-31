@@ -1,0 +1,5 @@
+IMPORT "tests/lib_ns.claro" AS math
+CALL math.add WITH 2, 3
+SAY RESULT
+CALL math.hello WITH "Alex"
+SAY RESULT
