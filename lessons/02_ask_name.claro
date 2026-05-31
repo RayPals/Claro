@@ -1,0 +1,3 @@
+SAY "Lesson 2: Ask a question"
+ASK "What is your name?" AS name
+SAY "Hello " + name
