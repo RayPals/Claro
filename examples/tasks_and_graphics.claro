@@ -1,0 +1,15 @@
+SAY "Task and graphics starter demo"
+
+START TASK helloTask
+    SAY "This task ran."
+END
+
+WAIT TASK helloTask
+
+OPEN WINDOW "Claro Game" WIDTH 640 HEIGHT 360
+CLEAR SCREEN
+DRAW TEXT "Hello from Claro graphics" AT 20 20
+UPDATE SCREEN
+CLOSE WINDOW
+
+SAY "Graphics commands are accepted in v1.10.26."
