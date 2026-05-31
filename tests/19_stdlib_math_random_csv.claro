@@ -1,0 +1,27 @@
+IMPORT "lib/math.claro" AS math
+IMPORT "lib/random.claro" AS random
+IMPORT "lib/csv.claro" AS csv
+
+CALL math.abs WITH -5
+SAY RESULT
+CALL math.clamp WITH 15, 0, 10
+SAY RESULT
+
+CALL random.seed WITH 123
+CALL random.int WITH 1, 10
+SET r TO RESULT
+IF (r >= 1) AND (r <= 10)
+    SAY "OK"
+ELSE
+    SAY "BAD"
+ENDIF
+
+SET t TO "a,b\n1,2\n"
+CALL csv.read WITH t, ","
+SET rows TO RESULT
+GET rows AT 1 AS r1
+GET r1 AT 2 AS f
+SAY f
+
+CALL csv.write WITH rows, ","
+SAY RESULT
