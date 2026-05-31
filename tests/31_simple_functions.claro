@@ -1,0 +1,5 @@
+TEACH greet name
+    SAY "Hello " + name
+END
+
+DO greet "Jon"
