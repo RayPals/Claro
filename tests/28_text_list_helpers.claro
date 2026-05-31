@@ -1,0 +1,22 @@
+TEXT UPPER "hello" AS loud
+SAY loud
+TEXT LOWER "LOUD" AS quiet
+SAY quiet
+TEXT TRIM "  neat  " AS clean
+SAY clean
+TEXT LENGTH clean AS size
+SAY size
+SET names LIST
+ADD "Sam" TO names
+ADD "Jon" TO names
+SORT names
+GET names AT 1 AS first
+SAY first
+REVERSE names
+GET names AT 1 AS nowFirst
+SAY nowFirst
+FIND "Jon" IN names AS place
+SAY place
+REMOVE "Jon" FROM names
+COUNT names AS total
+SAY total
