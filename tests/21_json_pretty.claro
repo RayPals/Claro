@@ -1,0 +1,10 @@
+SET obj TO MAP
+PUT obj KEY "a" VALUE 1
+PUT obj KEY "b" VALUE 2
+SET arr TO LIST
+ADD 10 TO arr
+ADD 20 TO arr
+PUT obj KEY "nums" VALUE arr
+
+MAKE JSON PRETTY obj AS out
+SAY out
