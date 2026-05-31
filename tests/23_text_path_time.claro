@@ -1,0 +1,13 @@
+TEXT SPLIT "a,b,c" BY "," AS parts
+TEXT JOIN parts BY "-" AS joined
+SAY joined
+
+TEXT REPLACE "one two two" FROM "two" TO "three" AS rep
+SAY rep
+
+PATH NORMALIZE "a/./b/../c" AS clean
+SAY clean
+
+TIME NOW AS t
+# just show it exists
+SAY t
