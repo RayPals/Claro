@@ -1,0 +1,6 @@
+SET m TO MAP
+PUT "k1" AS "v1" INTO m
+PUT "k2" AS "v2" INTO m
+FOR EACH k, v IN m
+    SAY k + ":" + v
+DONE
