@@ -1,0 +1,5 @@
+SAY "Name Input Example"
+
+ASK "What is your name?" AS name
+
+SAY "Hello " + name + "!"
