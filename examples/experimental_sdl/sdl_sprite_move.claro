@@ -1,0 +1,44 @@
+# SDL 1.2 demo: move a BMP sprite with arrow keys
+# Build Claro with -DCLARO_WITH_SDL12=1 and SDL 1.2 libs.
+# Place a sprite.bmp in the same folder as this script (or edit the path).
+
+SDL OPEN 640 480 "Claro SDL1.2 Sprite Demo"
+SDL LOADBMP "sprite.bmp" AS spr
+
+SET x TO 300
+SET y TO 220
+SET running TO YES
+
+FOR frame FROM 1 TO 1000000
+    SDL POLL
+    IF SDLEVENT = "QUIT"
+        SET running TO NO
+    ENDIF
+
+    SDL KEYDOWN 276 AS left     # SDLK_LEFT
+    SDL KEYDOWN 275 AS right    # SDLK_RIGHT
+    SDL KEYDOWN 273 AS up       # SDLK_UP
+    SDL KEYDOWN 274 AS down     # SDLK_DOWN
+
+    IF left = 1
+        SET x TO x - 4
+    ENDIF
+    IF right = 1
+        SET x TO x + 4
+    ENDIF
+    IF up = 1
+        SET y TO y - 4
+    ENDIF
+    IF down = 1
+        SET y TO y + 4
+    ENDIF
+
+    SDL CLEAR 20 20 30
+    SDL BLIT spr AT x y
+    SDL PRESENT
+    SDL DELAY 16
+
+    IF running = NO
+        RAISE "quit"
+    ENDIF
+DONE
