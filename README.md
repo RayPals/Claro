@@ -1,113 +1,209 @@
-# Claro 1.0 - Release Candidate
+# Claro v1.17.26
 
-Beginner-friendly programming for everyone.
+<img src="assets/Claro_Logo.jpg" alt="Claro logo" width="160">
 
-Claro is a simple, readable programming language designed for:
+Claro is a small, readable scripting language designed to help beginners — especially learners with learning disabilities — learn programming without being overwhelmed by punctuation-heavy syntax.
 
-- new programmers  
-- classrooms  
-- people with learning differences  
+Claro stays plain-text first: simple enough to start with `SET name "Jon"`, but able to grow into stronger typed scripts, objects, packages, graphics, networking, and tooling over the v1 line.
 
-It uses clear, English-style commands and friendly error messages so you can focus on learning and creating.
+## Status
 
----
+**Current release:** Claro v1.17.26
 
-## Repository
+Validated in this package:
 
-https://codeberg.org/RayPals/Claro
+```bash
+./claro --version
+# Claro v1.17.26
 
----
+./claro test
+# PASS: 0 failure(s)
 
-## Features
+./claro validate
+# Validation passed. Claro v1.17.26 networking reliability is ready for use.
+```
 
-- Easy to read and write
-- English-like syntax
-- Friendly error messages
-- Simple loops and decisions
-- Reusable functions (`TEACH`, `CALL`, `RETURN`)
-- Beginner game objects (sprites)
-- Classroom-safe mode
-- Portable — no installation required
+## Beginner-first syntax
 
----
+Claro accepts both the sentence-like style and the shorter simple style:
 
-## Running Claro
+```claro
+SET name TO "Jon"
+SET name "Jon"
+SET city to "Edmonton"
 
-Interactive mode:
+ASK "What is your name?" name
+SAY "Hello " + name
 
-    claro
+IF name = "Jon"
+    SAY "Nice name!"
+END
+```
 
-Run a program:
+Older forms such as `ASK "Name?" AS name`, `ENDIF`, `DONE`, and `LEARNED` still work so older Claro examples do not break.
 
-    claro program.claro
+## Simple functions
 
-Classroom safe mode:
+```claro
+TEACH greet name
+    SAY "Hello " + name
+END
 
-    claro --classroom program.claro
+DO greet "Jon"
+```
 
----
+Older function syntax still works:
 
-## Your First Program
+```claro
+TEACH greet TAKES name
+    SAY "Hello " + name
+LEARNED
 
-Create a file called `hello.claro`
+CALL greet WITH "Jon"
+```
 
-    SAY "Hello, world!"
+## Objects and classes
 
-Run it:
+Classes can have typed fields and simple methods.
 
-    claro examples/hello.claro
+```claro
+CLASS Player
+    HAS name TEXT
+    HAS score NUMBER
 
----
+    TEACH show
+        SAY name
+        SAY score
+    END
 
-## Core Commands
+    TEACH add points
+        SET score score + points
+    END
+END
 
-SAY — show output  
-ASK — get input  
-SET — store data  
-IF — make decisions  
-DO — repeat  
-WAIT — pause  
+NEW Player player
+SET player.name "Jon"
+SET player.score 10
 
----
+DO player.show
+DO player.add 5
+SAY player.score
+```
 
-## Functions with TEACH
+Object helper commands:
 
-    TEACH add TAKES a, b
-        RETURN a + b
-    LEARNED
+```claro
+OBJECT CLASS player AS kind
+OBJECT FIELDS player AS fields
+```
 
-    CALL add WITH 2, 3
-    SAY RESULT
+## Static type safety
 
----
+Beginners can still write the simplest form:
 
-## Sprites
+```claro
+SET name "Jon"
+```
 
-    CREATE SPRITE player
-    MOVE SPRITE player TO 10 5
-    SHOW SPRITE player
-    HIDE SPRITE player
+When learners are ready, Claro can protect variables with plain-text types:
 
----
+```claro
+SET score NUMBER 10
+SET name TEXT "Jon"
+SET ready YESNO YES
 
-## Building from Source
+TYPE OF score AS kind
+SAY kind
 
-Linux / macOS:
+CHECK TYPE score IS NUMBER
+```
 
-    gcc src/claro.c -O2 -o claro
+## Project and package workflow
 
-Windows (MinGW):
+v1.17.26 hardens Claro's project/package workflow.
 
-    gcc src/claro.c -O2 -o claro.exe
+Create a starter project:
 
----
+```bash
+claro new MyProject
+cd MyProject
+claro run
+```
 
-## Contributing
+Manage packages:
 
-https://codeberg.org/RayPals/Claro/issues
+```bash
+claro package init
+claro package add text
+claro package add sdl
+claro package list
+claro package remove text
+claro package doctor
+claro package lock
+```
 
----
+Claro now creates and maintains:
 
-## License
+```text
+claro.project
+claro.lock
+packages/
+```
 
-MIT
+Package names are checked so unsafe names such as `../bad` are rejected.
+
+
+## Networking
+
+v1.17.26 adds safer beginner networking commands with offline `claro://` test URLs.
+
+```claro
+HTTP CHECK "claro://hello" AS safe
+SAY safe
+
+HTTP GET "claro://hello" AS page STATUS status
+SAY page
+SAY status
+
+HTTP SAVE "claro://json" TO "network_demo.json" AS saveStatus
+SAY saveStatus
+```
+
+The latest HTTP status is also stored in `LASTHTTP`. Real `http://` and `https://` requests use `curl` when available, while `claro://` works offline for lessons and tests.
+
+## Useful commands
+
+```bash
+claro help
+claro --version
+claro test
+claro validate
+claro doctor
+claro examples
+claro check examples/quiz.claro
+claro typecheck examples/type_hardening.claro
+claro fmt examples/quiz.claro
+claro repl
+claro new MyProject
+claro run
+claro package init
+claro package add text
+claro package list
+claro package doctor
+claro ide
+```
+
+## Good first scripts
+
+```bash
+./claro lessons/01_hello.claro
+./claro examples/quiz.claro
+./claro examples/simple_functions.claro
+./claro examples/objects_classes.claro
+./claro examples/text_polish.claro
+./claro examples/networking.claro
+```
+
+## Release direction
+
+Claro should remain in the `v1.xx.yy` line for normal development. A future Claro v2 should mean a full rewrite years later, not an ordinary feature update.
