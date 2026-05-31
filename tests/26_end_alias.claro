@@ -1,0 +1,7 @@
+SET score 10
+IF score = 10
+    SAY "yes"
+END
+DO 2 TIMES
+    SAY "again"
+END
