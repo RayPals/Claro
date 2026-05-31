@@ -1,0 +1,5 @@
+TRY
+    IMPORT "tests/a_cycle_a.claro"
+CATCH
+    SAY LASTERROR
+ENDTRY
