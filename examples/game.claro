@@ -1,0 +1,12 @@
+SAY "Guess the Number Game"
+
+SET secret TO 7
+
+ASK "Guess a number from 1 to 10:" AS guess
+
+IF guess = secret
+    SAY "You got it!"
+ELSE
+    SAY "Not this time. The number was:"
+    SAY secret
+ENDIF
