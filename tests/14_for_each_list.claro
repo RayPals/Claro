@@ -1,0 +1,6 @@
+SET items TO LIST
+ADD "a" TO items
+ADD "b" TO items
+FOR EACH x IN items
+    SAY x
+DONE
