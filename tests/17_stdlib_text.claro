@@ -1,0 +1,13 @@
+IMPORT "lib/text.claro" AS text
+CALL text.upper WITH "hi"
+SAY RESULT
+CALL text.contains WITH "hello", "ell"
+SAY RESULT
+CALL text.endswith WITH "hello", "lo"
+SAY RESULT
+CALL text.split2 WITH "a=b", "="
+SET parts TO RESULT
+GET parts AT 1 AS a
+GET parts AT 2 AS b
+SAY a
+SAY b
