@@ -1,0 +1,8 @@
+SAY "Lesson 10: Tiny Quiz"
+ASK "What is 2 + 2?" AS answer
+
+IF answer = 4
+    SAY "Correct!"
+ELSE
+    SAY "The answer is 4."
+ENDIF
