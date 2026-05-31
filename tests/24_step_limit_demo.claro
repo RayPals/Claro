@@ -1,0 +1,7 @@
+# To test:
+#   set CLARO_STEP_LIMIT=50
+#   claro run tests/24_step_limit_demo.claro
+SET i TO 0
+REPEAT
+    SET i TO i + 1
+UNTIL i > 1000000
