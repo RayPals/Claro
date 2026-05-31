@@ -1,0 +1,5 @@
+SAY "Lesson 9: Files"
+WRITE FILE "lesson_note.txt" WITH "Claro saved this note."
+READ FILE "lesson_note.txt" AS note
+SAY note
+DELETE FILE "lesson_note.txt"
