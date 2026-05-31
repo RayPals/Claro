@@ -1,0 +1,8 @@
+SAY "Simple functions in Claro"
+
+TEACH greet name
+    SAY "Hello " + name
+END
+
+DO greet "Jon"
+DO greet "Friend"
