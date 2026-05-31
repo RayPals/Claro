@@ -1,0 +1,7 @@
+TRY
+    READ FILE "missing.txt" AS t
+    SAY t
+CATCH
+    SAY "Could not read file."
+    SAY LASTERROR
+ENDTRY
