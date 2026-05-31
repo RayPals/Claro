@@ -1,0 +1,13 @@
+SAY "Claro practical scripting demo"
+
+CREATE FOLDER "demo_output"
+WRITE FILE "demo_output/hello.txt" WITH "Hello from Claro"
+READ FILE "demo_output/hello.txt" AS text
+SAY text
+
+TEXT UPPER text AS loud
+SAY loud
+
+DELETE FILE "demo_output/hello.txt"
+DELETE FOLDER "demo_output"
+SAY "Done"
