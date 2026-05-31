@@ -1,0 +1,10 @@
+START TASK worker
+    SAY "Task running"
+END
+WAIT TASK worker
+OPEN WINDOW "Demo" WIDTH 100 HEIGHT 100
+CLEAR SCREEN
+DRAW TEXT "Hello" AT 1 1
+UPDATE SCREEN
+CLOSE WINDOW
+SAY "graphics commands accepted"
