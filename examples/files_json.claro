@@ -1,0 +1,11 @@
+SAY "Files and JSON Example"
+
+SET person TO MAP
+PUT person KEY "name" VALUE "Alex"
+PUT person KEY "age" VALUE 20
+
+MAKE JSON person AS out
+WRITE FILE "out.json" WITH out
+
+READ FILE "out.json" AS again
+SAY again
