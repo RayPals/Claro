@@ -1,0 +1,5 @@
+TEACH greet TAKES name
+    RETURN "Hello"
+LEARNED
+CALL greet WITH "Alex"
+SAY RESULT
