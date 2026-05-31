@@ -1,0 +1,14 @@
+SAY "FizzBuzz in Claro - T-Shirt Business Edition"
+SAY "Printing numbers 1 to 20:"
+FOR i FROM 1 TO 20 DO
+    IF i % 15 == 0 THEN
+        SAY "FizzBuzz"
+    ELSE IF i % 3 == 0 THEN
+        SAY "Fizz"
+    ELSE IF i % 5 == 0 THEN
+        SAY "Buzz"
+    ELSE
+        SAY i
+    END IF
+END FOR
+SAY "Task completed for t-shirt business automation!"
