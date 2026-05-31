@@ -1,0 +1,11 @@
+SET items TO LIST
+ADD "milk" TO items
+ADD "bread" TO items
+COUNT items AS n
+SAY n
+GET items AT 1 AS first
+SAY first
+SET person TO MAP
+PUT "name" AS "Alex" INTO person
+GET person KEY "name" AS nm
+SAY nm
