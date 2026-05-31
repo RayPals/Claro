@@ -1,0 +1,3 @@
+IMPORT "tests/lib_math.claro"
+CALL add WITH 2, 3
+SAY RESULT
