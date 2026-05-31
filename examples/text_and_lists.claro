@@ -1,0 +1,10 @@
+SET names LIST
+ADD "Sam" TO names
+ADD "Jon" TO names
+
+SORT names
+GET names AT 1 AS first
+SAY first
+
+TEXT UPPER first AS loud
+SAY loud
