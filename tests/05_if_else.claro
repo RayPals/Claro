@@ -1,0 +1,6 @@
+SET score TO 10
+IF score IS 10
+    SAY "Perfect"
+ELSE
+    SAY "Nope"
+ENDIF
