@@ -1,0 +1,8 @@
+SAY "Lesson 5: Choices"
+SET score TO 8
+
+IF score >= 5
+    SAY "You passed!"
+ELSE
+    SAY "Try again."
+ENDIF
