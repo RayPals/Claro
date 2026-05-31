@@ -1,0 +1,13 @@
+# Pretty-print JSON from a file (validates + re-encodes)
+IMPORT "lib/text.claro" AS text
+
+ASK "JSON file path:" AS p
+TRY
+    READ FILE p AS t
+    PARSE JSON t AS v
+    MAKE JSON v AS out
+    SAY out
+CATCH
+    SAY "Error:"
+    SAY LASTERROR
+ENDTRY
