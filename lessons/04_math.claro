@@ -1,0 +1,5 @@
+SAY "Lesson 4: Math"
+SET apples TO 3
+SET oranges TO 2
+SET total TO apples + oranges
+SAY total
