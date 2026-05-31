@@ -1,0 +1,6 @@
+TRY
+    READ FILE "missing_should_not_exist.txt" AS t
+    SAY t
+CATCH
+    SAY "caught"
+ENDTRY
