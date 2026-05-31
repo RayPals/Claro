@@ -1,0 +1,18 @@
+SAY "Typed variables and simple objects"
+
+SET score NUMBER 10
+SET name TEXT "Jon"
+SET ready YESNO YES
+
+CLASS Player
+    HAS name TEXT
+    HAS score NUMBER
+ENDCLASS
+
+NEW Player AS player
+SET player.name TEXT name
+SET player.score NUMBER score
+
+SAY player.name
+SAY player.score
+SAY ready
