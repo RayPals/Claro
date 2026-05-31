@@ -1,0 +1,25 @@
+CLASS Player
+    HAS name TEXT
+    HAS score NUMBER
+
+    TEACH show
+        SAY name
+        SAY score
+    END
+
+    TEACH add points
+        SET score score + points
+    END
+END
+
+NEW Player player
+SET player.name "Jon"
+SET player.score 10
+DO player.show
+DO player.add 5
+SAY player.score
+OBJECT CLASS player AS kind
+SAY kind
+OBJECT FIELDS player AS fields
+COUNT fields AS total
+SAY total
