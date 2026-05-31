@@ -1,0 +1,6 @@
+SET name "Jon"
+SAY name
+SET city to "Edmonton"
+SAY city
+SET score TO 3
+SAY score
