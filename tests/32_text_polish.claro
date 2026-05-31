@@ -1,0 +1,6 @@
+TEXT STARTS "Claro language" WITH "Claro" AS startsRight
+SAY startsRight
+TEXT ENDS "Claro language" WITH "age" AS endsRight
+SAY endsRight
+TEXT REPLACE "Hello world" FROM "world" TO "Claro" AS changed
+SAY changed
