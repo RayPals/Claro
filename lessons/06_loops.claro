@@ -1,0 +1,8 @@
+SAY "Lesson 6: Loops"
+DO 3 TIMES
+    SAY "Practice"
+DONE
+
+FOR i FROM 1 TO 3
+    SAY i
+DONE
