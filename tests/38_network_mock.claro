@@ -1,0 +1,8 @@
+HTTP CHECK "claro://hello" AS safe
+SAY safe
+HTTP GET "claro://hello" AS page STATUS status
+SAY page
+SAY status
+SAY LASTHTTP
+HTTP STATUS "claro://missing" AS missing
+SAY missing
