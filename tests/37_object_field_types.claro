@@ -1,0 +1,10 @@
+CLASS ScoreBox
+    HAS score NUMBER
+END
+
+NEW ScoreBox box
+SET box.score NUMBER 7
+CHECK TYPE box.score IS NUMBER
+SAY box.score
+TYPE OF box.score AS kind
+SAY kind
