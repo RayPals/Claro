@@ -1,0 +1,4 @@
+SAY "Daily Journal"
+ASK "Write one sentence about today:" AS note
+WRITE FILE "journal.txt" WITH note
+SAY "Saved to journal.txt"
