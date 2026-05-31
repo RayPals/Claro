@@ -1,0 +1,20 @@
+SAY "Collections Example"
+
+SET items TO LIST
+ADD "milk" TO items
+ADD "bread" TO items
+
+COUNT items AS n
+SAY "Number of items:"
+SAY n
+
+GET items AT 1 AS first
+SAY "First item:"
+SAY first
+
+SET person TO MAP
+PUT person KEY "name" VALUE "Alex"
+
+GET person KEY "name" AS nm
+SAY "Person name:"
+SAY nm
