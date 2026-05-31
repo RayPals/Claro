@@ -1,0 +1,121 @@
+# Claro Standard Library: csv (RFC4180-ish)
+# Use: IMPORT "lib/csv.claro" AS csv
+# read(text, sep)  -> LIST of rows (each row is LIST of fields)
+# write(rows, sep) -> TEXT (quotes fields when needed)
+#
+# Supports:
+# - quoted fields: "a,b"
+# - escaped quotes inside quoted fields: ""
+# - newlines inside quoted fields
+EXPORT ALL
+
+TEACH _needs_quote TAKES field, sep
+    FIND sep IN field AS p1
+    FIND "\"\n\"" IN field AS p2
+    FIND "\""\r\"" IN field AS p3
+    FIND "\""\"\"" IN field AS p4
+    IF (p1 != 0) OR (p2 != 0) OR (p3 != 0) OR (p4 != 0)
+        RETURN YES
+    ENDIF
+    RETURN NO
+LEARNED
+
+TEACH _escape_quotes TAKES field
+    # Replace " with ""
+    SET out TO ""
+    LENGTH field AS L
+    FOR i FROM 1 TO L
+        SUBSTR field FROM i LEN 1 AS ch
+        IF ch = "\""\"\"" 
+            SET out TO out + "\""\"\"" + "\""\"\"" 
+        ELSE
+            SET out TO out + ch
+        ENDIF
+    DONE
+    RETURN out
+LEARNED
+
+TEACH write TAKES rows, sep
+    SET out TO ""
+    FOR EACH row IN rows
+        SET line TO ""
+        SET first TO YES
+        FOR EACH field IN row
+            SET f TO field
+            CALL _needs_quote WITH f, sep
+            IF RESULT = YES
+                CALL _escape_quotes WITH f
+                SET f TO "\""\"\"" + RESULT + "\""\"\"" 
+            ENDIF
+
+            IF first = YES
+                SET line TO f
+                SET first TO NO
+            ELSE
+                SET line TO line + sep + f
+            ENDIF
+        DONE
+        SET out TO out + line + "\n"
+    DONE
+    RETURN out
+LEARNED
+
+TEACH read TAKES text, sep
+    # State machine CSV parser
+    SET rows TO LIST
+    SET row TO LIST
+    SET cur TO ""
+    SET inq TO NO
+
+    LENGTH text AS L
+    FOR i FROM 1 TO L
+        SUBSTR text FROM i LEN 1 AS ch
+
+        IF inq = YES
+            IF ch = "\""\"\"" 
+                # quote or escaped quote?
+                IF i < L
+                    SUBSTR text FROM (i + 1) LEN 1 AS nx
+                    IF nx = "\""\"\"" 
+                        SET cur TO cur + "\""\"\"" 
+                        SET i TO (i + 1)
+                    ELSE
+                        SET inq TO NO
+                    ENDIF
+                ELSE
+                    SET inq TO NO
+                ENDIF
+            ELSE
+                SET cur TO cur + ch
+            ENDIF
+        ELSE
+            IF ch = "\""\"\"" 
+                SET inq TO YES
+            ELSE
+                IF ch = sep
+                    ADD cur TO row
+                    SET cur TO ""
+                ELSE
+                    IF ch = "\n"
+                        ADD cur TO row
+                        ADD row TO rows
+                        SET row TO LIST
+                        SET cur TO ""
+                    ELSE
+                        IF ch != "\r"
+                            SET cur TO cur + ch
+                        ENDIF
+                    ENDIF
+                ENDIF
+            ENDIF
+        ENDIF
+    DONE
+
+    # final field / row
+    ADD cur TO row
+    # avoid adding a trailing empty row from final newline
+    IF (L > 0)
+        ADD row TO rows
+    ENDIF
+    RETURN rows
+LEARNED
