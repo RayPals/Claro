@@ -1,0 +1,9 @@
+SAY "Tiny Contacts Book"
+
+SET contacts TO MAP
+PUT contacts KEY "Alex" VALUE "alex@example.test"
+PUT contacts KEY "Sam" VALUE "sam@example.test"
+
+FOR EACH name, email IN contacts
+    SAY name + ": " + email
+DONE
