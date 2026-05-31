@@ -1,0 +1,19 @@
+IMPORT "lib/csv.claro" AS csv
+
+SET t TO "a,b\n\"x,y\",z\n1,\"hello\"\n"
+CALL csv.read WITH t, ","
+SET rows TO RESULT
+
+GET rows AT 2 AS r2
+GET r2 AT 1 AS f1
+SAY f1
+
+GET r2 AT 2 AS f2
+SAY f2
+
+GET r2 AT 3 AS f3
+SAY f3
+
+# write it back (should quote the x,y field)
+CALL csv.write WITH rows, ","
+SAY RESULT
