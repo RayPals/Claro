@@ -1,0 +1,13 @@
+SET score NUMBER 10
+TYPE OF score AS kind
+SAY kind
+CHECK TYPE score IS NUMBER
+SET name TEXT "Jon"
+TYPE OF name AS nameKind
+SAY nameKind
+SET happy YESNO YES
+TYPE OF happy AS happyKind
+SAY happyKind
+NEW Player player
+TYPE OF player AS playerKind
+SAY playerKind
