@@ -1,0 +1,9 @@
+IMPORT "tests/lib_exports.claro" AS math
+SAY math.PI
+CALL math.add WITH 10, 5
+SAY RESULT
+TRY
+    SAY math.hidden
+CATCH
+    SAY "hidden not exported"
+ENDTRY
