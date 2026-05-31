@@ -1,0 +1,20 @@
+SAY "Claro networking demo"
+
+HTTP CHECK "claro://hello" AS safe
+SAY "Is this URL safe?"
+SAY safe
+
+HTTP GET "claro://hello" AS page STATUS status
+SAY "Page text:"
+SAY page
+SAY "Status:"
+SAY status
+
+HTTP SAVE "claro://json" TO "network_demo.json" AS saveStatus
+SAY "Saved with status:"
+SAY saveStatus
+
+READ FILE "network_demo.json" AS saved
+SAY "Saved text:"
+SAY saved
+DELETE FILE "network_demo.json"
