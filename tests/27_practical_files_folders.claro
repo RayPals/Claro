@@ -1,0 +1,11 @@
+CREATE FOLDER "rc6_tmp"
+WRITE FILE "rc6_tmp/a.txt" WITH "hello"
+COPY FILE "rc6_tmp/a.txt" TO "rc6_tmp/b.txt"
+READ FILE "rc6_tmp/b.txt" AS text
+SAY text
+MOVE FILE "rc6_tmp/b.txt" TO "rc6_tmp/c.txt"
+EXISTS FILE "rc6_tmp/c.txt" AS found
+SAY found
+DELETE FILE "rc6_tmp/a.txt"
+DELETE FILE "rc6_tmp/c.txt"
+DELETE FOLDER "rc6_tmp"
