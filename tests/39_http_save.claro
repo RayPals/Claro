@@ -1,0 +1,5 @@
+HTTP SAVE "claro://json" TO "network_test_output.json" AS code
+SAY code
+READ FILE "network_test_output.json" AS saved
+SAY saved
+DELETE FILE "network_test_output.json"
