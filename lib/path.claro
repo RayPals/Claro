@@ -1,0 +1,48 @@
+# Claro Standard Library: path
+# Use: IMPORT "lib/path.claro" AS path
+EXPORT ALL
+
+TEACH join TAKES a, b
+    IF a = ""
+        RETURN b
+    ENDIF
+    IF b = ""
+        RETURN a
+    ENDIF
+    RETURN a + "\\" + b
+LEARNED
+
+TEACH ext TAKES p
+    SET last TO 0
+    LENGTH p AS L
+    FOR i FROM 1 TO L
+        SUBSTR p FROM i LEN 1 AS ch
+        IF ch = "."
+            SET last TO i
+        ENDIF
+    DONE
+    IF last = 0
+        RETURN ""
+    ENDIF
+    SUBSTR p FROM (last + 1) AS e
+    RETURN e
+LEARNED
+
+TEACH basename TAKES p
+    SET last TO 0
+    LENGTH p AS L
+    FOR i FROM 1 TO L
+        SUBSTR p FROM i LEN 1 AS ch
+        IF ch = "/"
+            SET last TO i
+        ENDIF
+        IF ch = "\\"
+            SET last TO i
+        ENDIF
+    DONE
+    IF last = 0
+        RETURN p
+    ENDIF
+    SUBSTR p FROM (last + 1) AS b
+    RETURN b
+LEARNED
