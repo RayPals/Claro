@@ -1,0 +1,3 @@
+SET items TO LIST
+ADD "milk" TO items
+GET items AT 1
