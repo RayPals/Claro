@@ -1,0 +1,12 @@
+SET score NUMBER 5
+SAY score
+SET name TEXT "Jon"
+SAY name
+SET ok YESNO YES
+SAY ok
+CLASS Person
+    HAS name TEXT
+ENDCLASS
+NEW Person AS person
+SET person.name TEXT "Jon"
+SAY person.name
