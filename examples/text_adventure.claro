@@ -1,0 +1,8 @@
+SAY "You are standing at a forest path."
+ASK "Go left or right?" AS choice
+
+IF choice = "left"
+    SAY "You find a quiet river."
+ELSE
+    SAY "You find an old stone tower."
+ENDIF
