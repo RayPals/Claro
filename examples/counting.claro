@@ -1,0 +1,21 @@
+# Counting Example
+# Shows how to use DO TIMES and REPEAT loops
+
+SAY "Counting with DO TIMES:"
+SET counter TO 1
+
+DO 5 TIMES
+    SAY counter
+    SET counter TO counter + 1
+DONE
+
+SAY ""
+SAY "Counting down with REPEAT:"
+SET n TO 5
+
+REPEAT
+    SAY n
+    SET n TO n - 1
+UNTIL n = 0
+
+SAY "Blastoff!"
