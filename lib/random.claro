@@ -1,0 +1,18 @@
+# Claro Standard Library: random
+# Use: IMPORT "lib/random.claro" AS random
+EXPORT ALL
+
+TEACH seed TAKES n
+    SEED n
+    RETURN YES
+LEARNED
+
+TEACH float TAKES none
+    RAND AS r
+    RETURN r
+LEARNED
+
+TEACH int TAKES lo, hi
+    RAND FROM lo TO hi AS r
+    RETURN r
+LEARNED
