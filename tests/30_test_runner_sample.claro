@@ -1,0 +1,7 @@
+# EXPECT: 3
+TEACH add USING a b
+    RETURN a + b
+LEARNED
+
+CALL add WITH 1 2 AS x
+SAY x
