@@ -1,0 +1,7 @@
+TEACH add TAKES a, b
+    RETURN a + b
+LEARNED
+
+TEACH hello TAKES name
+    RETURN "Hi " + name
+LEARNED
