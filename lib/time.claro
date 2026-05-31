@@ -1,0 +1,8 @@
+# Claro Standard Library: time
+# Use: IMPORT "lib/time.claro" AS time
+EXPORT ALL
+
+TEACH sleep TAKES seconds
+    WAIT seconds
+    RETURN YES
+LEARNED
