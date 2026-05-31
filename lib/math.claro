@@ -1,0 +1,37 @@
+# Claro Standard Library: math
+# Use: IMPORT "lib/math.claro" AS math
+EXPORT ALL
+
+TEACH abs TAKES x
+    IF x < 0
+        RETURN 0 - x
+    ELSE
+        RETURN x
+    ENDIF
+LEARNED
+
+TEACH min TAKES a, b
+    IF a < b
+        RETURN a
+    ELSE
+        RETURN b
+    ENDIF
+LEARNED
+
+TEACH max TAKES a, b
+    IF a > b
+        RETURN a
+    ELSE
+        RETURN b
+    ENDIF
+LEARNED
+
+TEACH clamp TAKES x, lo, hi
+    IF x < lo
+        RETURN lo
+    ENDIF
+    IF x > hi
+        RETURN hi
+    ENDIF
+    RETURN x
+LEARNED
