@@ -1,0 +1,4 @@
+SET score NUMBER 10
+SET score "hello"
+SET name TEXT 5
+CHECK TYPE score IS TEXT
