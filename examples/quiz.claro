@@ -1,4 +1,33 @@
+SAY "Welcome to the Claro quiz!"
 
 ASK "What is your name?" AS name
-SAY "Hello"
-SAY name
+SAY "Hello " + name + "!"
+
+SET score TO 0
+
+ASK "What is 2 + 2?" AS answer
+
+IF answer = 4
+    SAY "Correct!"
+    SET score TO score + 1
+ELSE
+    SAY "Not quite. The answer is 4."
+ENDIF
+
+ASK "What is 5 + 5?" AS answer2
+
+IF answer2 = 10
+    SAY "Correct!"
+    SET score TO score + 1
+ELSE
+    SAY "Not quite. The answer is 10."
+ENDIF
+
+SAY "Your final score is:"
+SAY score
+
+IF score = 2
+    SAY "Great job!"
+ELSE
+    SAY "Good try. Keep practicing!"
+ENDIF
