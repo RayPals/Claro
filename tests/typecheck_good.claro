@@ -1,0 +1,8 @@
+SET score NUMBER 10
+SET score 20
+SET name TEXT "Jon"
+SET happy YESNO YES
+TYPE OF score AS kind
+CHECK TYPE score IS NUMBER
+NEW Player player
+CHECK TYPE player IS OBJECT
