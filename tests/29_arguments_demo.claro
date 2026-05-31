@@ -1,0 +1,7 @@
+COUNT ARGUMENTS AS total
+SAY total
+GET ARGUMENT 1 AS first
+SAY first
+GET ALL ARGUMENTS AS args
+COUNT args AS argTotal
+SAY argTotal
