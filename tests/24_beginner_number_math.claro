@@ -1,0 +1,6 @@
+SET first TO "4"
+SET second TO "6"
+SET total TO first + second
+SAY total
+SET bigger TO first * second
+SAY bigger
