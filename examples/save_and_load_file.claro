@@ -1,0 +1,8 @@
+SAY "Save and Load Example"
+
+WRITE FILE "claro_note.txt" WITH "Claro saved this file."
+
+READ FILE "claro_note.txt" AS text
+
+SAY "The file says:"
+SAY text
