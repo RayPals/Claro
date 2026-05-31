@@ -1,0 +1,5 @@
+TRY
+    RAISE "boom"
+CATCH
+    SAY LASTERROR
+ENDTRY
