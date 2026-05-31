@@ -1,0 +1,8 @@
+SET text TO "{\"a\":[1,2,{\"b\":\"hi there\"}]}"
+PARSE JSON text AS obj
+GET obj KEY "a" AS arr
+GET arr AT 3 AS third
+GET third KEY "b" AS b
+SAY b
+MAKE JSON obj AS out
+SAY out
