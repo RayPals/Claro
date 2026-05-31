@@ -1,0 +1,76 @@
+# Claro Standard Library: text
+# Use: IMPORT "lib/text.claro" AS text
+EXPORT ALL
+
+TEACH lower TAKES s
+    RETURN LOWER s
+LEARNED
+
+TEACH upper TAKES s
+    RETURN UPPER s
+LEARNED
+
+TEACH trim TAKES s
+    RETURN TRIM s
+LEARNED
+
+TEACH contains TAKES s, part
+    FIND part IN s AS pos
+    IF pos = 0
+        RETURN NO
+    ELSE
+        RETURN YES
+    ENDIF
+LEARNED
+
+TEACH startswith TAKES s, prefix
+    FIND prefix IN s AS pos
+    IF pos = 1
+        RETURN YES
+    ELSE
+        RETURN NO
+    ENDIF
+LEARNED
+
+TEACH endswith TAKES s, suffix
+    LENGTH s AS ls
+    LENGTH suffix AS lp
+    IF lp = 0
+        RETURN YES
+    ENDIF
+    IF lp > ls
+        RETURN NO
+    ENDIF
+    SUBSTR s FROM (ls - lp + 1) LEN lp AS tail
+    IF tail = suffix
+        RETURN YES
+    ELSE
+        RETURN NO
+    ENDIF
+LEARNED
+
+TEACH replace TAKES s, old, new
+    FIND old IN s AS pos
+    IF pos = 0
+        RETURN s
+    ENDIF
+    LENGTH old AS lo
+    SUBSTR s FROM 1 LEN (pos - 1) AS left
+    SUBSTR s FROM (pos + lo) AS right
+    RETURN left + new + right
+LEARNED
+
+TEACH split2 TAKES s, sep
+    SET out TO LIST
+    FIND sep IN s AS pos
+    IF pos = 0
+        ADD s TO out
+        RETURN out
+    ENDIF
+    LENGTH sep AS ls
+    SUBSTR s FROM 1 LEN (pos - 1) AS a
+    SUBSTR s FROM (pos + ls) AS b
+    ADD a TO out
+    ADD b TO out
+    RETURN out
+LEARNED
