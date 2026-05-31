@@ -1,0 +1,4 @@
+CREATE SPRITE hero
+MOVE SPRITE hero TO 3 4
+SHOW SPRITE hero
+SAY "ok"
