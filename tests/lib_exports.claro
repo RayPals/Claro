@@ -1,0 +1,10 @@
+EXPORT add, PI
+
+SET PI TO 3.14
+
+TEACH add TAKES a, b
+    RETURN a + b
+LEARNED
+
+# internal var (should not be visible as math.hidden)
+SET hidden TO "nope"
