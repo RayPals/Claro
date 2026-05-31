@@ -1,0 +1,25 @@
+# Sprite Demo
+# Shows how to create and move game characters
+
+SAY "=== Sprite Demo ==="
+SAY ""
+
+CREATE SPRITE player
+CREATE SPRITE enemy
+
+MOVE SPRITE player TO 100 200
+MOVE SPRITE enemy TO 300 150
+
+SAY "Player and enemy created!"
+SHOW SPRITE player
+SHOW SPRITE enemy
+
+WAIT 1
+
+SAY "Moving player..."
+MOVE SPRITE player TO 200 200
+
+SAY "Hiding enemy..."
+HIDE SPRITE enemy
+
+SAY "Done!"
