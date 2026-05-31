@@ -1,0 +1,8 @@
+SAY "Claro package workflow"
+SAY "Try these commands in your terminal:"
+SAY "claro new MyProject"
+SAY "cd MyProject"
+SAY "claro package add text"
+SAY "claro package list"
+SAY "claro package doctor"
+SAY "claro run"
