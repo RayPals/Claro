@@ -1,0 +1,5 @@
+SET x TO 0
+REPEAT
+    SET x TO x + 1
+    SAY x
+UNTIL x >= 3
