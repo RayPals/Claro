@@ -1,0 +1,12 @@
+SET answer TO "4"
+IF answer = 4
+    SAY "number text works"
+ELSE
+    SAY "bad"
+ENDIF
+SET bigger TO "10"
+IF bigger > 5
+    SAY "greater works"
+ELSE
+    SAY "bad"
+ENDIF
