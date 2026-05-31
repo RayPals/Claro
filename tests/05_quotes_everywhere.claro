@@ -1,0 +1,10 @@
+SET greeting TO "Hello world"
+SAY greeting
+SET items TO LIST
+ADD "milk and honey" TO items
+GET items AT 1 AS first
+SAY first
+SET person TO MAP
+PUT "full name" AS "Alex Johnson" INTO person
+GET person KEY "full name" AS nm
+SAY nm
