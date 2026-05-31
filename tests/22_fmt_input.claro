@@ -1,0 +1,7 @@
+TEACH demo TAKES x
+IF x > 0
+SAY "pos"
+ELSE
+SAY "neg"
+ENDIF
+LEARNED
