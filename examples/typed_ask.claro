@@ -1,0 +1,9 @@
+SAY "Typed input example"
+ASK "How old are you?" age NUMBER
+ASK "Are you ready? Type YES or NO." ready YESNO
+
+SAY "Age next year:"
+SAY age + 1
+
+SAY "Ready value:"
+SAY ready
