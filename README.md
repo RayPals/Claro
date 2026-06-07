@@ -223,19 +223,12 @@ If you are new to Claro, start here:
 4. `docs/CLI.md`
 5. `docs/CURRENT_STATUS.md`
 
-Feature references:
+Feature references by current status:
 
-- Language reference: `docs/SPEC.md`
-- Friendly errors and checking: `docs/ERRORS.md`, `docs/LINTER.md`, `docs/TESTING.md`
-- Formatter: `docs/FORMATTER.md`
-- Static typing: `docs/ADVANCED_STATIC_TYPING.md`
-- Objects/classes: `docs/V1_15_OBJECTS_CLASSES.md`
-- Projects/packages: `docs/V1_16_PACKAGES_PROJECTS.md`, `docs/PACKAGE_REGISTRY.md`
-- Networking/web: `docs/V1_17_NETWORKING.md`, `docs/WEB_SERVER_PLAN.md`
-- Tasks/concurrency: `docs/CONCURRENCY.md`
-- IDE/editor support: `docs/IDE.md`, `docs/EDITOR_EXTENSION_PLAN.md`
-- Graphics/SDL status: `docs/GRAPHICS.md`, `docs/SDL12.md`
-- Roadmaps: `docs/ROADMAP.md`, `docs/COMPLETE_PLATFORM_ROADMAP.md`
+- **Ready for beginner lessons:** language reference (`docs/SPEC.md`), friendly errors/checking (`docs/ERRORS.md`, `docs/LINTER.md`, `docs/TESTING.md`), formatter (`docs/FORMATTER.md`), and simple functions (`docs/SIMPLE_FUNCTIONS.md`).
+- **Foundation present, still being polished:** static typing (`docs/ADVANCED_STATIC_TYPING.md`), objects/classes (`docs/V1_15_OBJECTS_CLASSES.md`), local projects/packages (`docs/V1_16_PACKAGES_PROJECTS.md`), HTTP client networking (`docs/V1_17_NETWORKING.md`), cooperative tasks (`docs/CONCURRENCY.md`), and IDE metadata/helper support (`docs/IDE.md`).
+- **Planned or experimental, not stable beginner features yet:** remote package registry (`docs/PACKAGE_REGISTRY.md`), web server API (`docs/WEB_SERVER_PLAN.md`), full editor extension/LSP (`docs/EDITOR_EXTENSION_PLAN.md`), and real SDL graphics (`docs/GRAPHICS.md`, `docs/SDL12.md`).
+- **Roadmaps:** `docs/ROADMAP.md` for the current v1 direction and `docs/COMPLETE_PLATFORM_ROADMAP.md` for the larger platform goal.
 
 Historical release notes and validation logs are kept in files such as `docs/RC*_NOTES.md`, `docs/RC*_VALIDATION.md`, and older `docs/V1_*_VALIDATION.md`. They are useful for project history, but they are not the beginner starting path.
 

@@ -185,3 +185,19 @@ Good starting docs:
 ## Historical docs
 
 Files named `RC*_NOTES.md`, `RC*_VALIDATION.md`, older `V1_*_VALIDATION.md`, and older release notes are kept for project history. They may mention old version numbers, old planned milestones, or old validation scripts. Use them to understand how Claro evolved; do not treat them as the current beginner path.
+
+## Which docs should a new learner trust first?
+
+For the current v1.18.26 package, read docs in this order:
+
+1. `QUICK_START.md`, `FIRST_HOUR.md`, and `lessons/README.md` for first programs.
+2. `README.md` and this file for the current feature map.
+3. `ROADMAP.md` for the next v1 work.
+
+Use feature docs with these expectations:
+
+- **Ready for beginner lessons:** `SPEC.md`, `SIMPLE_FUNCTIONS.md`, `ERRORS.md`, `LINTER.md`, `TESTING.md`, `FORMATTER.md`.
+- **Foundation present:** `ADVANCED_STATIC_TYPING.md`, `V1_14_STATIC_TYPES.md`, `V1_15_OBJECTS_CLASSES.md`, `V1_16_PACKAGES_PROJECTS.md`, `V1_17_NETWORKING.md`, `CONCURRENCY.md`, `IDE.md`.
+- **Plans or experiments:** `PACKAGE_REGISTRY.md`, `WEB_SERVER_PLAN.md`, `EDITOR_EXTENSION_PLAN.md`, `GRAPHICS.md`, `SDL12.md`, `COMPLETE_PLATFORM_ROADMAP.md`, `FUTURE_FEATURES_ROADMAP.md`.
+
+If a doc sounds more ambitious than this status map, treat this file as the current source of truth and update the older doc before teaching from it.

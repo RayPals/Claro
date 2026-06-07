@@ -1,6 +1,24 @@
 # Claro Future Features Roadmap
 
-> **For Hermes:** Use subagent-driven-development skill to implement this plan task-by-task.
+Current status: **historical implementation plan plus remaining ideas**.
+
+This file began as a task-by-task plan. Some early slices have since been completed or moved into current feature docs. For the current learner-facing truth, start with `CURRENT_STATUS.md`, `ROADMAP.md`, and `COMPLETE_PLATFORM_ROADMAP.md`.
+
+Already moved into current foundations:
+
+- typed list/map checking and clearer type mismatch diagnostics
+- IDE metadata and the command-based diagnostics helper
+- deterministic cooperative task commands
+- HTTP client safety with offline `claro://` test URLs
+- local project/package manifest and lockfile hardening
+
+Still planned or experimental:
+
+- real web server API
+- remote package registry/install flow
+- full editor extension/LSP experience
+- optional SDL graphics backend
+- optimization work backed by benchmarks
 
 **Goal:** Grow Claro from a beginner scripting language into a stable accessible platform without breaking the learning-friendly core.
 
@@ -10,7 +28,7 @@
 
 ---
 
-> Current note: Some tasks in this implementation plan have since been partially completed or moved into dedicated status docs. For the current high-level view, start with `ROADMAP.md`, `CURRENT_STATUS.md`, and `COMPLETE_PLATFORM_ROADMAP.md`.
+> Current note: this is not the beginner starting path. Use it for remaining implementation ideas only after checking `CURRENT_STATUS.md`.
 
 ## Priority order
 

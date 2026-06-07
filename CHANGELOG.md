@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.18.26-dev learner documentation status cleanup
+
+- Grouped the README documentation map by current feature status so new learners can see what is ready, what is foundation-level, and what is still planned or experimental.
+- Added a learner-first trust order to `docs/CURRENT_STATUS.md`.
+- Marked `docs/FUTURE_FEATURES_ROADMAP.md` as a historical implementation plan plus remaining ideas, with completed slices separated from still-planned work.
+
 ## v1.18.26-dev documentation audit consistency update
 
 - Clarified that `docs/DOCUMENTATION_AUDIT_v1.18.26.md` is a historical snapshot from the first documentation cleanup pass.
