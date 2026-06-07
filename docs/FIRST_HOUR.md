@@ -11,69 +11,75 @@ SAY "Hello!"
 ## 2. Ask a question
 
 ```claro
-ASK "What is your name?" AS name
+ASK "What is your name?" name
 SAY "Hello " + name
 ```
+
+Older examples may use `ASK "What is your name?" AS name`; that still works, but the shorter form is easier for new learners.
 
 ## 3. Store a variable
 
 ```claro
-SET score TO 0
+SET score 0
 SAY score
 ```
 
 ## 4. Do simple math
 
 ```claro
-SET score TO 0
-SET score TO score + 1
+SET score 0
+SET score score + 1
 SAY score
 ```
 
 ## 5. Make a decision
 
 ```claro
-ASK "What is 2 + 2?" AS answer
+ASK "What is 2 + 2?" answer
 
 IF answer = 4
     SAY "Correct!"
 ELSE
     SAY "The answer is 4."
-ENDIF
+END
 ```
 
-In RC2, simple number-looking input can compare naturally with numbers.
+Simple number-looking input can compare naturally with numbers.
 
 ## 6. Repeat something
 
 ```claro
 DO 3 TIMES
     SAY "Practice helps"
-DONE
+END
 ```
+
+Older examples may use `DONE` for loop endings; that compatibility form still works.
 
 ## 7. Use a list
 
 ```claro
-SET items TO LIST
+SET items LIST
 ADD "milk" TO items
 ADD "bread" TO items
 
 FOR EACH item IN items
     SAY item
-DONE
+END
 ```
 
 ## 8. Teach a function
 
 ```claro
-TEACH add TAKES a, b
+TEACH add a b
     RETURN a + b
-LEARNED
+END
 
-CALL add WITH 2, 3
+DO add 2 3
 SAY RESULT
 ```
+
+Older examples may use `TEACH add TAKES a, b`, `LEARNED`, and `CALL add WITH 2, 3`; those forms still work.
 
 ## 9. Save and load text
 

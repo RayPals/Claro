@@ -1,10 +1,9 @@
-# Claro Language Specification (Draft)
+# Claro Language Specification
 
-Version: **0.19-draft** (Beta19-Spec)  
-Status: **Draft** (stability work in progress)
+Current package: **Claro v1.18.26**  
+Status: **Living v1 specification**
 
-This document defines the intended behavior of the Claro language. It’s written to reduce breaking
-changes and make the path to 1.0 clear.
+This document defines the intended behavior of the Claro language. It is written to reduce breaking changes and keep the v1 line teachable and predictable.
 
 ---
 
@@ -15,10 +14,10 @@ changes and make the path to 1.0 clear.
 3. General-purpose scripting: files, JSON/CSV, small tools.
 4. Safe by default: TRY/CATCH, predictable runtime behavior.
 
-Non-goals for 1.0:
-- Concurrency / threads
-- Advanced static typing
-- Metaprogramming / macros
+Current scope notes:
+- Concurrency is being developed as beginner-safe tasks first; native threads are not exposed as the beginner API.
+- Advanced static typing exists as a foundation and is still being expanded.
+- Metaprogramming/macros are not a current goal.
 
 ---
 
@@ -244,10 +243,11 @@ claro test
 
 ---
 
-## 14. Beta “may change” list
+## 14. v1 stabilization notes
 
-Until 1.0, these are still being stabilized:
+These details may still be refined within the v1 line:
 - exact numeric precision rules
-- MAP iteration ordering (1.0 will define it)
+- MAP iteration ordering
 - exact wording/format of error messages
 - REPL multi-line behaviors
+- the boundary between dynamic runtime behavior and optional static checks

@@ -3,7 +3,7 @@ param(
   [string]$Out = "claro.exe"
 )
 
-Write-Host "Building Claro v1.17.26..." -ForegroundColor Cyan
+Write-Host "Building Claro v1.18.26..." -ForegroundColor Cyan
 & $CC "-std=c99" "src\claro.c" "-O0" "-o" $Out "-lm"
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 

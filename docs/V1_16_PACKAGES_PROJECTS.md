@@ -1,6 +1,6 @@
-# Claro v1.17.26 - Packages and Projects
+# Claro v1.18.26 - Packages and Projects
 
-Claro v1.17.26 makes projects and packages safer and more useful while keeping the beginner syntax simple.
+Claro v1.18.26 makes projects and packages safer and more useful while keeping the beginner syntax simple.
 
 ## Create a project
 
@@ -25,12 +25,13 @@ README.md
 `claro.project` is intentionally plain text:
 
 ```text
+manifest-version: 1
 name: MyProject
 main: main.claro
-version: v1.17.26
+version: v1.18.26
 packages:
 package: text
-package: sdl
+package: net_tools
 ```
 
 ## Package commands
@@ -51,6 +52,18 @@ packages/NAME/
   claro.package
   README.md
 ```
+
+Each `claro.package` file includes a tiny manifest and checksum:
+
+```text
+manifest-version: 1
+name: text
+version: 1
+source: local
+checksum: 1234abcd
+```
+
+`claro.lock` records the release version, lock format, packages, and checksums so future registry work has a stable safety foundation.
 
 ## Safety rules
 

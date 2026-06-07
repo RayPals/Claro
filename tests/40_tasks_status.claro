@@ -1,0 +1,9 @@
+SAY "Task status demo"
+START TASK helloTask
+    SAY "Inside task"
+    YIELD
+ENDTASK
+TASK STATUS helloTask AS status
+SAY status
+WAIT TASK helloTask
+SAY "After wait"

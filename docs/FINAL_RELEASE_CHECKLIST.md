@@ -1,6 +1,6 @@
 # Claro Final Release Checklist
 
-Before publishing `Claro v1.10.26` as the first stable release:
+Before publishing `Claro v1.18.26` as the current stable release:
 
 - Build from a clean unzip on Windows.
 - Build from a clean unzip on Linux or macOS.
@@ -16,4 +16,4 @@ Before publishing `Claro v1.10.26` as the first stable release:
 - Confirm beginner docs teach simple syntax first.
 - Do not add large new systems before stable v1.
 
-Large features such as SDL, classes, packages, networking, threads, strong static types, and IDE tooling should come after the first stable v1 foundation.
+Avoid adding large new systems during a stability release; prioritize buildability, tests, documentation consistency, and beginner safety.

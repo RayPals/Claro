@@ -1,48 +1,29 @@
-# Post-1.0 Roadmap
+# Historical Post-1.0 Roadmap
 
-Claro should continue in the v1 line.
+> Historical note: this file records an older planning view from earlier v1 development. For the current roadmap, use `ROADMAP.md`, `CURRENT_STATUS.md`, and `COMPLETE_PLATFORM_ROADMAP.md`.
 
-Recommended next phases:
+Claro should continue in the v1 line. Claro v2 should be reserved for a future full rewrite, not normal feature additions.
 
-## v1.11.26 - Type Safety Polish
+## What changed since this roadmap was first written
 
-- improve typed variables
-- stronger `claro check`
-- clearer beginner type errors
+Several items that were once planned for later v1 releases now have foundations in the current package:
 
-## v1.12.26 - Objects Polish
+- Type safety polish: foundation present through typed variables and `claro typecheck`.
+- Objects/classes: foundation present through `CLASS`, `HAS`, `NEW`, fields, and simple methods.
+- Package manager: local project/package workflow foundation present.
+- Networking: HTTP client foundation present with offline `claro://` URLs.
+- Concurrency/tasks: deterministic foundation present.
+- IDE support: metadata/helper foundation present.
 
-- make classes and objects more useful
-- keep syntax plain and readable
+## Still open
 
-## v1.13.26 - Package Manager Foundation
+The larger complete-platform work is not finished yet:
 
-- make `claro package` more useful
-- local packages first
-- avoid complex online behavior too early
+- strong function/object/import typing
+- package registry and publishing
+- beginner web server API
+- full cooperative task scheduler
+- editor extension or LSP
+- real SDL/graphics support in an optional build
 
-## v1.14.26 - SDL/Game Foundation
-
-- real SDL-backed window support
-- drawing
-- keyboard input
-- beginner game examples
-
-## v1.15.26 - Networking Foundation
-
-- simple HTTP requests
-- TCP/UDP basics later
-
-## v1.17.26 - Safe Tasks/Concurrency
-
-- beginner-safe task model
-- avoid confusing low-level threading early
-
-## v1.17.26 - IDE Support
-
-- syntax highlighting
-- formatter/checker integration
-- editor metadata
-- later LSP support
-
-Claro v2 should be reserved for a future full rewrite, not normal feature additions.
+Use the current roadmap files for next steps.

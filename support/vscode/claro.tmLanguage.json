@@ -1,0 +1,9 @@
+{
+  "scopeName": "source.claro",
+  "name": "Claro",
+  "patterns": [
+    { "name": "keyword.control.claro", "match": "\\b(SAY|ASK|SET|IF|ELSE|END|REPEAT|TEACH|DO|CLASS|NEW|START|TASK|HTTP|OPEN|WINDOW|DRAW|UPDATE|CLOSE|TYPE|CHECK|IS)\\b" },
+    { "name": "storage.type.claro", "match": "\\b(NUMBER|TEXT|YESNO|LIST|MAP|OBJECT|ANY)\\b" },
+    { "name": "string.quoted.double.claro", "begin": "\"", "end": "\"" }
+  ]
+}

@@ -1,6 +1,6 @@
-# Claro v1.17.26 Networking Reliability
+# Claro v1.18.26 Networking Reliability
 
-Claro v1.17.26 hardens the beginner networking foundation without making the language harder to read.
+Claro v1.18.26 hardens the beginner networking foundation without making the language harder to read.
 
 The goal is simple plain-text commands:
 

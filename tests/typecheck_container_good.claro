@@ -1,0 +1,6 @@
+SET names AS LIST OF TEXT TO LIST
+ADD "Ada" TO names
+ADD "Grace" TO names
+SET scores AS MAP OF NUMBER TO MAP
+PUT scores KEY "math" VALUE 98
+PUT scores KEY "science" VALUE 99

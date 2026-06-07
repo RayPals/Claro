@@ -1,5 +1,8 @@
 # Claro v1.06.26 Notes
 
+> Historical note: this file is kept for release history. The current package is Claro v1.18.26; use `CURRENT_STATUS.md`, `ROADMAP.md`, and the current feature docs for up-to-date beginner guidance.
+
+
 RC6 keeps Claro focused on the original goal: a plain-text scripting language simple enough for learners with learning disabilities, while still growing into a useful tool for real scripts.
 
 ## Main theme

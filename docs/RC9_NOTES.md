@@ -1,5 +1,8 @@
 # Claro v1.09.26 RC9 Notes
 
+> Historical note: this file is kept for release history. The current package is Claro v1.18.26; use `CURRENT_STATUS.md`, `ROADMAP.md`, and the current feature docs for up-to-date beginner guidance.
+
+
 RC9 is the final-candidate release before the first stable v1 release.
 
 The goal of RC9 is not to make Claro bigger. The goal is to make the current learner-friendly language easier to test, validate, and ship.

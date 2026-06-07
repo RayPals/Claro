@@ -1,26 +1,26 @@
-# Claro v1.17.26
+# Claro v1.18.26
 
 <img src="assets/Claro_Logo.jpg" alt="Claro logo" width="160">
 
 Claro is a small, readable scripting language designed to help beginners — especially learners with learning disabilities — learn programming without being overwhelmed by punctuation-heavy syntax.
 
-Claro stays plain-text first: simple enough to start with `SET name "Jon"`, but able to grow into stronger typed scripts, objects, packages, graphics, networking, and tooling over the v1 line.
+Claro stays plain-text first: simple enough to start with `SET name "Jon"`, but able to grow into stronger typed scripts, objects, packages, networking, and tooling over the v1 line. Graphics/SDL work is experimental and not enabled in the stable executable.
 
 ## Status
 
-**Current release:** Claro v1.17.26
+**Current release:** Claro v1.18.26
 
 Validated in this package:
 
 ```bash
 ./claro --version
-# Claro v1.17.26
+# Claro v1.18.26
 
 ./claro test
 # PASS: 0 failure(s)
 
 ./claro validate
-# Validation passed. Claro v1.17.26 networking reliability is ready for use.
+# Validation passed. Claro v1.18.26 networking reliability is ready for use.
 ```
 
 ## Beginner-first syntax
@@ -118,9 +118,19 @@ SAY kind
 CHECK TYPE score IS NUMBER
 ```
 
+Advanced container checks are available through `claro typecheck`:
+
+```claro
+SET names AS LIST OF TEXT TO LIST
+ADD "Ada" TO names
+
+SET scores AS MAP OF NUMBER TO MAP
+PUT scores KEY "math" VALUE 98
+```
+
 ## Project and package workflow
 
-v1.17.26 hardens Claro's project/package workflow.
+v1.18.26 hardens Claro's project/package workflow.
 
 Create a starter project:
 
@@ -135,7 +145,6 @@ Manage packages:
 ```bash
 claro package init
 claro package add text
-claro package add sdl
 claro package list
 claro package remove text
 claro package doctor
@@ -155,7 +164,7 @@ Package names are checked so unsafe names such as `../bad` are rejected.
 
 ## Networking
 
-v1.17.26 adds safer beginner networking commands with offline `claro://` test URLs.
+v1.18.26 adds safer beginner networking commands with offline `claro://` test URLs.
 
 ```claro
 HTTP CHECK "claro://hello" AS safe
@@ -203,6 +212,32 @@ claro ide
 ./claro examples/text_polish.claro
 ./claro examples/networking.claro
 ```
+
+## Documentation map
+
+If you are new to Claro, start here:
+
+1. `docs/QUICK_START.md`
+2. `docs/FIRST_HOUR.md`
+3. `lessons/README.md`
+4. `docs/CLI.md`
+5. `docs/CURRENT_STATUS.md`
+
+Feature references:
+
+- Language reference: `docs/SPEC.md`
+- Friendly errors and checking: `docs/ERRORS.md`, `docs/LINTER.md`, `docs/TESTING.md`
+- Formatter: `docs/FORMATTER.md`
+- Static typing: `docs/ADVANCED_STATIC_TYPING.md`
+- Objects/classes: `docs/V1_15_OBJECTS_CLASSES.md`
+- Projects/packages: `docs/V1_16_PACKAGES_PROJECTS.md`, `docs/PACKAGE_REGISTRY.md`
+- Networking/web: `docs/V1_17_NETWORKING.md`, `docs/WEB_SERVER_PLAN.md`
+- Tasks/concurrency: `docs/CONCURRENCY.md`
+- IDE/editor support: `docs/IDE.md`, `docs/EDITOR_EXTENSION_PLAN.md`
+- Graphics/SDL status: `docs/GRAPHICS.md`, `docs/SDL12.md`
+- Roadmaps: `docs/ROADMAP.md`, `docs/COMPLETE_PLATFORM_ROADMAP.md`
+
+Historical release notes and validation logs are kept in files such as `docs/RC*_NOTES.md`, `docs/RC*_VALIDATION.md`, and older `docs/V1_*_VALIDATION.md`. They are useful for project history, but they are not the beginner starting path.
 
 ## Release direction
 

@@ -1,8 +1,73 @@
 # Changelog
 
-## Claro v1.17.26 - Networking Reliability Release
+## v1.18.26-dev documentation audit consistency update
 
-- Updated visible version string to `Claro v1.17.26`.
+- Clarified that `docs/DOCUMENTATION_AUDIT_v1.18.26.md` is a historical snapshot from the first documentation cleanup pass.
+- Pointed current readers toward `CURRENT_STATUS.md`, `ROADMAP.md`, and the README documentation map before the original audit problem list.
+
+## v1.18.26-dev type mismatch diagnostics update
+
+- Improved `claro typecheck` messages so scalar, list, map, and `CHECK TYPE` mismatches use one beginner-friendly `Type mismatch` / `Type check failed` style.
+- Diagnostics now name the variable/container, the expected type, and the detected value type in plain language.
+- Added `tools/validate_typecheck_diagnostics.py` and wired it into `tools/validate_v1_17.py`.
+- Strengthened `tools/validate_v1_17.py` so it rebuilds `claro.exe` before validation instead of trusting a stale binary.
+- Updated advanced static typing docs with the clearer diagnostic examples.
+
+## v1.18.26-dev package manifest and security foundation update
+
+- Promoted the next development slice to `Claro v1.18.26`.
+- Added `manifest-version: 1` to `claro.project` and local `claro.package` files.
+- Added deterministic package checksums to local package manifests and `claro.lock`.
+- Hardened `claro package doctor` so it validates package manifests and checksums.
+- Added `tools/validate_package_security.py` and wired it into `tools/validate_v1_17.py`.
+
+## v1.18.26-dev cooperative concurrency foundation update
+
+- Added beginner-friendly `YIELD` and `TASK STATUS name AS variable` support.
+- Documented deterministic cooperative concurrency in `docs/CONCURRENCY.md`.
+- Added `tests/40_tasks_status.claro` and `tools/validate_concurrency.py`.
+- Improved unfinished block diagnostics so missing task endings say the opened block needs `ENDTASK`.
+- Wired concurrency validation into `tools/validate_v1_17.py`.
+
+## v1.18.26-dev LSP diagnostics helper update
+
+- Replaced the old completion-word-only `support/lsp/claro_lsp_stub.py` with a command-based helper.
+- Added JSON `metadata`, `completions`, and `diagnostics` helper modes.
+- Diagnostics now combine `claro check` and `claro typecheck` output into editor-friendly JSON objects.
+- Added `tools/validate_lsp_helper.py` and wired it into `tools/validate_v1_17.py`.
+- Expanded `docs/IDE.md` with LSP/helper usage.
+
+## v1.18.26-dev IDE foundation update
+
+- Expanded `claro ide` into valid editor metadata JSON with `file_extensions`, `commands`, `snippets`, and `diagnostics`.
+- Added typed container names to IDE metadata, including `LIST OF TEXT` and `MAP OF NUMBER`.
+- Added `tools/validate_ide_metadata.py` and wired it into `tools/validate_v1_17.py`.
+- Added `docs/IDE.md` for editor integration guidance.
+
+## v1.18.26 development foundation
+
+- Added static checking for typed lists such as `LIST OF TEXT`.
+- Added static checking for typed maps such as `MAP OF NUMBER`.
+- Added `tests/typecheck_container_good.claro` and `tests/typecheck_container_bad.claro`.
+- Added `docs/FUTURE_FEATURES_ROADMAP.md` covering IDE, registry, concurrency, GUI/game, web, and optimization tracks.
+- Added `docs/ADVANCED_STATIC_TYPING.md`.
+
+## Claro v1.18.26 - SDL Documentation Correction
+
+- Clarified that SDL 1.2 is not included in the stable executable.
+- Removed the misleading `claro package add sdl` README example.
+- Marked `examples/experimental_sdl/` as future/experimental examples only.
+
+## Claro v1.18.26 - Stable Test Runner Fix
+
+- Promoted the package to stable `Claro v1.18.26`.
+- Fixed Windows `claro test` so it discovers and runs the full golden test suite.
+- Normalized runtime error paths to forward slashes for cross-platform expected-output stability.
+- Validated version, full tests, package validation, and networking example.
+
+## Claro v1.18.26 - Networking Reliability Release
+
+- Updated visible version string to `Claro v1.18.26`.
 - Hardened the networking foundation while keeping plain-text commands.
 - Added offline-safe `claro://` network test URLs so tests and lessons do not need internet access.
 - Improved `HTTP GET`:

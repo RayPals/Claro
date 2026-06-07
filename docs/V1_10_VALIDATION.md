@@ -1,5 +1,8 @@
 # Claro v1.10.26 Validation
 
+> Historical note: this file is kept for release history. The current package is Claro v1.18.26; use `CURRENT_STATUS.md`, `ROADMAP.md`, and the current feature docs for up-to-date beginner guidance.
+
+
 Validated from a clean package with:
 
 ```bash

@@ -1,5 +1,8 @@
 # Claro v1.10.26 Stable Release
 
+> Historical note: this file is kept for release history. The current package is Claro v1.18.26; use `CURRENT_STATUS.md`, `ROADMAP.md`, and the current feature docs for up-to-date beginner guidance.
+
+
 Claro v1.10.26 is the first stable v1 foundation release.
 
 The goal is not to be huge. The goal is to be reliable, readable, and friendly enough for beginner learners while still giving them a real scripting language to grow with.

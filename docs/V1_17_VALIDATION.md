@@ -1,4 +1,7 @@
-# Claro v1.17.26 Validation
+# Claro v1.18.26 Validation
+
+> Historical note: this file is kept for release history. The current package is Claro v1.18.26; use `CURRENT_STATUS.md`, `ROADMAP.md`, and the current feature docs for up-to-date beginner guidance.
+
 
 Validated from a clean source folder with:
 
@@ -13,7 +16,7 @@ gcc -std=c99 src/claro.c -O0 -o claro -lm
 Expected version:
 
 ```text
-Claro v1.17.26
+Claro v1.18.26
 ```
 
 Expected test result:
@@ -25,7 +28,7 @@ PASS: 0 failure(s)
 Expected validation result:
 
 ```text
-Validation passed. Claro v1.17.26 networking reliability is ready for use.
+Validation passed. Claro v1.18.26 networking reliability is ready for use.
 ```
 
 New network tests:

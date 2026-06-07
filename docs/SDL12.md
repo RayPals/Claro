@@ -1,41 +1,32 @@
-# SDL 1.2 Support (Optional)
+# SDL 1.2 Support Status
 
-Claro can be built with optional SDL 1.2 support for simple 2D graphics and input.
+SDL 1.2 support is **not included in the current stable executable**.
 
-## Build (MinGW example)
+The `examples/experimental_sdl/` files are design experiments / future examples only. In Claro v1.18.26, running them with the included `claro.exe` will fail with:
 
-Install SDL 1.2 development files, then compile with:
-
-```sh
-gcc -DCLARO_WITH_SDL12=1 -I<SDL_INCLUDE_DIR> src/claro.c -L<SDL_LIB_DIR> -lSDL -mwindows -O2 -o claro.exe
+```text
+Unknown command: SDL
 ```
 
-On some setups you may need `-lSDLmain` too.
+## Current graphics status
 
-## Commands
+The stable interpreter only accepts placeholder graphics-style commands such as `OPEN`, `CLEAR`, `DRAW`, `UPDATE`, and `CLOSE`. These do **not** open a real SDL window; they only mark graphics commands as accepted for beginner script compatibility.
 
-All SDL commands are grouped under `SDL ...`:
+## Planned SDL command shape
+
+If SDL support is implemented later, the intended commands are:
 
 - `SDL OPEN <w> <h> <title>`
 - `SDL CLEAR <r> <g> <b>`
-- `SDL RECT <x> <y> <w> <h> <r> <g> <b>` (filled rectangle)
+- `SDL RECT <x> <y> <w> <h> <r> <g> <b>`
 - `SDL PRESENT`
-- `SDL POLL` (updates variables `SDLEVENT` and `SDLKEY`)
+- `SDL POLL`
 - `SDL DELAY <ms>`
 - `SDL CLOSE`
+- `SDL LOADBMP <path> AS var`
+- `SDL BLIT <handle> AT x y`
+- `SDL BLITCLIP <handle> SRC sx sy sw sh AT x y`
+- `SDL KEYDOWN <keycode> AS var`
+- `SDL MOUSE AS mx my mb`
 
-### Event variables
-
-After `SDL POLL`, Claro variables update:
-
-- `SDLEVENT` = `"NONE" | "QUIT" | "KEYDOWN" | "KEYUP" | "OTHER"`
-- `SDLKEY` = key code number (SDLKey) for KEYDOWN/KEYUP, otherwise `0`
-
-## Sprite / bitmap support
-
-- `SDL LOADBMP <path> AS var` → loads a BMP and stores a numeric handle in `var`
-- `SDL BLIT <handle> AT x y` → draws the loaded bitmap at x,y
-- `SDL KEYDOWN <keycode> AS var` → sets var to 1/0 based on current key state
-
-- `SDL BLITCLIP <handle> SRC sx sy sw sh AT x y` → blit part of a surface (sprite-sheet)
-- `SDL MOUSE AS mx my mb` → writes mouse x/y and button bitmask
+These are **planned/experimental**, not stable features yet.

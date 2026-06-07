@@ -1,6 +1,0 @@
-TEACH add TAKES a, b
-    RETURN a + b
-LEARNED
-
-CALL add WITH 2, 3
-SAY RESULT

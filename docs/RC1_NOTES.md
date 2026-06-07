@@ -1,5 +1,8 @@
 # Claro RC1 Notes
 
+> Historical note: this file is kept for release history. The current package is Claro v1.18.26; use `CURRENT_STATUS.md`, `ROADMAP.md`, and the current feature docs for up-to-date beginner guidance.
+
+
 Claro RC1 is a learner-testing release candidate for the portable teaching core.
 
 ## What RC1 is for

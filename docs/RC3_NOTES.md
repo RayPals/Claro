@@ -1,5 +1,8 @@
 # Claro RC3 Notes
 
+> Historical note: this file is kept for release history. The current package is Claro v1.18.26; use `CURRENT_STATUS.md`, `ROADMAP.md`, and the current feature docs for up-to-date beginner guidance.
+
+
 Claro RC3 is the **Classroom Readiness Release**.
 
 RC3 does not try to make Claro bigger. It makes the existing beginner language easier to teach, test, and package.

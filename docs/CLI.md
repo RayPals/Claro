@@ -1,6 +1,6 @@
 # Claro Command Line
 
-Claro v1.17.26 supports these main commands:
+Claro v1.18.26 supports these main commands:
 
 ```bash
 claro file.claro
@@ -58,7 +58,7 @@ claro package doctor
 claro package lock
 ```
 
-The v1.17.26 package command is a safer local project-file helper. It creates `claro.project`, `claro.lock`, and local folders under `packages/`. It is not yet an online package registry.
+The v1.18.26 package command is a safer local project-file helper. It creates `claro.project`, `claro.lock`, and local folders under `packages/`. It is not yet an online package registry.
 
 ## IDE metadata
 
