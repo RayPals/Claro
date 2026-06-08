@@ -41,7 +41,7 @@ See `CURRENT_STATUS.md` for the detailed feature matrix.
 Goal: make larger beginner programs safer without making first scripts harder.
 
 Needed next:
-- typed function parameters
+- richer typed function signatures
 - typed function returns
 - type checking across branches and loops
 - typed imports/modules

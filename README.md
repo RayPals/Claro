@@ -128,6 +128,21 @@ SET scores AS MAP OF NUMBER TO MAP
 PUT scores KEY "math" VALUE 98
 ```
 
+`claro typecheck` also has an early function-argument diagnostic foundation. A function can state a parameter expectation with `CHECK TYPE`, and calls with the wrong value type get a friendly error:
+
+```claro
+TEACH square amount
+    CHECK TYPE amount IS NUMBER
+    SAY amount
+END
+
+DO square "oops"
+```
+
+```text
+Type mismatch for function square: parameter amount needs NUMBER, but this argument looks like TEXT.
+```
+
 ## Project and package workflow
 
 v1.18.26 hardens Claro's project/package workflow.

@@ -16,7 +16,14 @@ EXPECTED = {
         "tests/typecheck_container_bad.claro:3: Type mismatch for list names: expected TEXT item, but this value looks like NUMBER.",
         "tests/typecheck_container_bad.claro:6: Type mismatch for map scores: expected NUMBER value, but this value looks like TEXT.",
     ],
+    "tests/typecheck_function_bad.claro": [
+        "tests/typecheck_function_bad.claro:5: Type mismatch for function square: parameter amount needs NUMBER, but this argument looks like TEXT.",
+    ],
 }
+
+EXPECTED_OK = [
+    "tests/typecheck_function_good.claro",
+]
 
 STALE_PHRASES = [
     "was first set as NUMBER, but this looks like TEXT",
@@ -52,12 +59,32 @@ def run_typecheck(path):
     return result.stdout
 
 
+def run_typecheck_ok(path):
+    result = subprocess.run(
+        [str(EXE), "typecheck", path],
+        cwd=ROOT,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+    print("$", EXE.name, "typecheck", path)
+    print(result.stdout, end="")
+    if result.returncode != 0:
+        raise SystemExit(f"Expected {path} to pass typecheck")
+    lines = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    if lines != ["Type check OK"]:
+        raise SystemExit("Unexpected success output for " + path + "\nGot:\n" + "\n".join(lines))
+
+
 def main():
     if not EXE.exists():
         raise SystemExit(f"Missing Claro executable: {EXE}")
 
     for path in EXPECTED:
         run_typecheck(path)
+
+    for path in EXPECTED_OK:
+        run_typecheck_ok(path)
 
     print("Typecheck diagnostics validation complete")
 

@@ -43,6 +43,36 @@ Output:
 Type mismatch for map scores: expected NUMBER value, but this value looks like TEXT.
 ```
 
+## Function parameter checks
+
+Claro now has a small static-checking foundation for function arguments. Keep the beginner-friendly function syntax, then put the expected type inside the function with `CHECK TYPE`:
+
+```claro
+TEACH square amount
+    CHECK TYPE amount IS NUMBER
+    SAY amount
+END
+
+DO square 4
+```
+
+If a learner calls the function with the wrong kind of value, `claro typecheck` explains which parameter needs which type:
+
+```claro
+TEACH square amount
+    CHECK TYPE amount IS NUMBER
+    SAY amount
+END
+
+DO square "oops"
+```
+
+Output:
+
+```text
+Type mismatch for function square: parameter amount needs NUMBER, but this argument looks like TEXT.
+```
+
 ## Status
 
-This is currently a static checker feature. It improves `claro typecheck` and validation confidence. Runtime enforcement for every container mutation can be added later after the syntax is classroom-tested.
+This is currently a static checker feature. It improves `claro typecheck` and validation confidence. Runtime enforcement for every container mutation and richer function signatures can be added later after the syntax is classroom-tested.

@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.18.26-dev typed function diagnostic foundation
+
+- Added a narrow `claro typecheck` foundation for function argument diagnostics: if a function body declares a parameter expectation with `CHECK TYPE parameter IS TYPE`, calls to that function are checked against the expected argument type.
+- Added positive and negative fixtures for the function-argument diagnostic path.
+- Extended `tools/validate_typecheck_diagnostics.py` to verify both the new friendly error and a matching successful call.
+
 ## v1.18.26-dev learner documentation status cleanup
 
 - Grouped the README documentation map by current feature status so new learners can see what is ready, what is foundation-level, and what is still planned or experimental.
