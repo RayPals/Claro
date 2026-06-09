@@ -143,6 +143,17 @@ DO square "oops"
 Type mismatch for function square: parameter amount needs NUMBER, but this argument looks like TEXT.
 ```
 
+For functions with more than one checked parameter, Claro reports each mismatched argument with the parameter name:
+
+```claro
+TEACH label TAKES name, age
+    CHECK TYPE name IS TEXT
+    CHECK TYPE age IS NUMBER
+END
+
+CALL label WITH 7, "old"
+```
+
 ## Project and package workflow
 
 v1.18.26 hardens Claro's project/package workflow.

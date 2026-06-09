@@ -73,6 +73,26 @@ Output:
 Type mismatch for function square: parameter amount needs NUMBER, but this argument looks like TEXT.
 ```
 
+Multiple checked parameters are reported separately, so a learner can fix each argument one at a time:
+
+```claro
+TEACH label TAKES name, age
+    CHECK TYPE name IS TEXT
+    CHECK TYPE age IS NUMBER
+    SAY name
+    SAY age
+END
+
+CALL label WITH 7, "old"
+```
+
+Output:
+
+```text
+Type mismatch for function label: parameter name needs TEXT, but this argument looks like NUMBER.
+Type mismatch for function label: parameter age needs NUMBER, but this argument looks like TEXT.
+```
+
 ## Status
 
-This is currently a static checker feature. It improves `claro typecheck` and validation confidence. Runtime enforcement for every container mutation and richer function signatures can be added later after the syntax is classroom-tested.
+This is currently a static checker feature. It improves `claro typecheck` and validation confidence for `DO` and compatibility `CALL ... WITH` function calls. Runtime enforcement for every container mutation and richer function signatures can be added later after the syntax is classroom-tested.

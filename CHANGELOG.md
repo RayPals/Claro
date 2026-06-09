@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.18.26-dev multi-parameter function diagnostics
+
+- Extended the function-argument typecheck foundation so both `DO` and compatibility `CALL ... WITH` calls can report checked parameter mismatches.
+- Added multi-parameter positive and negative fixtures that verify each wrong argument gets a clear parameter-specific diagnostic.
+- Included the function argument fixtures in `claro validate` so package validation covers the diagnostic foundation directly.
+
 ## v1.18.26-dev typed function diagnostic foundation
 
 - Added a narrow `claro typecheck` foundation for function argument diagnostics: if a function body declares a parameter expectation with `CHECK TYPE parameter IS TYPE`, calls to that function are checked against the expected argument type.

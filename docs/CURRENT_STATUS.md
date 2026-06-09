@@ -52,7 +52,7 @@ Ready now:
 - typed variables such as `SET score NUMBER 10`
 - `TYPE OF` and `CHECK TYPE`
 - typed list/map checks through `claro typecheck`
-- a narrow function argument check: `CHECK TYPE parameter IS TYPE` inside a function lets `claro typecheck` catch mismatched call arguments
+- a narrow function argument check: `CHECK TYPE parameter IS TYPE` inside a function lets `claro typecheck` catch mismatched `DO` and `CALL ... WITH` arguments, including multiple checked parameters
 
 Still needed:
 - richer typed function signatures and return values

@@ -19,10 +19,15 @@ EXPECTED = {
     "tests/typecheck_function_bad.claro": [
         "tests/typecheck_function_bad.claro:5: Type mismatch for function square: parameter amount needs NUMBER, but this argument looks like TEXT.",
     ],
+    "tests/typecheck_function_multi_bad.claro": [
+        "tests/typecheck_function_multi_bad.claro:8: Type mismatch for function label: parameter name needs TEXT, but this argument looks like NUMBER.",
+        "tests/typecheck_function_multi_bad.claro:8: Type mismatch for function label: parameter age needs NUMBER, but this argument looks like TEXT.",
+    ],
 }
 
 EXPECTED_OK = [
     "tests/typecheck_function_good.claro",
+    "tests/typecheck_function_multi_good.claro",
 ]
 
 STALE_PHRASES = [

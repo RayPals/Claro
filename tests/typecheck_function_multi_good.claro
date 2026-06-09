@@ -1,0 +1,8 @@
+TEACH label TAKES name, age
+    CHECK TYPE name IS TEXT
+    CHECK TYPE age IS NUMBER
+    SAY name
+    SAY age
+END
+CALL label WITH "Ada", 12
+DO label "Grace", 9
