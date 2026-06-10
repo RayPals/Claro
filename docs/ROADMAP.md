@@ -45,7 +45,7 @@ Needed next:
 - typed function returns
 - type checking across branches and loops
 - typed imports/modules
-- object field and method type checking
+- richer object field checking and method return typing
 - clearer error messages for type mismatches
 
 ### 2. Objects and classes polish
@@ -54,7 +54,7 @@ Goal: keep object-oriented examples readable enough for beginners.
 
 Needed next:
 - constructor-style defaults or beginner-friendly initialization helpers
-- method parameter checks
+- method return checks
 - object printing/debugging helpers
 - better examples that avoid abstract toy OOP
 

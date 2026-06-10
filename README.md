@@ -154,6 +154,26 @@ END
 CALL label WITH 7, "old"
 ```
 
+The same narrow diagnostic foundation now covers simple object method calls when the object was created with `NEW` and the method body uses `CHECK TYPE` for a parameter:
+
+```claro
+CLASS Player
+    HAS score NUMBER
+
+    TEACH add points
+        CHECK TYPE points IS NUMBER
+        SET score score + points
+    END
+END
+
+NEW Player player
+DO player.add "five"
+```
+
+```text
+Type mismatch for method Player.add: parameter points needs NUMBER, but this argument looks like TEXT.
+```
+
 ## Project and package workflow
 
 v1.18.26 hardens Claro's project/package workflow.

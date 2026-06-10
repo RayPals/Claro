@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.18.26-dev object method parameter diagnostics
+
+- Extended the narrow `CHECK TYPE` argument diagnostic foundation to simple object methods such as `DO player.add "five"` when `player` was created with `NEW Player player`.
+- Added a focused negative typecheck fixture for object method parameter diagnostics and wired it into `tools/validate_typecheck_diagnostics.py`.
+- Documented the current method-parameter diagnostic behavior in the README, current status, roadmap, and advanced static typing guide.
+
 ## v1.18.26-dev multi-parameter function diagnostics
 
 - Extended the function-argument typecheck foundation so both `DO` and compatibility `CALL ... WITH` calls can report checked parameter mismatches.

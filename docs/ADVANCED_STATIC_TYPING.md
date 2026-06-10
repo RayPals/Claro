@@ -93,6 +93,36 @@ Type mismatch for function label: parameter name needs TEXT, but this argument l
 Type mismatch for function label: parameter age needs NUMBER, but this argument looks like TEXT.
 ```
 
+## Object method parameter checks
+
+Claro also checks simple object method arguments when the method body names a parameter with `CHECK TYPE`. This keeps the method syntax beginner-readable while giving a clearer error before the program runs:
+
+```claro
+CLASS Player
+    HAS score NUMBER
+
+    TEACH add points
+        CHECK TYPE points IS NUMBER
+        SET score score + points
+    END
+END
+
+NEW Player player
+DO player.add 5
+```
+
+If the learner passes text where the method expects a number:
+
+```claro
+DO player.add "five"
+```
+
+Output:
+
+```text
+Type mismatch for method Player.add: parameter points needs NUMBER, but this argument looks like TEXT.
+```
+
 ## Status
 
-This is currently a static checker feature. It improves `claro typecheck` and validation confidence for `DO` and compatibility `CALL ... WITH` function calls. Runtime enforcement for every container mutation and richer function signatures can be added later after the syntax is classroom-tested.
+This is currently a static checker feature. It improves `claro typecheck` and validation confidence for `DO` and compatibility `CALL ... WITH` function calls, plus simple `DO object.method ...` calls where the object was created with `NEW Class name`. Runtime enforcement for every container mutation and richer function/object signatures can be added later after the syntax is classroom-tested.

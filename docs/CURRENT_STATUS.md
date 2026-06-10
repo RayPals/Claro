@@ -52,12 +52,12 @@ Ready now:
 - typed variables such as `SET score NUMBER 10`
 - `TYPE OF` and `CHECK TYPE`
 - typed list/map checks through `claro typecheck`
-- a narrow function argument check: `CHECK TYPE parameter IS TYPE` inside a function lets `claro typecheck` catch mismatched `DO` and `CALL ... WITH` arguments, including multiple checked parameters
+- a narrow function/method argument check: `CHECK TYPE parameter IS TYPE` inside a function or simple object method lets `claro typecheck` catch mismatched `DO`, `CALL ... WITH`, and `DO object.method ...` arguments
 
 Still needed:
 - richer typed function signatures and return values
 - type checking through branches and loops
-- object method and field type checking
+- richer object field type checking
 - typed imports/modules
 
 Good starting docs:
@@ -73,11 +73,11 @@ Ready now:
 - typed `HAS` fields
 - `NEW`
 - field access such as `player.score`
-- simple methods
+- simple methods, including static diagnostics for checked method parameters
 - object helper commands
 
 Still needed:
-- stronger method/field type checking
+- stronger object field type checking
 - constructor/default-value polish
 - clearer object debugging and teaching examples
 
