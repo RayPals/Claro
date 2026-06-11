@@ -31,6 +31,7 @@ EXPECTED = {
 EXPECTED_OK = [
     "tests/typecheck_function_good.claro",
     "tests/typecheck_function_multi_good.claro",
+    "tests/typecheck_method_good.claro",
 ]
 
 STALE_PHRASES = [

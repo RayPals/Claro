@@ -123,6 +123,8 @@ Output:
 Type mismatch for method Player.add: parameter points needs NUMBER, but this argument looks like TEXT.
 ```
 
+Both sides of this narrow method foundation are covered by validation: `tests/typecheck_method_good.claro` checks that `DO player.add 5` is accepted, and `tests/typecheck_method_bad.claro` checks the friendly wrong-type diagnostic.
+
 ## Status
 
 This is currently a static checker feature. It improves `claro typecheck` and validation confidence for `DO` and compatibility `CALL ... WITH` function calls, plus simple `DO object.method ...` calls where the object was created with `NEW Class name`. Runtime enforcement for every container mutation and richer function/object signatures can be added later after the syntax is classroom-tested.

@@ -31,7 +31,7 @@ See `CURRENT_STATUS.md` for the detailed feature matrix.
 
 1. Keep beginner-facing docs current and separate from historical release notes.
 2. Keep examples aligned with the modern simple syntax (`END`, `DO`, short `SET`, short `ASK`) while documenting older compatibility forms separately.
-3. Expand validation around typecheck diagnostics and package/networking safety.
+3. Expand validation around typecheck diagnostics and package/networking safety. Current object-method parameter validation covers one correct `DO object.method ...` call and one wrong-type diagnostic.
 4. Add small examples for each foundation feature before adding bigger syntax.
 
 ## Complete-platform milestones
