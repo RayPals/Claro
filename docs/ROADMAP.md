@@ -31,7 +31,7 @@ See `CURRENT_STATUS.md` for the detailed feature matrix.
 
 1. Keep beginner-facing docs current and separate from historical release notes.
 2. Keep examples aligned with the modern simple syntax (`END`, `DO`, short `SET`, short `ASK`) while documenting older compatibility forms separately.
-3. Expand validation around typecheck diagnostics and package/networking safety. Current object-method parameter validation covers one correct `DO object.method ...` call and one wrong-type diagnostic.
+3. Expand validation around typecheck diagnostics and package/networking safety. Current object-method parameter validation covers one correct `DO object.method ...` call and one wrong-type diagnostic; object-field validation also covers one simple wrong-type direct assignment after `NEW Class object`.
 4. Add small examples for each foundation feature before adding bigger syntax.
 
 ## Complete-platform milestones
@@ -45,7 +45,7 @@ Needed next:
 - typed function returns
 - type checking across branches and loops
 - typed imports/modules
-- richer object field checking and method return typing
+- broader object field checking and method return typing
 - clearer error messages for type mismatches
 
 ### 2. Objects and classes polish

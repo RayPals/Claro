@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.18.26-dev object field assignment diagnostics
+
+- Added a narrow `claro typecheck` diagnostic for direct wrong-type object field assignment after `NEW Class object`, such as `SET player.score "ten"` when `HAS score NUMBER` is known.
+- Wired the new negative fixture into typecheck validation while keeping the existing object method positive/negative checks and object-field runtime fixture green.
+- Documented the narrow object-field diagnostic scope in beginner-facing status and static typing docs.
+
 ## v1.18.26-dev object method parameter diagnostics
 
 - Extended the narrow `CHECK TYPE` argument diagnostic foundation to simple object methods such as `DO player.add "five"` when `player` was created with `NEW Player player`.

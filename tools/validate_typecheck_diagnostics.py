@@ -26,12 +26,16 @@ EXPECTED = {
     "tests/typecheck_method_bad.claro": [
         "tests/typecheck_method_bad.claro:11: Type mismatch for method Player.add: parameter points needs NUMBER, but this argument looks like TEXT.",
     ],
+    "tests/typecheck_object_field_bad.claro": [
+        "tests/typecheck_object_field_bad.claro:6: Type mismatch for field player.score: expected NUMBER, but this value looks like TEXT.",
+    ],
 }
 
 EXPECTED_OK = [
     "tests/typecheck_function_good.claro",
     "tests/typecheck_function_multi_good.claro",
     "tests/typecheck_method_good.claro",
+    "tests/37_object_field_types.claro",
 ]
 
 STALE_PHRASES = [

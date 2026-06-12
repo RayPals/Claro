@@ -53,11 +53,12 @@ Ready now:
 - `TYPE OF` and `CHECK TYPE`
 - typed list/map checks through `claro typecheck`
 - a narrow function/method argument check: `CHECK TYPE parameter IS TYPE` inside a function or simple object method lets `claro typecheck` accept correct checked calls and catch mismatched `DO`, `CALL ... WITH`, and `DO object.method ...` arguments
+- a narrow object-field assignment check for simple `NEW Class object` plus direct `SET object.field value` cases when the class declares `HAS field TYPE`
 
 Still needed:
 - richer typed function signatures and return values
 - type checking through branches and loops
-- richer object field type checking
+- richer object field type checking beyond simple direct assignments
 - typed imports/modules
 
 Good starting docs:
@@ -74,10 +75,11 @@ Ready now:
 - `NEW`
 - field access such as `player.score`
 - simple methods, including static diagnostics for checked method parameters
+- direct object-field assignments with a narrow static diagnostic for wrong value types
 - object helper commands
 
 Still needed:
-- stronger object field type checking
+- broader object field type checking across aliases, methods, and more complex object flows
 - constructor/default-value polish
 - clearer object debugging and teaching examples
 

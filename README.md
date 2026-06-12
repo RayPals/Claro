@@ -174,6 +174,12 @@ DO player.add "five"
 Type mismatch for method Player.add: parameter points needs NUMBER, but this argument looks like TEXT.
 ```
 
+For simple object fields created with `NEW Class name`, `claro typecheck` also catches direct wrong-type field assignments such as `SET player.score "ten"` when the class says `HAS score NUMBER`:
+
+```text
+Type mismatch for field player.score: expected NUMBER, but this value looks like TEXT.
+```
+
 ## Project and package workflow
 
 v1.18.26 hardens Claro's project/package workflow.

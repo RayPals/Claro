@@ -125,6 +125,33 @@ Type mismatch for method Player.add: parameter points needs NUMBER, but this arg
 
 Both sides of this narrow method foundation are covered by validation: `tests/typecheck_method_good.claro` checks that `DO player.add 5` is accepted, and `tests/typecheck_method_bad.claro` checks the friendly wrong-type diagnostic.
 
+## Object field assignment checks
+
+Claro also has a narrow static diagnostic for direct object-field assignments. If a class declares a typed field and a script creates a simple object with `NEW Class name`, `claro typecheck` remembers the field type:
+
+```claro
+CLASS Player
+    HAS score NUMBER
+END
+
+NEW Player player
+SET player.score 10
+```
+
+If a learner assigns the wrong value type directly to that known field:
+
+```claro
+SET player.score "ten"
+```
+
+Output:
+
+```text
+Type mismatch for field player.score: expected NUMBER, but this value looks like TEXT.
+```
+
+This slice is intentionally small: it covers direct `NEW Class object` plus `SET object.field value` cases in one file. Broader object flows, aliases, method return checks, and richer object signatures remain future work.
+
 ## Status
 
-This is currently a static checker feature. It improves `claro typecheck` and validation confidence for `DO` and compatibility `CALL ... WITH` function calls, plus simple `DO object.method ...` calls where the object was created with `NEW Class name`. Runtime enforcement for every container mutation and richer function/object signatures can be added later after the syntax is classroom-tested.
+This is currently a static checker feature. It improves `claro typecheck` and validation confidence for `DO` and compatibility `CALL ... WITH` function calls, simple `DO object.method ...` calls where the object was created with `NEW Class name`, and direct assignments to known object fields. Runtime enforcement for every container mutation and richer function/object signatures can be added later after the syntax is classroom-tested.
