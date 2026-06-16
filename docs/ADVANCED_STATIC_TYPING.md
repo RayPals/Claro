@@ -150,6 +150,8 @@ Output:
 Type mismatch for field player.score: expected NUMBER, but this value looks like TEXT.
 ```
 
+Both sides of this narrow field foundation are covered by validation: `tests/typecheck_object_field_good.claro` checks that `SET player.score 10` is accepted for a `HAS score NUMBER` field, and `tests/typecheck_object_field_bad.claro` checks the friendly wrong-type diagnostic.
+
 This slice is intentionally small: it covers direct `NEW Class object` plus `SET object.field value` cases in one file. Broader object flows, aliases, method return checks, and richer object signatures remain future work.
 
 ## Status

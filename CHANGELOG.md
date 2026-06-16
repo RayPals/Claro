@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.18.26-dev object field positive validation
+
+- Added a focused positive `claro typecheck` fixture for direct object-field assignment: `NEW Player player` followed by `SET player.score 10` when the class declares `HAS score NUMBER`.
+- Wired the positive object-field fixture into both the typecheck diagnostics validator and `claro validate`, complementing the existing wrong-type field diagnostic fixture.
+
 ## v1.18.26-dev object field assignment diagnostics
 
 - Added a narrow `claro typecheck` diagnostic for direct wrong-type object field assignment after `NEW Class object`, such as `SET player.score "ten"` when `HAS score NUMBER` is known.
