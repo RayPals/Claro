@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.18.26-dev object field TEXT positive validation
+
+- Added a focused positive `claro typecheck` fixture for direct object-field assignment with a TEXT field: `NEW Player player` followed by `SET player.name "Ada"` when the class declares `HAS name TEXT`.
+- Wired the TEXT object-field fixture into both the typecheck diagnostics validator and `claro validate`, complementing the existing NUMBER positive fixture and wrong-type field diagnostic fixture.
+
 ## v1.18.26-dev object field positive validation
 
 - Added a focused positive `claro typecheck` fixture for direct object-field assignment: `NEW Player player` followed by `SET player.score 10` when the class declares `HAS score NUMBER`.
