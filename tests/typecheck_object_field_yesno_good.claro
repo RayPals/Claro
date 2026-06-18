@@ -1,0 +1,6 @@
+CLASS Player
+    HAS ready YESNO
+END
+
+NEW Player player
+SET player.ready YES

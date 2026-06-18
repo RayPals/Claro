@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.18.26-dev object field YESNO positive validation
+
+- Added a focused positive `claro typecheck` fixture for direct object-field assignment with a YESNO field: `NEW Player player` followed by `SET player.ready YES` when the class declares `HAS ready YESNO`.
+- Wired the YESNO object-field fixture into both the typecheck diagnostics validator and `claro validate`, complementing the existing NUMBER/TEXT positive fixtures and wrong-type field diagnostic fixture.
+
 ## v1.18.26-dev object field TEXT positive validation
 
 - Added a focused positive `claro typecheck` fixture for direct object-field assignment with a TEXT field: `NEW Player player` followed by `SET player.name "Ada"` when the class declares `HAS name TEXT`.
