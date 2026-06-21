@@ -1,0 +1,6 @@
+CLASS Player
+    HAS name TEXT
+END
+
+NEW Player player
+SET player.name 123

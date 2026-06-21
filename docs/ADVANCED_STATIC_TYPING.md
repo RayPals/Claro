@@ -150,7 +150,7 @@ Output:
 Type mismatch for field player.score: expected NUMBER, but this value looks like TEXT.
 ```
 
-Both sides of this narrow field foundation are covered by validation: `tests/typecheck_object_field_good.claro` checks that `SET player.score 10` is accepted for a `HAS score NUMBER` field, `tests/typecheck_object_field_text_good.claro` checks that `SET player.name "Ada"` is accepted for a `HAS name TEXT` field, `tests/typecheck_object_field_yesno_good.claro` checks that `SET player.ready YES` is accepted for a `HAS ready YESNO` field, `tests/typecheck_object_field_bad.claro` checks the NUMBER wrong-type diagnostic, and `tests/typecheck_object_field_yesno_bad.claro` checks the YESNO wrong-type diagnostic.
+Both sides of this narrow field foundation are covered by validation: `tests/typecheck_object_field_good.claro` checks that `SET player.score 10` is accepted for a `HAS score NUMBER` field, `tests/typecheck_object_field_text_good.claro` checks that `SET player.name "Ada"` is accepted for a `HAS name TEXT` field, `tests/typecheck_object_field_yesno_good.claro` checks that `SET player.ready YES` is accepted for a `HAS ready YESNO` field, `tests/typecheck_object_field_bad.claro` checks the NUMBER wrong-type diagnostic, `tests/typecheck_object_field_text_bad.claro` checks the TEXT wrong-type diagnostic, and `tests/typecheck_object_field_yesno_bad.claro` checks the YESNO wrong-type diagnostic.
 
 This slice is intentionally small: it covers direct `NEW Class object` plus `SET object.field value` cases in one file. Broader object flows, aliases, method return checks, and richer object signatures remain future work.
 

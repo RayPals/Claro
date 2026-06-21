@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.18.26-dev object field TEXT negative validation
+
+- Added a focused negative `claro typecheck` fixture for direct object-field assignment with a TEXT field: `NEW Player player` followed by `SET player.name 123` when the class declares `HAS name TEXT`.
+- Wired the TEXT wrong-type fixture into both the typecheck diagnostics validator and `claro validate`, completing NUMBER/TEXT/YESNO negative coverage for the current narrow direct object-field diagnostic foundation.
+
 ## v1.18.26-dev object field YESNO negative validation
 
 - Added a focused negative `claro typecheck` fixture for direct object-field assignment with a YESNO field: `NEW Player player` followed by `SET player.ready "yes"` when the class declares `HAS ready YESNO`.
