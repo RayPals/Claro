@@ -180,6 +180,12 @@ For simple object fields created with `NEW Class name`, `claro typecheck` also c
 Type mismatch for field player.score: expected NUMBER, but this value looks like TEXT.
 ```
 
+It also catches direct assignments to undeclared fields and suggests the matching `HAS` line:
+
+```text
+Object Player has no field level. Check the field name or add HAS level NUMBER to the class.
+```
+
 ## Project and package workflow
 
 v1.18.26 hardens Claro's project/package workflow.

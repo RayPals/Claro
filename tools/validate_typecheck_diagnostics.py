@@ -35,6 +35,9 @@ EXPECTED = {
     "tests/typecheck_object_field_yesno_bad.claro": [
         "tests/typecheck_object_field_yesno_bad.claro:6: Type mismatch for field player.ready: expected YESNO, but this value looks like TEXT.",
     ],
+    "tests/typecheck_object_field_unknown_bad.claro": [
+        "tests/typecheck_object_field_unknown_bad.claro:6: Object Player has no field level. Check the field name or add HAS level NUMBER to the class.",
+    ],
 }
 
 EXPECTED_OK = [

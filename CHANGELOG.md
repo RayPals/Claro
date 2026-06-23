@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.18.26-dev object field unknown-field diagnostic
+
+- Added a focused negative `claro typecheck` fixture for direct object-field assignment to an undeclared field: `NEW Player player` followed by `SET player.level 3` when the class only declares `HAS score NUMBER`.
+- Improved the narrow direct object-field diagnostic so simple unknown fields explain the missing field name and suggest adding a matching `HAS` declaration.
+
 ## v1.18.26-dev object field TEXT negative validation
 
 - Added a focused negative `claro typecheck` fixture for direct object-field assignment with a TEXT field: `NEW Player player` followed by `SET player.name 123` when the class declares `HAS name TEXT`.
