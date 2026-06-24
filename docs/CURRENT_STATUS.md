@@ -53,7 +53,7 @@ Ready now:
 - `TYPE OF` and `CHECK TYPE`
 - typed list/map checks through `claro typecheck`
 - a narrow function/method argument check: `CHECK TYPE parameter IS TYPE` inside a function or simple object method lets `claro typecheck` accept correct checked calls and catch mismatched `DO`, `CALL ... WITH`, and `DO object.method ...` arguments
-- a narrow object-field assignment check for simple `NEW Class object` plus direct `SET object.field value` cases when the class declares `HAS field TYPE`; validation now covers correct NUMBER, TEXT, and YESNO direct assignments, NUMBER/TEXT/YESNO wrong-type diagnostics, and an unknown-field diagnostic for direct assignments to undeclared fields
+- a narrow object-field assignment check for simple `NEW Class object` plus direct `SET object.field value` cases when the class declares `HAS field TYPE`; validation now covers correct NUMBER, TEXT, and YESNO direct assignments, NUMBER/TEXT/YESNO wrong-type diagnostics, plus NUMBER-valued and TEXT-valued unknown-field diagnostics for direct assignments to undeclared fields
 
 Still needed:
 - richer typed function signatures and return values

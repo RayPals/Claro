@@ -167,7 +167,13 @@ Output:
 Object Player has no field level. Check the field name or add HAS level NUMBER to the class.
 ```
 
-Both sides of this narrow field foundation are covered by validation: `tests/typecheck_object_field_good.claro` checks that `SET player.score 10` is accepted for a `HAS score NUMBER` field, `tests/typecheck_object_field_text_good.claro` checks that `SET player.name "Ada"` is accepted for a `HAS name TEXT` field, `tests/typecheck_object_field_yesno_good.claro` checks that `SET player.ready YES` is accepted for a `HAS ready YESNO` field, `tests/typecheck_object_field_bad.claro` checks the NUMBER wrong-type diagnostic, `tests/typecheck_object_field_text_bad.claro` checks the TEXT wrong-type diagnostic, `tests/typecheck_object_field_yesno_bad.claro` checks the YESNO wrong-type diagnostic, and `tests/typecheck_object_field_unknown_bad.claro` checks the unknown-field diagnostic.
+The unknown-field hint uses the value type it can see. A text-valued typo such as `SET player.nickname "Ace"` is covered separately:
+
+```text
+Object Player has no field nickname. Check the field name or add HAS nickname TEXT to the class.
+```
+
+Both sides of this narrow field foundation are covered by validation: `tests/typecheck_object_field_good.claro` checks that `SET player.score 10` is accepted for a `HAS score NUMBER` field, `tests/typecheck_object_field_text_good.claro` checks that `SET player.name "Ada"` is accepted for a `HAS name TEXT` field, `tests/typecheck_object_field_yesno_good.claro` checks that `SET player.ready YES` is accepted for a `HAS ready YESNO` field, `tests/typecheck_object_field_bad.claro` checks the NUMBER wrong-type diagnostic, `tests/typecheck_object_field_text_bad.claro` checks the TEXT wrong-type diagnostic, `tests/typecheck_object_field_yesno_bad.claro` checks the YESNO wrong-type diagnostic, `tests/typecheck_object_field_unknown_bad.claro` checks a NUMBER-valued unknown-field diagnostic, and `tests/typecheck_object_field_unknown_text_bad.claro` checks a TEXT-valued unknown-field diagnostic.
 
 This slice is intentionally small: it covers direct `NEW Class object` plus `SET object.field value` cases in one file. Broader object flows, aliases, method return checks, and richer object signatures remain future work.
 
