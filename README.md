@@ -186,10 +186,11 @@ It also catches direct assignments to undeclared fields and suggests the matchin
 Object Player has no field level. Check the field name or add HAS level NUMBER to the class.
 ```
 
-TEXT-valued field-name mistakes are validated too:
+TEXT-valued and YESNO-valued field-name mistakes are validated too:
 
 ```text
 Object Player has no field nickname. Check the field name or add HAS nickname TEXT to the class.
+Object Player has no field ready. Check the field name or add HAS ready YESNO to the class.
 ```
 
 ## Project and package workflow
