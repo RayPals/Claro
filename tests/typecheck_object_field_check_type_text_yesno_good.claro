@@ -1,0 +1,10 @@
+CLASS Player
+    HAS name TEXT
+    HAS ready YESNO
+END
+
+NEW Player player
+SET player.name "Ada"
+SET player.ready YES
+CHECK TYPE player.name IS TEXT
+CHECK TYPE player.ready IS YESNO

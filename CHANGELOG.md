@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.18.26-dev object field CHECK TYPE TEXT/YESNO validation
+
+- Added a focused positive `claro typecheck` fixture for direct object-field metadata checks: `CHECK TYPE player.name IS TEXT` and `CHECK TYPE player.ready IS YESNO` after `NEW Player player` and direct field assignments.
+- Wired the fixture into both the typecheck diagnostics validator and `claro validate`; no production typechecker change was needed because the existing direct object-field metadata path already accepts these checks.
+
 ## v1.18.26-dev object field unknown YESNO diagnostic validation
 
 - Added a focused negative `claro typecheck` fixture for direct object-field assignment to an undeclared field with a YESNO value: `NEW Player player` followed by `SET player.ready YES` when the class only declares `HAS score NUMBER`.

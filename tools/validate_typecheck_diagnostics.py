@@ -53,6 +53,7 @@ EXPECTED_OK = [
     "tests/typecheck_object_field_good.claro",
     "tests/typecheck_object_field_text_good.claro",
     "tests/typecheck_object_field_yesno_good.claro",
+    "tests/typecheck_object_field_check_type_text_yesno_good.claro",
     "tests/37_object_field_types.claro",
 ]
 
