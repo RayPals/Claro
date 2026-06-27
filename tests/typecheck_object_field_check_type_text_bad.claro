@@ -1,0 +1,7 @@
+CLASS Player
+    HAS name TEXT
+END
+
+NEW Player player
+SET player.name "Ada"
+CHECK TYPE player.name IS NUMBER

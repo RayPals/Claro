@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.18.26-dev object field CHECK TYPE TEXT negative validation
+
+- Added a focused negative `claro typecheck` fixture for direct object-field metadata checks: `CHECK TYPE player.name IS NUMBER` is rejected after `NEW Player player` and `SET player.name "Ada"` when the class declares `HAS name TEXT`.
+- Wired the fixture into both the typecheck diagnostics validator and `claro validate`; no production typechecker behavior change was needed because the existing direct object-field metadata diagnostic already reports the learner-friendly mismatch.
+
 ## v1.18.26-dev object field CHECK TYPE TEXT/YESNO validation
 
 - Added a focused positive `claro typecheck` fixture for direct object-field metadata checks: `CHECK TYPE player.name IS TEXT` and `CHECK TYPE player.ready IS YESNO` after `NEW Player player` and direct field assignments.

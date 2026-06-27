@@ -44,6 +44,9 @@ EXPECTED = {
     "tests/typecheck_object_field_unknown_yesno_bad.claro": [
         "tests/typecheck_object_field_unknown_yesno_bad.claro:6: Object Player has no field ready. Check the field name or add HAS ready YESNO to the class.",
     ],
+    "tests/typecheck_object_field_check_type_text_bad.claro": [
+        "tests/typecheck_object_field_check_type_text_bad.claro:7: Type check failed: expected NUMBER, but player.name looks like TEXT.",
+    ],
 }
 
 EXPECTED_OK = [
