@@ -1,0 +1,7 @@
+CLASS Player
+    HAS ready YESNO
+END
+
+NEW Player player
+SET player.ready YES
+CHECK TYPE player.ready IS TEXT

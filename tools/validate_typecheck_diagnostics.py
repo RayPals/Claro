@@ -47,6 +47,9 @@ EXPECTED = {
     "tests/typecheck_object_field_check_type_text_bad.claro": [
         "tests/typecheck_object_field_check_type_text_bad.claro:7: Type check failed: expected NUMBER, but player.name looks like TEXT.",
     ],
+    "tests/typecheck_object_field_check_type_yesno_bad.claro": [
+        "tests/typecheck_object_field_check_type_yesno_bad.claro:7: Type check failed: expected TEXT, but player.ready looks like YESNO.",
+    ],
 }
 
 EXPECTED_OK = [

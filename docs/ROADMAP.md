@@ -31,7 +31,7 @@ See `CURRENT_STATUS.md` for the detailed feature matrix.
 
 1. Keep beginner-facing docs current and separate from historical release notes.
 2. Keep examples aligned with the modern simple syntax (`END`, `DO`, short `SET`, short `ASK`) while documenting older compatibility forms separately.
-3. Expand validation around typecheck diagnostics and package/networking safety. Current object-method parameter validation covers one correct `DO object.method ...` call and one wrong-type diagnostic; object-field validation covers correct NUMBER, TEXT, and YESNO direct `SET object.field value` assignments, direct `CHECK TYPE` metadata checks for TEXT/YESNO fields plus a negative TEXT metadata mismatch, NUMBER/TEXT/YESNO wrong-type direct assignments, and simple NUMBER/TEXT/YESNO-valued unknown-field diagnostics after `NEW Class object`.
+3. Expand validation around typecheck diagnostics and package/networking safety. Current object-method parameter validation covers one correct `DO object.method ...` call and one wrong-type diagnostic; object-field validation covers correct NUMBER, TEXT, and YESNO direct `SET object.field value` assignments, direct `CHECK TYPE` metadata checks for TEXT/YESNO fields plus negative TEXT and YESNO metadata mismatches, NUMBER/TEXT/YESNO wrong-type direct assignments, and simple NUMBER/TEXT/YESNO-valued unknown-field diagnostics after `NEW Class object`.
 4. Add small examples for each foundation feature before adding bigger syntax.
 
 ## Complete-platform milestones
