@@ -1,0 +1,6 @@
+CLASS Player
+    HAS score NUMBER
+END
+
+NEW Player player
+CHECK TYPE player.level IS NUMBER

@@ -53,6 +53,9 @@ EXPECTED = {
     "tests/typecheck_object_field_check_type_number_bad.claro": [
         "tests/typecheck_object_field_check_type_number_bad.claro:7: Type check failed: expected TEXT, but player.score looks like NUMBER.",
     ],
+    "tests/typecheck_object_field_check_type_unknown_number_bad.claro": [
+        "tests/typecheck_object_field_check_type_unknown_number_bad.claro:6: Object Player has no field level. Check the field name or add HAS level NUMBER to the class.",
+    ],
 }
 
 EXPECTED_OK = [

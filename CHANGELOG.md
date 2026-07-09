@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.18.26-dev object field CHECK TYPE unknown-field diagnostic
+
+- Added a focused negative `claro typecheck` fixture for direct object-field metadata checks against an undeclared field: `CHECK TYPE player.level IS NUMBER` after `NEW Player player` when the class only declares `HAS score NUMBER`.
+- Improved the narrow direct object-field `CHECK TYPE` diagnostic so simple unknown fields name the object class and suggest the matching `HAS level NUMBER` declaration.
+
 ## v1.18.26-dev object field CHECK TYPE NUMBER negative validation
 
 - Added a focused negative `claro typecheck` fixture for direct object-field metadata checks: `CHECK TYPE player.score IS TEXT` is rejected after `NEW Player player` and `SET player.score 10` when the class declares `HAS score NUMBER`.

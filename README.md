@@ -199,6 +199,12 @@ Direct object-field `CHECK TYPE` metadata mismatches are validated for NUMBER, T
 Type check failed: expected TEXT, but player.ready looks like YESNO.
 ```
 
+If `CHECK TYPE` names an undeclared field, Claro now gives the same class-and-field hint as direct field assignment. For example, `CHECK TYPE player.level IS NUMBER` after `NEW Player player` reports:
+
+```text
+Object Player has no field level. Check the field name or add HAS level NUMBER to the class.
+```
+
 ## Project and package workflow
 
 v1.18.26 hardens Claro's project/package workflow.
