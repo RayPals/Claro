@@ -205,6 +205,12 @@ If `CHECK TYPE` names an undeclared field, Claro now gives the same class-and-fi
 Object Player has no field level. Check the field name or add HAS level NUMBER to the class.
 ```
 
+TEXT expectations are validated with the same pattern, for example `CHECK TYPE player.nickname IS TEXT` reports:
+
+```text
+Object Player has no field nickname. Check the field name or add HAS nickname TEXT to the class.
+```
+
 ## Project and package workflow
 
 v1.18.26 hardens Claro's project/package workflow.

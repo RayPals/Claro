@@ -56,6 +56,9 @@ EXPECTED = {
     "tests/typecheck_object_field_check_type_unknown_number_bad.claro": [
         "tests/typecheck_object_field_check_type_unknown_number_bad.claro:6: Object Player has no field level. Check the field name or add HAS level NUMBER to the class.",
     ],
+    "tests/typecheck_object_field_check_type_unknown_text_bad.claro": [
+        "tests/typecheck_object_field_check_type_unknown_text_bad.claro:6: Object Player has no field nickname. Check the field name or add HAS nickname TEXT to the class.",
+    ],
 }
 
 EXPECTED_OK = [
