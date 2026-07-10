@@ -1,0 +1,16 @@
+IMPORT "lib/path.claro" AS path
+
+CALL path.join WITH "notes", "today.txt"
+SAY RESULT
+CALL path.basename WITH "notes/today.txt"
+SAY RESULT
+CALL path.dirname WITH "notes/today.txt"
+SAY RESULT
+CALL path.ext WITH "notes/today.txt"
+SAY RESULT
+CALL path.stem WITH "notes/today.txt"
+SAY RESULT
+CALL path.absolute WITH "/home/learner"
+SAY RESULT
+CALL path.absolute WITH "notes/today.txt"
+SAY RESULT

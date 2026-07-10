@@ -22,7 +22,7 @@ Ready now:
 - choices with `IF` / `ELSE` / `END`
 - loops
 - lists and maps
-- files, JSON, and text helpers
+- files, JSON, text helpers, and tested path/collection library helpers
 - friendly checking with `claro check`
 
 Good starting docs:

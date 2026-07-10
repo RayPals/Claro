@@ -1,0 +1,31 @@
+IMPORT "lib/collections.claro" AS collections
+
+SET words AS LIST OF TEXT TO LIST
+ADD "Ada" TO words
+ADD "Grace" TO words
+ADD "Lin" TO words
+
+CALL collections.length WITH words
+SAY RESULT
+CALL collections.contains WITH words, "Grace"
+SAY RESULT
+CALL collections.index WITH words, "Lin"
+SAY RESULT
+CALL collections.join WITH words, " | "
+SAY RESULT
+CALL collections.reversed WITH words
+SET backwards TO RESULT
+GET backwards AT 1 AS first
+SAY first
+
+SET scores AS MAP OF NUMBER TO MAP
+PUT scores KEY "math" VALUE 95
+PUT scores KEY "science" VALUE 88
+CALL collections.has_key WITH scores, "math"
+SAY RESULT
+CALL collections.get WITH scores, "science", 0
+SAY RESULT
+CALL collections.keys WITH scores
+SET subjects TO RESULT
+COUNT subjects AS subjectCount
+SAY subjectCount

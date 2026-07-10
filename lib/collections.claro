@@ -1,0 +1,6 @@
+# Claro Standard Library: collections
+# Use: IMPORT "lib/collections.claro" AS collections
+#
+# This module provides beginner-friendly helpers for LIST and MAP values.
+# All list positions are 1-based so they match GET ... AT and FIND.
+EXPORT ALL

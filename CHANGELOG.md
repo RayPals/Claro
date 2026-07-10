@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.18.26-dev standard-library reliability update
+
+- Added a tested `lib/collections.claro` module with list and map helpers.
+- Made the existing `lib/path.claro` import provide working native helpers for joining and inspecting paths.
+- Added golden tests for both modules.
+- Normalized CRLF/LF golden-test expectations so `claro test` reflects interpreter behavior across Windows and Unix checkouts.
+- Replaced stale standard-library command claims with current, runnable documentation.
+
+
 ## v1.18.26-dev object field CHECK TYPE unknown-field diagnostic
 
 - Added a focused negative `claro typecheck` fixture for direct object-field metadata checks against an undeclared field: `CHECK TYPE player.level IS NUMBER` after `NEW Player player` when the class only declares `HAS score NUMBER`.

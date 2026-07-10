@@ -239,6 +239,26 @@ packages/
 Package names are checked so unsafe names such as `../bad` are rejected.
 
 
+## Standard-library path and collection helpers
+
+Claro includes tested, namespaced helpers for everyday programs:
+
+```claro
+IMPORT "lib/path.claro" AS path
+IMPORT "lib/collections.claro" AS collections
+
+CALL path.join WITH "notes", "today.txt"
+SAY RESULT
+
+SET names AS LIST OF TEXT TO LIST
+ADD "Ada" TO names
+ADD "Grace" TO names
+CALL collections.join WITH names, " and "
+SAY RESULT
+```
+
+The `path` module includes `join`, `basename`, `dirname`, `ext`, `stem`, and `absolute`. The `collections` module includes list length/search/join/reverse helpers and map key/value/default-access helpers. See `docs/STDLIB.md` for the complete, current API.
+
 ## Networking
 
 v1.18.26 adds safer beginner networking commands with offline `claro://` test URLs.
