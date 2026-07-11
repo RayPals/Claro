@@ -9,10 +9,16 @@
 - Replaced stale standard-library command claims with current, runnable documentation.
 
 
+## v1.18.26-dev object field CHECK TYPE unknown YESNO validation
+
+- Added a focused negative `claro typecheck` fixture for direct object-field metadata checks against an undeclared YESNO field: `CHECK TYPE player.enabled IS YESNO` after `NEW Player player` when the class only declares `HAS ready YESNO`.
+- Wired the fixture into both the typecheck diagnostics validator and `claro validate`; no production typechecker behavior change was needed because the existing direct object-field `CHECK TYPE` unknown-field diagnostic already reports the learner-friendly YESNO suggestion.
+
 ## v1.18.26-dev object field CHECK TYPE unknown TEXT validation
 
 - Added a focused negative `claro typecheck` fixture for direct object-field metadata checks against an undeclared TEXT field: `CHECK TYPE player.nickname IS TEXT` after `NEW Player player` when the class only declares `HAS name TEXT`.
 - Wired the fixture into both the typecheck diagnostics validator and `claro validate`; no production typechecker behavior change was needed because the existing direct object-field `CHECK TYPE` unknown-field diagnostic already reports the learner-friendly TEXT suggestion.
+
 
 
 ## v1.18.26-dev object field CHECK TYPE unknown-field diagnostic

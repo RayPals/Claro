@@ -211,6 +211,12 @@ TEXT expectations are validated with the same pattern, for example `CHECK TYPE p
 Object Player has no field nickname. Check the field name or add HAS nickname TEXT to the class.
 ```
 
+YESNO expectations are validated too; `CHECK TYPE player.enabled IS YESNO` reports:
+
+```text
+Object Player has no field enabled. Check the field name or add HAS enabled YESNO to the class.
+```
+
 ## Project and package workflow
 
 v1.18.26 hardens Claro's project/package workflow.
