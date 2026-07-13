@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.18.26-dev object field CHECK TYPE TEXT positive validation
+
+- Added a dedicated positive `claro typecheck` fixture for direct object-field metadata checks: `CHECK TYPE player.name IS TEXT` is accepted after `NEW Player player` and `SET player.name "Ada"` when the class declares `HAS name TEXT`.
+- Wired the fixture into both the typecheck diagnostics validator and `claro validate`; no production typechecker behavior change was needed because the existing direct object-field metadata path already accepts the TEXT check.
+
 ## v1.18.26-dev object field CHECK TYPE NUMBER positive validation
 
 - Added a focused positive `claro typecheck` fixture for direct object-field metadata checks: `CHECK TYPE player.score IS NUMBER` is accepted after `NEW Player player` and `SET player.score 10` when the class declares `HAS score NUMBER`.
