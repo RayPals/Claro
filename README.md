@@ -217,6 +217,12 @@ YESNO expectations are validated too; `CHECK TYPE player.enabled IS YESNO` repor
 Object Player has no field enabled. Check the field name or add HAS enabled YESNO to the class.
 ```
 
+If a learner checks a field before creating the object with `NEW`, `claro typecheck` points to the missing object setup:
+
+```text
+Object player is not known yet. Create it with NEW ClassName player before checking player.score.
+```
+
 ## Project and package workflow
 
 v1.18.26 hardens Claro's project/package workflow.

@@ -62,6 +62,9 @@ EXPECTED = {
     "tests/typecheck_object_field_check_type_unknown_yesno_bad.claro": [
         "tests/typecheck_object_field_check_type_unknown_yesno_bad.claro:6: Object Player has no field enabled. Check the field name or add HAS enabled YESNO to the class.",
     ],
+    "tests/typecheck_object_field_check_type_unknown_object_bad.claro": [
+        "tests/typecheck_object_field_check_type_unknown_object_bad.claro:5: Object player is not known yet. Create it with NEW ClassName player before checking player.score.",
+    ],
 }
 
 EXPECTED_OK = [

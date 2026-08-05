@@ -1,0 +1,5 @@
+CLASS Player
+    HAS score NUMBER
+END
+
+CHECK TYPE player.score IS NUMBER
