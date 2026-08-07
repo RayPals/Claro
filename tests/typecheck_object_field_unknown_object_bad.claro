@@ -1,0 +1,5 @@
+CLASS Player
+    HAS score NUMBER
+END
+
+SET player.score 10

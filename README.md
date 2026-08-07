@@ -223,6 +223,12 @@ If a learner checks a field before creating the object with `NEW`, `claro typech
 Object player is not known yet. Create it with NEW ClassName player before checking player.score.
 ```
 
+The same missing-object guidance is now validated for direct field assignment before `NEW`:
+
+```text
+Object player is not known yet. Create it with NEW ClassName player before setting player.score.
+```
+
 ## Project and package workflow
 
 v1.18.26 hardens Claro's project/package workflow.

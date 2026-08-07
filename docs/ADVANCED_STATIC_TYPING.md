@@ -222,7 +222,19 @@ Output:
 Object player is not known yet. Create it with NEW ClassName player before checking player.score.
 ```
 
-Both sides of this narrow field foundation are covered by validation: `tests/typecheck_object_field_good.claro` checks that `SET player.score 10` is accepted for a `HAS score NUMBER` field, `tests/typecheck_object_field_text_good.claro` checks that `SET player.name "Ada"` is accepted for a `HAS name TEXT` field, `tests/typecheck_object_field_yesno_good.claro` checks that `SET player.ready YES` is accepted for a `HAS ready YESNO` field, `tests/typecheck_object_field_check_type_number_good.claro` checks that direct `CHECK TYPE player.score IS NUMBER` metadata is accepted, `tests/typecheck_object_field_check_type_text_good.claro` checks the dedicated direct `CHECK TYPE player.name IS TEXT` metadata path, `tests/typecheck_object_field_check_type_text_yesno_good.claro` keeps combined TEXT/YESNO metadata checks covered, `tests/typecheck_object_field_check_type_number_bad.claro` checks that `CHECK TYPE player.score IS TEXT` reports the NUMBER metadata mismatch, `tests/typecheck_object_field_check_type_text_bad.claro` checks that `CHECK TYPE player.name IS NUMBER` reports the TEXT metadata mismatch, `tests/typecheck_object_field_check_type_yesno_bad.claro` checks that `CHECK TYPE player.ready IS TEXT` reports the YESNO metadata mismatch, `tests/typecheck_object_field_check_type_unknown_number_bad.claro` checks that `CHECK TYPE player.level IS NUMBER` reports the unknown-field metadata diagnostic, `tests/typecheck_object_field_check_type_unknown_text_bad.claro` checks that `CHECK TYPE player.nickname IS TEXT` reports the TEXT unknown-field metadata diagnostic, `tests/typecheck_object_field_check_type_unknown_yesno_bad.claro` checks that `CHECK TYPE player.enabled IS YESNO` reports the YESNO unknown-field metadata diagnostic, `tests/typecheck_object_field_check_type_unknown_object_bad.claro` checks that `CHECK TYPE player.score IS NUMBER` before `NEW Player player` reports the missing-object diagnostic, `tests/typecheck_object_field_bad.claro` checks the NUMBER wrong-type diagnostic, `tests/typecheck_object_field_text_bad.claro` checks the TEXT wrong-type diagnostic, `tests/typecheck_object_field_yesno_bad.claro` checks the YESNO wrong-type diagnostic, `tests/typecheck_object_field_unknown_bad.claro` checks a NUMBER-valued unknown-field hint, `tests/typecheck_object_field_unknown_text_bad.claro` checks a TEXT-valued unknown-field hint, `tests/typecheck_object_field_unknown_yesno_bad.claro` checks a YESNO-valued unknown-field hint, and `tests/37_object_field_types.claro` keeps the runtime object-field example passing.
+Direct field assignment before `NEW` is checked with the same beginner-first guidance:
+
+```claro
+SET player.score 10
+```
+
+Output:
+
+```text
+Object player is not known yet. Create it with NEW ClassName player before setting player.score.
+```
+
+Both sides of this narrow field foundation are covered by validation: `tests/typecheck_object_field_good.claro` checks that `SET player.score 10` is accepted for a `HAS score NUMBER` field, `tests/typecheck_object_field_text_good.claro` checks that `SET player.name "Ada"` is accepted for a `HAS name TEXT` field, `tests/typecheck_object_field_yesno_good.claro` checks that `SET player.ready YES` is accepted for a `HAS ready YESNO` field, `tests/typecheck_object_field_unknown_object_bad.claro` checks that `SET player.score 10` before `NEW Player player` reports the missing-object assignment diagnostic, `tests/typecheck_object_field_check_type_unknown_object_bad.claro` checks the matching missing-object `CHECK TYPE` diagnostic, and the remaining object-field fixtures cover known-field mismatches plus unknown NUMBER/TEXT/YESNO fields.
 
 This slice is intentionally small: it covers direct `NEW Class object` plus `SET object.field value` cases in one file. Broader object flows, aliases, method return checks, and richer object signatures remain future work.
 
