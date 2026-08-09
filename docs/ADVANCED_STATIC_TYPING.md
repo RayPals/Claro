@@ -174,6 +174,12 @@ Object Player has no field nickname. Check the field name or add HAS nickname TE
 Object Player has no field ready. Check the field name or add HAS ready YESNO to the class.
 ```
 
+When the value is an expression whose type is not known yet, Claro now avoids the internal `ANY` placeholder and gives a plain next step instead:
+
+```text
+Object Player has no field level. Check the field name or add the field to the class with the right type.
+```
+
 Direct `CHECK TYPE` on an undeclared field uses the expected type from the check in its suggestion:
 
 ```claro
@@ -234,7 +240,7 @@ Output:
 Object player is not known yet. Create it with NEW ClassName player before setting player.score.
 ```
 
-Both sides of this narrow field foundation are covered by validation: `tests/typecheck_object_field_good.claro` checks that `SET player.score 10` is accepted for a `HAS score NUMBER` field, `tests/typecheck_object_field_text_good.claro` checks that `SET player.name "Ada"` is accepted for a `HAS name TEXT` field, `tests/typecheck_object_field_yesno_good.claro` checks that `SET player.ready YES` is accepted for a `HAS ready YESNO` field, `tests/typecheck_object_field_unknown_object_bad.claro` checks that `SET player.score 10` before `NEW Player player` reports the missing-object assignment diagnostic, `tests/typecheck_object_field_check_type_unknown_object_bad.claro` checks the matching missing-object `CHECK TYPE` diagnostic, and the remaining object-field fixtures cover known-field mismatches plus unknown NUMBER/TEXT/YESNO fields.
+Both sides of this narrow field foundation are covered by validation: `tests/typecheck_object_field_good.claro` checks that `SET player.score 10` is accepted for a `HAS score NUMBER` field, `tests/typecheck_object_field_text_good.claro` checks that `SET player.name "Ada"` is accepted for a `HAS name TEXT` field, `tests/typecheck_object_field_yesno_good.claro` checks that `SET player.ready YES` is accepted for a `HAS ready YESNO` field, `tests/typecheck_object_field_unknown_object_bad.claro` checks that `SET player.score 10` before `NEW Player player` reports the missing-object assignment diagnostic, `tests/typecheck_object_field_check_type_unknown_object_bad.claro` checks the matching missing-object `CHECK TYPE` diagnostic, and the remaining object-field fixtures cover known-field mismatches, unknown NUMBER/TEXT/YESNO fields, and unknown-field assignments whose value type is not inferable yet.
 
 This slice is intentionally small: it covers direct `NEW Class object` plus `SET object.field value` cases in one file. Broader object flows, aliases, method return checks, and richer object signatures remain future work.
 

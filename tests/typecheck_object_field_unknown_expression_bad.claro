@@ -1,0 +1,7 @@
+CLASS Player
+    HAS score NUMBER
+END
+
+NEW Player player
+SET score 3
+SET player.level score + 1

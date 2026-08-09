@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.18.26-dev unknown object-field expression diagnostic
+
+- Added a focused negative `claro typecheck` fixture for assigning an expression with no inferable static type to an undeclared object field, such as `SET player.level score + 1` after `NEW Player player`.
+- Replaced the internal `ANY` placeholder in that diagnostic with the beginner-facing guidance: `Check the field name or add the field to the class with the right type.`
+- Wired the fixture into both the typecheck diagnostics validator and `claro validate`.
+
 ## v1.18.26-dev object field CHECK TYPE TEXT positive validation
 
 - Added a dedicated positive `claro typecheck` fixture for direct object-field metadata checks: `CHECK TYPE player.name IS TEXT` is accepted after `NEW Player player` and `SET player.name "Ada"` when the class declares `HAS name TEXT`.

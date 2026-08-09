@@ -193,6 +193,12 @@ Object Player has no field nickname. Check the field name or add HAS nickname TE
 Object Player has no field ready. Check the field name or add HAS ready YESNO to the class.
 ```
 
+If Claro cannot infer the value type for an undeclared field yet, it avoids exposing the internal `ANY` placeholder and keeps the hint beginner-facing:
+
+```text
+Object Player has no field level. Check the field name or add the field to the class with the right type.
+```
+
 Direct object-field `CHECK TYPE` metadata mismatches are validated for NUMBER, TEXT, and YESNO fields too. For example, after `HAS ready YESNO` and `SET player.ready YES`, `CHECK TYPE player.ready IS TEXT` reports:
 
 ```text
