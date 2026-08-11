@@ -26,6 +26,9 @@ EXPECTED = {
     "tests/typecheck_method_bad.claro": [
         "tests/typecheck_method_bad.claro:11: Type mismatch for method Player.add: parameter points needs NUMBER, but this argument looks like TEXT.",
     ],
+    "tests/typecheck_method_unknown_object_bad.claro": [
+        "tests/typecheck_method_unknown_object_bad.claro:10: Object player is not known yet. Create it with NEW ClassName player before calling player.add.",
+    ],
     "tests/typecheck_object_field_bad.claro": [
         "tests/typecheck_object_field_bad.claro:6: Type mismatch for field player.score: expected NUMBER, but this value looks like TEXT.",
     ],

@@ -125,6 +125,27 @@ Type mismatch for method Player.add: parameter points needs NUMBER, but this arg
 
 Both sides of this narrow method foundation are covered by validation: `tests/typecheck_method_good.claro` checks that `DO player.add 5` is accepted, and `tests/typecheck_method_bad.claro` checks the friendly wrong-type diagnostic.
 
+If the method call comes before the object is created, the type checker now gives the learner the missing setup step:
+
+```claro
+CLASS Player
+    HAS score NUMBER
+
+    TEACH add points
+        CHECK TYPE points IS NUMBER
+        SET score score + points
+    END
+END
+
+DO player.add 5
+```
+
+Output:
+
+```text
+Object player is not known yet. Create it with NEW ClassName player before calling player.add.
+```
+
 ## Object field assignment checks
 
 Claro also has a narrow static diagnostic for direct object-field assignments. If a class declares a typed field and a script creates a simple object with `NEW Class name`, `claro typecheck` remembers the field type:

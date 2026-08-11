@@ -174,6 +174,12 @@ DO player.add "five"
 Type mismatch for method Player.add: parameter points needs NUMBER, but this argument looks like TEXT.
 ```
 
+If a learner calls a simple object method before creating the object with `NEW`, `claro typecheck` now points to the missing setup instead of letting the dotted call look like an ordinary unknown function:
+
+```text
+Object player is not known yet. Create it with NEW ClassName player before calling player.add.
+```
+
 For simple object fields created with `NEW Class name`, `claro typecheck` also catches direct wrong-type field assignments such as `SET player.score "ten"` when the class says `HAS score NUMBER`:
 
 ```text
