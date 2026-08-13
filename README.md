@@ -180,6 +180,12 @@ If a learner calls a simple object method before creating the object with `NEW`,
 Object player is not known yet. Create it with NEW ClassName player before calling player.add.
 ```
 
+If the object exists but the class does not declare that method, Claro now names the class and suggests where to add the missing `TEACH` block:
+
+```text
+Object Player has no method fly. Check the method name or add TEACH fly inside CLASS Player.
+```
+
 For simple object fields created with `NEW Class name`, `claro typecheck` also catches direct wrong-type field assignments such as `SET player.score "ten"` when the class says `HAS score NUMBER`:
 
 ```text

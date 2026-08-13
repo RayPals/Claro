@@ -146,6 +146,18 @@ Output:
 Object player is not known yet. Create it with NEW ClassName player before calling player.add.
 ```
 
+If the object exists but the class does not declare the method, Claro now names the class and suggests where to add the missing `TEACH` block:
+
+```claro
+DO player.fly 5
+```
+
+Output:
+
+```text
+Object Player has no method fly. Check the method name or add TEACH fly inside CLASS Player.
+```
+
 ## Object field assignment checks
 
 Claro also has a narrow static diagnostic for direct object-field assignments. If a class declares a typed field and a script creates a simple object with `NEW Class name`, `claro typecheck` remembers the field type:
