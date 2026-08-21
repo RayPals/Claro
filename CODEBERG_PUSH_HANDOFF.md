@@ -1,14 +1,15 @@
 # Codeberg Push Handoff
 
-Prepared local commit could not be pushed non-interactively.
+Prepared local commits could not be pushed non-interactively.
 
-- Updated: `2026-08-17T03:01:05Z`
-- Local commit: `1cbdc1e56a9509355643cbc7a079f8f6eed442a3`
-- Commit message: `feat: diagnose unknown object methods`
+- Updated: `2026-08-20T03:11:11Z`
+- Local HEAD: `5d53b16a779d4d662e9a66197eff8c6cc6418aec`
+- Included prepared feature commit: `1cbdc1e56a9509355643cbc7a079f8f6eed442a3`
+- Included handoff/docs commit: `5d53b16a779d4d662e9a66197eff8c6cc6418aec`
 - Intended branch: `origin/main`
-- Remote head observed before latest auth check: `40f7881afd766d82d2ccb40fa801d3bd9358c7c2`
-- Remote head observed after latest auth check: `40f7881afd766d82d2ccb40fa801d3bd9358c7c2`
-- Blocker: `CODEBERG_TOKEN` is present, but a read-only Codeberg API identity check returned `HTTP Error 401: Unauthorized`; the token is invalid/expired or lacks access. Because API authentication itself failed, HTTPS Git push was not retried in this run. The token value was not printed or stored. The local branch remains one commit ahead of `origin/main`.
+- Remote head observed before latest push attempt: `40f7881afd766d82d2ccb40fa801d3bd9358c7c2`
+- Remote head observed after latest push attempt: `40f7881afd766d82d2ccb40fa801d3bd9358c7c2`
+- Blocker: `CODEBERG_TOKEN` is not present in this cron environment, and HTTPS Git push with prompts disabled failed with `fatal: could not read Username for 'https://codeberg.org': terminal prompts disabled`. The token value was not printed or stored because no token was available. Remote `origin/main` did not advance.
 
 Fresh validation in this checkout before the latest push attempt:
 
@@ -21,13 +22,13 @@ python3 tools/validate_typecheck_diagnostics.py
 ./claro validate
 ```
 
-Latest auth / push verification command:
+Latest auth / push verification commands:
 
 ```bash
-python3 -c '<read-only Codeberg /api/v1/user check using CODEBERG_TOKEN>'
+GIT_TERMINAL_PROMPT=0 git -c credential.helper= push origin HEAD:refs/heads/main
 GIT_TERMINAL_PROMPT=0 git -c credential.helper= ls-remote origin refs/heads/main
 ```
 
-Result: API authentication failed with `HTTP Error 401: Unauthorized`; push was not retried; remote `main` remained at `40f7881afd766d82d2ccb40fa801d3bd9358c7c2`, not the local commit above.
+Result: push failed before authentication because no non-interactive Codeberg credentials were available; remote `main` remained at `40f7881afd766d82d2ccb40fa801d3bd9358c7c2`, not the local HEAD above.
 
 After writing or updating this handoff note, rerun validation before making more source changes or retrying the push.
