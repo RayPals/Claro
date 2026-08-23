@@ -2,12 +2,13 @@
 
 Prepared local commits could not be pushed non-interactively.
 
-- Updated: `2026-08-22T03:02:25Z`
+- Updated: `2026-08-23T03:01:33Z`
 - Local branch at time of this handoff update: `main`, ahead of `origin/main`; run `git rev-parse HEAD` for the exact current local commit, because committing this note necessarily changes the final handoff commit SHA.
 - Included prepared feature commit: `1cbdc1e56a9509355643cbc7a079f8f6eed442a3`
 - Included handoff/docs commit: `5d53b16a779d4d662e9a66197eff8c6cc6418aec`
 - Included prior handoff refresh commit: `351a52e2614b72a5c49acfa15c1f59f2c4f641bd`
 - Included prior handoff auth-refresh commit: `9fdc564736011b33c11c08792b35ab30638a7057`
+- Included latest auth-blocker commit before this refresh: `92407dabbec1c8d11ee7651b246ebd452f92920d`
 - Intended branch: `origin/main`
 - Remote head observed before this run's push attempts: `40f7881afd766d82d2ccb40fa801d3bd9358c7c2`
 - Remote head observed after this run's push attempts: `40f7881afd766d82d2ccb40fa801d3bd9358c7c2`
