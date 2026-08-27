@@ -2,8 +2,9 @@
 
 Prepared local commits could not be pushed non-interactively.
 
-- Updated: `2026-08-26T03:01:17Z`
+- Updated: `2026-08-27T03:01:38Z`
 - Local branch at time of this handoff update: `main`, ahead of `origin/main`; run `git rev-parse HEAD` for the exact current local commit, because committing this note necessarily changes the final handoff commit SHA.
+- Local HEAD before this handoff edit: `356bf0e54d490d8775c5662ded16f0c0cde1bf94`
 - Included prepared feature commit: `1cbdc1e56a9509355643cbc7a079f8f6eed442a3`
 - Included handoff/docs commit: `5d53b16a779d4d662e9a66197eff8c6cc6418aec`
 - Included prior handoff refresh commit: `351a52e2614b72a5c49acfa15c1f59f2c4f641bd`
@@ -11,7 +12,8 @@ Prepared local commits could not be pushed non-interactively.
 - Included auth-blocker commit: `92407dabbec1c8d11ee7651b246ebd452f92920d`
 - Included handoff-refresh commit: `2bc4ce7e48f59755793e90ff85980ff4482ebd82`
 - Included handoff-refresh commit: `f6da23d32edd4626f4535104218005b356493e31`
-- Included latest handoff-refresh commit before this update: `6b2dca4423b375b7e4a3281a76283dc86b6da872`
+- Included handoff-refresh commit: `6b2dca4423b375b7e4a3281a76283dc86b6da872`
+- Included latest handoff-refresh commit before this update: `356bf0e54d490d8775c5662ded16f0c0cde1bf94`
 - Intended branch: `origin/main`
 - Remote head observed before this run's push attempt: `40f7881afd766d82d2ccb40fa801d3bd9358c7c2`
 - Remote head observed after this run's push attempt: `40f7881afd766d82d2ccb40fa801d3bd9358c7c2`
