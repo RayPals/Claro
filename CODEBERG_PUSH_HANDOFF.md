@@ -2,9 +2,9 @@
 
 Prepared local commits could not be pushed non-interactively.
 
-- Updated: `2026-08-29T03:01:42Z`
+- Updated: `2026-08-30T03:01:41Z`
 - Local branch at time of this handoff update: `main`, ahead of `origin/main`; run `git rev-parse HEAD` for the exact current local commit, because committing this note necessarily changes the final handoff commit SHA.
-- Local HEAD before this handoff edit: `18a4a8d30ddb40544034d3a805b2bdcc9680dfb3`
+- Local HEAD before this handoff edit: `49ec9345a7a144437e9ccc3e9fec84556122ca98`
 - Included prepared feature commit: `1cbdc1e56a9509355643cbc7a079f8f6eed442a3`
 - Included handoff/docs commit: `5d53b16a779d4d662e9a66197eff8c6cc6418aec`
 - Included prior handoff refresh commit: `351a52e2614b72a5c49acfa15c1f59f2c4f641bd`
@@ -15,7 +15,8 @@ Prepared local commits could not be pushed non-interactively.
 - Included handoff-refresh commit: `6b2dca4423b375b7e4a3281a76283dc86b6da872`
 - Included handoff-refresh commit: `356bf0e54d490d8775c5662ded16f0c0cde1bf94`
 - Included handoff-refresh commit: `d357caecbe4f2c667be87a1d815cf4720486cd97`
-- Included latest handoff-refresh commit before this update: `18a4a8d30ddb40544034d3a805b2bdcc9680dfb3`
+- Included handoff-refresh commit: `18a4a8d30ddb40544034d3a805b2bdcc9680dfb3`
+- Included latest handoff-refresh commit before this update: `49ec9345a7a144437e9ccc3e9fec84556122ca98`
 - Intended branch: `origin/main`
 - Remote head observed before this run's push attempt: `40f7881afd766d82d2ccb40fa801d3bd9358c7c2`
 - Remote head observed after this run's push attempt: `40f7881afd766d82d2ccb40fa801d3bd9358c7c2`
@@ -23,7 +24,7 @@ Prepared local commits could not be pushed non-interactively.
 - Push exit: `128`
 - Blocker: `CODEBERG_TOKEN` is not present in this cron environment, `$HOME/.netrc` is missing, and HTTPS Git push with prompts disabled failed with `fatal: could not read Username for 'https://codeberg.org': terminal prompts disabled`. The token value was not printed or stored because no token was available. Remote `origin/main` did not advance.
 
-Fresh validation in this checkout before committing this handoff note:
+Fresh validation in this checkout before this handoff note edit:
 
 ```bash
 gcc -std=c99 src/claro.c -O0 -o claro -lm
