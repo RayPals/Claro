@@ -23,6 +23,9 @@ EXPECTED = {
         "tests/typecheck_function_multi_bad.claro:8: Type mismatch for function label: parameter name needs TEXT, but this argument looks like NUMBER.",
         "tests/typecheck_function_multi_bad.claro:8: Type mismatch for function label: parameter age needs NUMBER, but this argument looks like TEXT.",
     ],
+    "tests/typecheck_function_missing_arg_bad.claro": [
+        "tests/typecheck_function_missing_arg_bad.claro:6: Function square needs argument amount as NUMBER, but this call does not provide it.",
+    ],
     "tests/typecheck_method_bad.claro": [
         "tests/typecheck_method_bad.claro:11: Type mismatch for method Player.add: parameter points needs NUMBER, but this argument looks like TEXT.",
     ],

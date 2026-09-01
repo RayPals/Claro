@@ -73,6 +73,23 @@ Output:
 Type mismatch for function square: parameter amount needs NUMBER, but this argument looks like TEXT.
 ```
 
+If the learner forgets a checked argument, `claro typecheck` now names the missing parameter and expected type:
+
+```claro
+TEACH square amount
+    CHECK TYPE amount IS NUMBER
+    SAY amount
+END
+
+DO square
+```
+
+Output:
+
+```text
+Function square needs argument amount as NUMBER, but this call does not provide it.
+```
+
 Multiple checked parameters are reported separately, so a learner can fix each argument one at a time:
 
 ```claro

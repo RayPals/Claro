@@ -132,7 +132,7 @@ SET scores AS MAP OF NUMBER TO MAP
 PUT scores KEY "math" VALUE 98
 ```
 
-`claro typecheck` also has an early function-argument diagnostic foundation. A function can state a parameter expectation with `CHECK TYPE`, and calls with the wrong value type get a friendly error:
+`claro typecheck` also has an early function-argument diagnostic foundation. A function can state a parameter expectation with `CHECK TYPE`, and calls with the wrong value type or a missing checked argument get a friendly error:
 
 ```claro
 TEACH square amount
@@ -145,6 +145,7 @@ DO square "oops"
 
 ```text
 Type mismatch for function square: parameter amount needs NUMBER, but this argument looks like TEXT.
+Function square needs argument amount as NUMBER, but this call does not provide it.
 ```
 
 For functions with more than one checked parameter, Claro reports each mismatched argument with the parameter name:
