@@ -152,7 +152,19 @@ Output:
 Method Player.add needs argument points as NUMBER, but this call does not provide it.
 ```
 
-Both sides of this narrow method foundation are covered by validation: `tests/typecheck_method_good.claro` checks that `DO player.add 5` is accepted, `tests/typecheck_method_bad.claro` checks the friendly wrong-type diagnostic, and `tests/typecheck_method_missing_arg_bad.claro` checks the missing checked-argument diagnostic.
+If the learner gives too many arguments to a simple checked method, `claro typecheck` now points to the extra argument instead of silently accepting it:
+
+```claro
+DO player.add 5, 6
+```
+
+Output:
+
+```text
+Method Player.add only accepts 1 argument, but this call gives 2. Remove the extra argument.
+```
+
+Both sides of this narrow method foundation are covered by validation: `tests/typecheck_method_good.claro` checks that `DO player.add 5` is accepted, `tests/typecheck_method_bad.claro` checks the friendly wrong-type diagnostic, `tests/typecheck_method_missing_arg_bad.claro` checks the missing checked-argument diagnostic, and `tests/typecheck_method_extra_arg_bad.claro` checks the extra-argument diagnostic.
 
 If the method call comes before the object is created, the type checker now gives the learner the missing setup step. The modern `DO` form and the older compatibility `CALL ... WITH` form both get this guidance, even when the method name is also a typo:
 

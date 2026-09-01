@@ -180,6 +180,7 @@ CALL player.add WITH "five"
 ```text
 Type mismatch for method Player.add: parameter points needs NUMBER, but this argument looks like TEXT.
 Method Player.add needs argument points as NUMBER, but this call does not provide it.
+Method Player.add only accepts 1 argument, but this call gives 2. Remove the extra argument.
 ```
 
 If a learner calls a simple object method before creating the object with `NEW`, `claro typecheck` now points to the missing setup instead of letting the dotted call look like an ordinary unknown function. This covers both the modern `DO player.add 5` form and the older compatibility `CALL player.add WITH 5` form, including `CALL` mistakes where the method name itself is wrong:

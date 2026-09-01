@@ -38,6 +38,9 @@ EXPECTED = {
     "tests/typecheck_method_missing_arg_bad.claro": [
         "tests/typecheck_method_missing_arg_bad.claro:11: Method Player.add needs argument points as NUMBER, but this call does not provide it.",
     ],
+    "tests/typecheck_method_extra_arg_bad.claro": [
+        "tests/typecheck_method_extra_arg_bad.claro:11: Method Player.add only accepts 1 argument, but this call gives 2. Remove the extra argument.",
+    ],
     "tests/typecheck_method_unknown_object_bad.claro": [
         "tests/typecheck_method_unknown_object_bad.claro:10: Object player is not known yet. Create it with NEW ClassName player before calling player.add.",
     ],
