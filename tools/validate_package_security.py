@@ -73,6 +73,16 @@ def main():
         if "Package names may use only" not in out:
             fail(f"Unsafe package diagnostic was unclear:\n{out}")
 
+        (work / "claro.project").write_text(
+            "manifest-version: 1\nname: ClaroProject\nmain: main.claro\nversion: v1.18.26\npackages:\npackage: ../bad\n",
+            encoding="utf-8",
+        )
+        rc, out = run([str(EXE), "package", "doctor"], work)
+        if rc == 0:
+            fail("package doctor must reject unsafe package names already present in claro.project")
+        if "BAD package name: ../bad" not in out:
+            fail(f"package doctor unsafe-name diagnostic was unclear:\n{out}")
+
     print("Package security validation OK")
 
 
