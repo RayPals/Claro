@@ -83,6 +83,12 @@ def main():
         if "BAD package name: ../bad" not in out:
             fail(f"package doctor unsafe-name diagnostic was unclear:\n{out}")
 
+        rc, out = run([str(EXE), "package", "lock"], work)
+        if rc == 0:
+            fail("package lock must reject unsafe package names already present in claro.project")
+        if "BAD package name: ../bad" not in out:
+            fail(f"package lock unsafe-name diagnostic was unclear:\n{out}")
+
     print("Package security validation OK")
 
 

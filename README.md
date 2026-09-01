@@ -282,7 +282,7 @@ claro.lock
 packages/
 ```
 
-Package names are checked so unsafe names such as `../bad` are rejected when adding packages, and `claro package doctor` also flags unsafe package names if they are already present in `claro.project`.
+Package names are checked so unsafe names such as `../bad` are rejected when adding packages. If an unsafe name is already present in `claro.project`, both `claro package doctor` and `claro package lock` flag it instead of treating it as safe lockfile data.
 
 
 ## Standard-library path and collection helpers
