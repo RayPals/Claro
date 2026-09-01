@@ -93,6 +93,8 @@ folder/name
 bad name
 ```
 
+If an unsafe package name somehow gets into `claro.project`, package maintenance commands should not quietly continue. `claro package doctor` points out the bad name, `claro package lock` refuses to write lockfile data for it, and `claro package remove NAME` now exits with an error if the lockfile refresh still sees an unsafe package name after the removal.
+
 ## Why this matters
 
 Packages are important for Claro's future, but the workflow must stay friendly:

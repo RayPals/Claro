@@ -89,6 +89,16 @@ def main():
         if "BAD package name: ../bad" not in out:
             fail(f"package lock unsafe-name diagnostic was unclear:\n{out}")
 
+        (work / "claro.project").write_text(
+            "manifest-version: 1\nname: ClaroProject\nmain: main.claro\nversion: v1.18.26\npackages:\npackage: math-tools\npackage: ../bad\n",
+            encoding="utf-8",
+        )
+        rc, out = run([str(EXE), "package", "remove", "math-tools"], work)
+        if rc == 0:
+            fail("package remove must not report success while unsafe package names remain in claro.project")
+        if "BAD package name: ../bad" not in out:
+            fail(f"package remove unsafe-name diagnostic was unclear:\n{out}")
+
     print("Package security validation OK")
 
 
