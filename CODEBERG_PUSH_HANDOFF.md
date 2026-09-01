@@ -1,51 +1,11 @@
-# Codeberg Push Handoff
+# Gitea Push Handoff
 
-Prepared local commits could not be pushed non-interactively.
+No prepared local commit is waiting on authentication for the configured private Gitea remote.
 
-- Updated: `2026-08-30T03:01:41Z`
-- Local branch at time of this handoff update: `main`, ahead of `origin/main`; run `git rev-parse HEAD` for the exact current local commit, because committing this note necessarily changes the final handoff commit SHA.
-- Local HEAD before this handoff edit: `49ec9345a7a144437e9ccc3e9fec84556122ca98`
-- Included prepared feature commit: `1cbdc1e56a9509355643cbc7a079f8f6eed442a3`
-- Included handoff/docs commit: `5d53b16a779d4d662e9a66197eff8c6cc6418aec`
-- Included prior handoff refresh commit: `351a52e2614b72a5c49acfa15c1f59f2c4f641bd`
-- Included prior handoff auth-refresh commit: `9fdc564736011b33c11c08792b35ab30638a7057`
-- Included auth-blocker commit: `92407dabbec1c8d11ee7651b246ebd452f92920d`
-- Included handoff-refresh commit: `2bc4ce7e48f59755793e90ff85980ff4482ebd82`
-- Included handoff-refresh commit: `f6da23d32edd4626f4535104218005b356493e31`
-- Included handoff-refresh commit: `6b2dca4423b375b7e4a3281a76283dc86b6da872`
-- Included handoff-refresh commit: `356bf0e54d490d8775c5662ded16f0c0cde1bf94`
-- Included handoff-refresh commit: `d357caecbe4f2c667be87a1d815cf4720486cd97`
-- Included handoff-refresh commit: `18a4a8d30ddb40544034d3a805b2bdcc9680dfb3`
-- Included latest handoff-refresh commit before this update: `49ec9345a7a144437e9ccc3e9fec84556122ca98`
-- Intended branch: `origin/main`
-- Remote head observed before this run's push attempt: `40f7881afd766d82d2ccb40fa801d3bd9358c7c2`
-- Remote head observed after this run's push attempt: `40f7881afd766d82d2ccb40fa801d3bd9358c7c2`
-- Push command attempted: `GIT_TERMINAL_PROMPT=0 git -c credential.helper= push origin HEAD:refs/heads/main`
-- Push exit: `128`
-- Blocker: `CODEBERG_TOKEN` is not present in this cron environment, `$HOME/.netrc` is missing, and HTTPS Git push with prompts disabled failed with `fatal: could not read Username for 'https://codeberg.org': terminal prompts disabled`. The token value was not printed or stored because no token was available. Remote `origin/main` did not advance.
+- Updated: `2026-09-01T09:15:03Z`
+- Configured publication remote: `gitea` (`ssh://git@gitea.142-44-162-98.sslip.io:2222/RayPals/Claro.git`)
+- Verified local HEAD: `33639de4cce24d3ab91f7da541650644aca369b0`
+- Verified Gitea `main`: `33639de4cce24d3ab91f7da541650644aca369b0`
+- Latest completed work: `package: reject unsafe names during lock`
 
-Fresh validation in this checkout before this handoff note edit:
-
-```bash
-gcc -std=c99 src/claro.c -O0 -o claro -lm
-gcc -std=c99 src/claro.c -O0 -o claro.exe -lm
-./claro typecheck tests/typecheck_method_unknown_method_bad.claro  # expected nonzero diagnostic asserted
-python3 tools/validate_typecheck_diagnostics.py
-./claro test
-./claro validate
-```
-
-Observed validation result: focused unknown-method diagnostic matched exactly, `tools/validate_typecheck_diagnostics.py` completed, `./claro test` reported `PASS: 0 failure(s)`, and `./claro validate` reported `Validation passed. Claro v1.18.26 foundation checks are ready for use.`
-
-Because this handoff note is itself a late workspace edit, rerun the same focused/full validation commands after committing the note before any future push claim.
-
-Latest auth / push verification commands:
-
-```bash
-GIT_TERMINAL_PROMPT=0 git -c credential.helper= push origin HEAD:refs/heads/main
-GIT_TERMINAL_PROMPT=0 git -c credential.helper= ls-remote origin refs/heads/main
-```
-
-Result: push failed before authentication because no non-interactive Codeberg credentials were available; remote `main` remained at `40f7881afd766d82d2ccb40fa801d3bd9358c7c2`, not the local branch head.
-
-Do not start a new feature until the prepared local commits are pushed to Codeberg or the authentication blocker is resolved.
+The older Codeberg authentication blocker is historical only. This scheduled job is now configured to publish only to the private Gitea remote, and Gitea `main` matches the local validated HEAD above.
