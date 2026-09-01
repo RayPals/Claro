@@ -1,0 +1,6 @@
+TEACH square amount
+    CHECK TYPE amount IS NUMBER
+    SAY amount
+END
+
+DO square 5, 6
