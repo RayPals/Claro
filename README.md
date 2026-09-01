@@ -159,7 +159,7 @@ END
 CALL label WITH 7, "old"
 ```
 
-The same narrow diagnostic foundation now covers simple object method calls when the object was created with `NEW` and the method body uses `CHECK TYPE` for a parameter. Correct calls such as `DO player.add 5` are covered by validation, and wrong-type calls get a focused learner-facing error:
+The same narrow diagnostic foundation now covers simple object method calls when the object was created with `NEW` and the method body uses `CHECK TYPE` for a parameter. Correct calls such as `DO player.add 5` and compatibility calls such as `CALL player.add WITH 5` are covered by validation, and wrong-type calls get a focused learner-facing error:
 
 ```claro
 CLASS Player
@@ -173,6 +173,7 @@ END
 
 NEW Player player
 DO player.add "five"
+CALL player.add WITH "five"
 ```
 
 ```text
