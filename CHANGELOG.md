@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.18.26-dev CI release validation coverage
+
+- Added `tools/validate_ci_workflow.py` to assert that Forgejo/Gitea CI keeps running Claro's current release gates.
+- Updated `.forgejo/workflows/ci.yml` to run `claro validate`, typecheck diagnostics validation, version convention validation, and the CI workflow coverage check in addition to the existing smoke tests.
+- Documented the CI coverage validator in the testing docs and current status/roadmap notes.
+
 ## v1.18.26-dev unknown object-field expression diagnostic
 
 - Added a focused negative `claro typecheck` fixture for assigning an expression with no inferable static type to an undeclared object field, such as `SET player.level score + 1` after `NEW Player player`.

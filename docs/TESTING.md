@@ -24,6 +24,7 @@ Validate the current v1.18.26 package after building:
 ./claro validate
 python tools/validate_typecheck_diagnostics.py
 python tools/validate_version_convention.py
+python tools/validate_ci_workflow.py
 ```
 
 Useful focused validation scripts:
@@ -38,6 +39,8 @@ python tools/validate_ide_metadata.py
 python tools/validate_lsp_helper.py
 python tools/validate_package_security.py
 ```
+
+The Forgejo/Gitea CI workflow is expected to run the current release gates above, not only the older smoke tests. `tools/validate_ci_workflow.py` checks that coverage so CI does not drift away from the documented package validation path.
 
 Older `validate_rc*.py` scripts are kept for historical release notes. They are not the recommended current package validation path.
 
