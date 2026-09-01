@@ -1,0 +1,10 @@
+CLASS Player
+    HAS score NUMBER
+
+    TEACH add points
+        CHECK TYPE points IS NUMBER
+        SET score score + points
+    END
+END
+
+CALL player.add WITH 5

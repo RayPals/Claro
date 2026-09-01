@@ -125,7 +125,7 @@ Type mismatch for method Player.add: parameter points needs NUMBER, but this arg
 
 Both sides of this narrow method foundation are covered by validation: `tests/typecheck_method_good.claro` checks that `DO player.add 5` is accepted, and `tests/typecheck_method_bad.claro` checks the friendly wrong-type diagnostic.
 
-If the method call comes before the object is created, the type checker now gives the learner the missing setup step:
+If the method call comes before the object is created, the type checker now gives the learner the missing setup step. The modern `DO` form and the older compatibility `CALL ... WITH` form both get this guidance:
 
 ```claro
 CLASS Player
@@ -138,6 +138,7 @@ CLASS Player
 END
 
 DO player.add 5
+CALL player.add WITH 5
 ```
 
 Output:

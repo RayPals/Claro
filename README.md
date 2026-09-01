@@ -178,7 +178,7 @@ DO player.add "five"
 Type mismatch for method Player.add: parameter points needs NUMBER, but this argument looks like TEXT.
 ```
 
-If a learner calls a simple object method before creating the object with `NEW`, `claro typecheck` now points to the missing setup instead of letting the dotted call look like an ordinary unknown function:
+If a learner calls a simple object method before creating the object with `NEW`, `claro typecheck` now points to the missing setup instead of letting the dotted call look like an ordinary unknown function. This covers both the modern `DO player.add 5` form and the older compatibility `CALL player.add WITH 5` form:
 
 ```text
 Object player is not known yet. Create it with NEW ClassName player before calling player.add.
