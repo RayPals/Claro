@@ -125,7 +125,7 @@ Type mismatch for method Player.add: parameter points needs NUMBER, but this arg
 
 Both sides of this narrow method foundation are covered by validation: `tests/typecheck_method_good.claro` checks that `DO player.add 5` is accepted, and `tests/typecheck_method_bad.claro` checks the friendly wrong-type diagnostic.
 
-If the method call comes before the object is created, the type checker now gives the learner the missing setup step. The modern `DO` form and the older compatibility `CALL ... WITH` form both get this guidance:
+If the method call comes before the object is created, the type checker now gives the learner the missing setup step. The modern `DO` form and the older compatibility `CALL ... WITH` form both get this guidance, even when the method name is also a typo:
 
 ```claro
 CLASS Player
@@ -139,12 +139,14 @@ END
 
 DO player.add 5
 CALL player.add WITH 5
+CALL player.fly WITH 5
 ```
 
 Output:
 
 ```text
 Object player is not known yet. Create it with NEW ClassName player before calling player.add.
+Object player is not known yet. Create it with NEW ClassName player before calling player.fly.
 ```
 
 If the object exists but the class does not declare the method, Claro now names the class and suggests where to add the missing `TEACH` block:
