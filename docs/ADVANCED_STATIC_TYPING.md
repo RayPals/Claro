@@ -140,7 +140,19 @@ Output:
 Type mismatch for method Player.add: parameter points needs NUMBER, but this argument looks like TEXT.
 ```
 
-Both sides of this narrow method foundation are covered by validation: `tests/typecheck_method_good.claro` checks that `DO player.add 5` is accepted, and `tests/typecheck_method_bad.claro` checks the friendly wrong-type diagnostic.
+If the learner forgets a checked method argument, `claro typecheck` also names the missing method parameter and expected type:
+
+```claro
+DO player.add
+```
+
+Output:
+
+```text
+Method Player.add needs argument points as NUMBER, but this call does not provide it.
+```
+
+Both sides of this narrow method foundation are covered by validation: `tests/typecheck_method_good.claro` checks that `DO player.add 5` is accepted, `tests/typecheck_method_bad.claro` checks the friendly wrong-type diagnostic, and `tests/typecheck_method_missing_arg_bad.claro` checks the missing checked-argument diagnostic.
 
 If the method call comes before the object is created, the type checker now gives the learner the missing setup step. The modern `DO` form and the older compatibility `CALL ... WITH` form both get this guidance, even when the method name is also a typo:
 
