@@ -41,6 +41,9 @@ EXPECTED = {
     "tests/typecheck_method_call_bad.claro": [
         "tests/typecheck_method_call_bad.claro:11: Type mismatch for method Player.add: parameter points needs NUMBER, but this argument looks like TEXT.",
     ],
+    "tests/typecheck_method_second_method_bad.claro": [
+        "tests/typecheck_method_second_method_bad.claro:15: Type mismatch for method Player.add: parameter points needs NUMBER, but this argument looks like TEXT.",
+    ],
     "tests/typecheck_method_missing_arg_bad.claro": [
         "tests/typecheck_method_missing_arg_bad.claro:11: Method Player.add needs argument points as NUMBER, but this call does not provide it.",
     ],
