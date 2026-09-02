@@ -208,10 +208,11 @@ Object player is not known yet. Create it with NEW ClassName player before calli
 Object player is not known yet. Create it with NEW ClassName player before calling player.fly.
 ```
 
-If the object exists but the class does not declare the method, Claro now names the class and suggests where to add the missing `TEACH` block:
+If the object exists but the class does not declare the method, Claro now names the class and suggests where to add the missing `TEACH` block. This is validated for the modern `DO player.fly 5` form and the older compatibility `CALL player.fly WITH 5` form:
 
 ```claro
 DO player.fly 5
+CALL player.fly WITH 5
 ```
 
 Output:

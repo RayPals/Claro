@@ -74,6 +74,9 @@ EXPECTED = {
     "tests/typecheck_method_unknown_method_bad.claro": [
         "tests/typecheck_method_unknown_method_bad.claro:11: Object Player has no method fly. Check the method name or add TEACH fly inside CLASS Player.",
     ],
+    "tests/typecheck_method_call_unknown_method_bad.claro": [
+        "tests/typecheck_method_call_unknown_method_bad.claro:11: Object Player has no method fly. Check the method name or add TEACH fly inside CLASS Player.",
+    ],
     "tests/typecheck_object_field_bad.claro": [
         "tests/typecheck_object_field_bad.claro:6: Type mismatch for field player.score: expected NUMBER, but this value looks like TEXT.",
     ],
