@@ -76,6 +76,8 @@ dash
 underscore
 ```
 
+Package names must be 64 characters or fewer so Claro can create predictable local package folders and metadata paths.
+
 This means simple names like these are allowed:
 
 ```text

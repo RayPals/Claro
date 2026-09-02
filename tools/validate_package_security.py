@@ -73,6 +73,15 @@ def main():
         if "Package names may use only" not in out:
             fail(f"Unsafe package diagnostic was unclear:\n{out}")
 
+        long_name = "a" * 65
+        rc, out = run([str(EXE), "package", "add", long_name], work)
+        if rc == 0:
+            fail("Package names longer than 64 characters must be rejected before paths are created")
+        if "Package names must be 64 characters or fewer" not in out:
+            fail(f"Long package-name diagnostic was unclear:\n{out}")
+        if (work / "packages" / long_name).exists():
+            fail("Long package name should not create a package folder")
+
         (work / "claro.project").write_text(
             "manifest-version: 1\nname: ClaroProject\nmain: main.claro\nversion: v1.18.26\npackages:\npackage: ../bad\n",
             encoding="utf-8",

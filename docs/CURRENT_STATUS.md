@@ -96,7 +96,7 @@ Ready now:
 - `claro package init`
 - `claro package add/list/remove/doctor/lock`
 - local project files such as `claro.project`, `claro.lock`, and `packages/`
-- package-name safety checks when adding packages, when `claro package doctor` audits an existing `claro.project`, when `claro package lock` writes lockfile data, and when `claro package remove` refreshes the lockfile after an edit
+- package-name safety checks when adding packages, including the 64-character package-name limit, when `claro package doctor` audits an existing `claro.project`, when `claro package lock` writes lockfile data, and when `claro package remove` refreshes the lockfile after an edit
 
 Still needed:
 - install from local path
