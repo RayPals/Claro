@@ -184,6 +184,7 @@ CALL player.add WITH "five"
 ```text
 Type mismatch for method Player.add: parameter points needs NUMBER, but this argument looks like TEXT.
 Method Player.add needs argument points as NUMBER, but this call does not provide it.
+Method Player.rename needs 1 argument, but this call gives 0. Add the missing argument.
 Method Player.add only accepts 1 argument, but this call gives 2. Remove the extra argument.
 ```
 

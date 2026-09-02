@@ -1,0 +1,10 @@
+CLASS Player
+    HAS name TEXT
+
+    TEACH rename newName
+        SET name newName
+    END
+END
+
+NEW Player player
+DO player.rename
