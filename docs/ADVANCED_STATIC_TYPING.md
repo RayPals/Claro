@@ -110,6 +110,23 @@ Type mismatch for function label: parameter name needs TEXT, but this argument l
 Type mismatch for function label: parameter age needs NUMBER, but this argument looks like TEXT.
 ```
 
+If a learner mistypes a modern `DO` function name, `claro typecheck` now names the unknown function and suggests either checking the spelling or adding a matching `TEACH` block:
+
+```claro
+TEACH square amount
+    CHECK TYPE amount IS NUMBER
+    SAY amount
+END
+
+DO squre 4
+```
+
+Output:
+
+```text
+Function squre is not known yet. Check the function name or add TEACH squre before calling it.
+```
+
 ## Object method parameter checks
 
 Claro also checks simple object method arguments when the method body names a parameter with `CHECK TYPE`. This keeps the method syntax beginner-readable while giving a clearer error before the program runs:

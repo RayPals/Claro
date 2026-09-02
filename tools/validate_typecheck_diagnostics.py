@@ -29,6 +29,9 @@ EXPECTED = {
     "tests/typecheck_function_extra_arg_bad.claro": [
         "tests/typecheck_function_extra_arg_bad.claro:6: Function square only accepts 1 argument, but this call gives 2. Remove the extra argument.",
     ],
+    "tests/typecheck_function_unknown_bad.claro": [
+        "tests/typecheck_function_unknown_bad.claro:6: Function squre is not known yet. Check the function name or add TEACH squre before calling it.",
+    ],
     "tests/typecheck_method_bad.claro": [
         "tests/typecheck_method_bad.claro:11: Type mismatch for method Player.add: parameter points needs NUMBER, but this argument looks like TEXT.",
     ],

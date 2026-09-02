@@ -147,6 +147,7 @@ DO square "oops"
 Type mismatch for function square: parameter amount needs NUMBER, but this argument looks like TEXT.
 Function square needs argument amount as NUMBER, but this call does not provide it.
 Function square only accepts 1 argument, but this call gives 2. Remove the extra argument.
+Function squre is not known yet. Check the function name or add TEACH squre before calling it.
 ```
 
 For functions with more than one checked parameter, Claro reports each mismatched argument with the parameter name:
