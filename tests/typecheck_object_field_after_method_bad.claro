@@ -1,0 +1,10 @@
+CLASS Player
+    TEACH show
+        SAY "player"
+    END
+
+    HAS score NUMBER
+END
+
+NEW Player player
+SET player.score "ten"

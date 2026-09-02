@@ -199,7 +199,7 @@ If the object exists but the class does not declare that method, Claro now names
 Object Player has no method fly. Check the method name or add TEACH fly inside CLASS Player.
 ```
 
-For simple object fields created with `NEW Class name`, `claro typecheck` also catches direct wrong-type field assignments such as `SET player.score "ten"` when the class says `HAS score NUMBER`:
+For simple object fields created with `NEW Class name`, `claro typecheck` also catches direct wrong-type field assignments such as `SET player.score "ten"` when the class says `HAS score NUMBER`. This remains true if the `HAS` field appears after a simple method in the class, so learners get the field-type error instead of a misleading unknown-field hint:
 
 ```text
 Type mismatch for field player.score: expected NUMBER, but this value looks like TEXT.

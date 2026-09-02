@@ -68,6 +68,9 @@ EXPECTED = {
     "tests/typecheck_object_field_bad.claro": [
         "tests/typecheck_object_field_bad.claro:6: Type mismatch for field player.score: expected NUMBER, but this value looks like TEXT.",
     ],
+    "tests/typecheck_object_field_after_method_bad.claro": [
+        "tests/typecheck_object_field_after_method_bad.claro:10: Type mismatch for field player.score: expected NUMBER, but this value looks like TEXT.",
+    ],
     "tests/typecheck_object_field_text_bad.claro": [
         "tests/typecheck_object_field_text_bad.claro:6: Type mismatch for field player.name: expected TEXT, but this value looks like NUMBER.",
     ],
