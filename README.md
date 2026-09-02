@@ -150,6 +150,8 @@ Function square only accepts 1 argument, but this call gives 2. Remove the extra
 Function squre is not known yet. Check the function name or add TEACH squre before calling it.
 ```
 
+The unknown-function diagnostic is validated for both modern `DO squre 4` and compatibility `CALL squre WITH 4` calls.
+
 For functions with more than one checked parameter, Claro reports each mismatched argument with the parameter name:
 
 ```claro

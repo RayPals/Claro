@@ -110,7 +110,7 @@ Type mismatch for function label: parameter name needs TEXT, but this argument l
 Type mismatch for function label: parameter age needs NUMBER, but this argument looks like TEXT.
 ```
 
-If a learner mistypes a modern `DO` function name, `claro typecheck` now names the unknown function and suggests either checking the spelling or adding a matching `TEACH` block:
+If a learner mistypes a function name, `claro typecheck` now names the unknown function and suggests either checking the spelling or adding a matching `TEACH` block. This is covered for both modern `DO` and older compatibility `CALL ... WITH` calls:
 
 ```claro
 TEACH square amount
@@ -119,9 +119,10 @@ TEACH square amount
 END
 
 DO squre 4
+CALL squre WITH 4
 ```
 
-Output:
+Each form reports the same beginner-facing fix:
 
 ```text
 Function squre is not known yet. Check the function name or add TEACH squre before calling it.
