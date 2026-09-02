@@ -339,6 +339,12 @@ Both sides of this narrow field foundation are covered by validation: `tests/typ
 
 This slice is intentionally small: it covers direct `NEW Class object` plus `SET object.field value` cases in one file. Field declarations are collected even when a learner writes a simple method before a later `HAS` field, so the type checker can still report the field's declared type. Broader object flows, aliases, method return checks, and richer object signatures remain future work.
 
+Simple functions also get an arity check before running. If a learner defines `TEACH greet name` and then writes `DO greet` without the `name` argument, `claro typecheck` reports:
+
+```text
+Function greet needs 1 argument, but this call gives 0. Add the missing argument.
+```
+
 ## Status
 
 This is currently a static checker feature. It improves `claro typecheck` and validation confidence for `DO` and compatibility `CALL ... WITH` function calls, simple `DO object.method ...` calls where the object was created with `NEW Class name`, and direct assignments to known object fields. Runtime enforcement for every container mutation and richer function/object signatures can be added later after the syntax is classroom-tested.

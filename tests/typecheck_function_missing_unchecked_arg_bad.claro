@@ -1,0 +1,5 @@
+TEACH greet name
+    SAY name
+END
+
+DO greet

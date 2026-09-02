@@ -26,6 +26,9 @@ EXPECTED = {
     "tests/typecheck_function_missing_arg_bad.claro": [
         "tests/typecheck_function_missing_arg_bad.claro:6: Function square needs argument amount as NUMBER, but this call does not provide it.",
     ],
+    "tests/typecheck_function_missing_unchecked_arg_bad.claro": [
+        "tests/typecheck_function_missing_unchecked_arg_bad.claro:5: Function greet needs 1 argument, but this call gives 0. Add the missing argument.",
+    ],
     "tests/typecheck_function_extra_arg_bad.claro": [
         "tests/typecheck_function_extra_arg_bad.claro:6: Function square only accepts 1 argument, but this call gives 2. Remove the extra argument.",
     ],

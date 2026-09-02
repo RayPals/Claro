@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.18.26-dev missing unchecked function argument diagnostic
+
+- Added a focused negative `claro typecheck` fixture for calling a simple function without its declared argument, such as `TEACH greet name` followed by `DO greet`.
+- Improved the static arity check so simple functions without `CHECK TYPE` hints still report a beginner-facing missing-argument diagnostic.
+- Wired the fixture into the typecheck diagnostics validator and `claro validate`.
+
 ## v1.18.26-dev CI release validation coverage
 
 - Added `tools/validate_ci_workflow.py` to assert that Forgejo/Gitea CI keeps running Claro's current release gates.
