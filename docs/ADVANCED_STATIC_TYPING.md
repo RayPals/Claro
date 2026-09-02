@@ -345,6 +345,18 @@ Simple functions also get an arity check before running. If a learner defines `T
 Function greet needs 1 argument, but this call gives 0. Add the missing argument.
 ```
 
+The older compatibility spelling gets the same beginner-facing result when `WITH` is left empty:
+
+```claro
+CALL greet WITH
+```
+
+Output:
+
+```text
+Function greet needs 1 argument, but this call gives 0. Add the missing argument.
+```
+
 ## Status
 
 This is currently a static checker feature. It improves `claro typecheck` and validation confidence for `DO` and compatibility `CALL ... WITH` function calls, simple `DO object.method ...` calls where the object was created with `NEW Class name`, and direct assignments to known object fields. Runtime enforcement for every container mutation and richer function/object signatures can be added later after the syntax is classroom-tested.

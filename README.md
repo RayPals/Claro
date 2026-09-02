@@ -151,7 +151,7 @@ Function square only accepts 1 argument, but this call gives 2. Remove the extra
 Function squre is not known yet. Check the function name or add TEACH squre before calling it.
 ```
 
-The unknown-function diagnostic is validated for both modern `DO squre 4` and compatibility `CALL squre WITH 4` calls.
+The unknown-function diagnostic is validated for both modern `DO squre 4` and compatibility `CALL squre WITH 4` calls. Compatibility calls that leave `WITH` empty, such as `CALL greet WITH`, now count as zero arguments, so learners get the same missing-argument guidance as `DO greet` instead of the checker treating the blank as an argument.
 
 For functions with more than one checked parameter, Claro reports each mismatched argument with the parameter name:
 
