@@ -32,6 +32,20 @@ def main():
 
     with tempfile.TemporaryDirectory() as td:
         work = Path(td)
+
+        rc, out = run([str(EXE), "new", "StarterApp"], work)
+        if rc != 0:
+            fail(out)
+        starter = work / "StarterApp"
+        starter_project = read(starter / "claro.project")
+        for phrase in ["manifest-version: 1", "name: StarterApp", "main: main.claro", "version: v1.18.26", "packages:"]:
+            if phrase not in starter_project:
+                fail(f"claro new project file missing {phrase!r}:\n{starter_project}")
+        starter_lock = read(starter / "claro.lock")
+        for phrase in ["lock-version: 1", "version: v1.18.26"]:
+            if phrase not in starter_lock:
+                fail(f"claro new lockfile missing {phrase!r}:\n{starter_lock}")
+
         (work / "main.claro").write_text('SAY "Package security demo"\n', encoding="utf-8")
 
         rc, out = run([str(EXE), "package", "init"], work)

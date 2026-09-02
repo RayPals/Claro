@@ -293,6 +293,8 @@ claro.lock
 packages/
 ```
 
+Starter projects created with `claro new MyProject` use the same `manifest-version: 1` and `lock-version: 1` headers as `claro package init`, so the first project files match the package maintenance tools.
+
 Package names are checked so unsafe names such as `../bad` are rejected when adding packages. Names must also be 64 characters or fewer, which keeps generated package paths predictable. If an unsafe name is already present in `claro.project`, `claro package doctor`, `claro package lock`, and lockfile refreshes during `claro package remove` flag it instead of treating it as safe lockfile data.
 
 
