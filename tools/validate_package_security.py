@@ -131,6 +131,12 @@ def main():
         if "BAD package name: ../bad" not in out:
             fail(f"package lock unsafe-name diagnostic was unclear:\n{out}")
 
+        rc, out = run([str(EXE), "package", "init"], work)
+        if rc == 0:
+            fail("package init must not report success while unsafe package names remain in claro.project")
+        if "BAD package name: ../bad" not in out:
+            fail(f"package init existing unsafe-name diagnostic was unclear:\n{out}")
+
         rc, out = run([str(EXE), "package", "add", "science"], work)
         if rc == 0:
             fail("package add must not report success while unsafe package names remain in claro.project")

@@ -295,7 +295,7 @@ packages/
 
 Starter projects created with `claro new MyProject` use the same `manifest-version: 1` and `lock-version: 1` headers as `claro package init`, so the first project files match the package maintenance tools.
 
-Project names and package names are checked so unsafe names such as `../bad` are rejected before Claro creates folders. Names must also be 64 characters or fewer, which keeps generated project and package paths predictable. If an unsafe package name is already present in `claro.project`, `claro package doctor`, `claro package lock`, `claro package add`, and lockfile refreshes during `claro package remove` flag it instead of treating it as safe lockfile data. `claro package remove` can also remove the exact unsafe entry, so a learner can repair a bad project file without Claro using that unsafe name as a folder path.
+Project names and package names are checked so unsafe names such as `../bad` are rejected before Claro creates folders. Names must also be 64 characters or fewer, which keeps generated project and package paths predictable. If an unsafe package name is already present in `claro.project`, `claro package doctor`, `claro package lock`, `claro package init`, `claro package add`, and lockfile refreshes during `claro package remove` flag it instead of treating it as safe lockfile data. `claro package remove` can also remove the exact unsafe entry, so a learner can repair a bad project file without Claro using that unsafe name as a folder path.
 
 
 ## Standard-library path and collection helpers
