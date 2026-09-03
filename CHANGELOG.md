@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.18.26-dev package list unsafe-name diagnostic
+
+- Added focused package-security validation for `claro package list` when `claro.project` already contains an unsafe package name such as `../bad`.
+- Changed `claro package list` to fail with the existing beginner-facing `BAD package name: ...` diagnostic instead of displaying unsafe entries as normal package names.
+
 ## v1.18.26-dev missing unchecked function argument diagnostic
 
 - Added a focused negative `claro typecheck` fixture for calling a simple function without its declared argument, such as `TEACH greet name` followed by `DO greet`.

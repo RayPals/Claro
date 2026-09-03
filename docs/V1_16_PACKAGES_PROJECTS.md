@@ -101,7 +101,7 @@ folder/name
 bad name
 ```
 
-If an unsafe package name somehow gets into `claro.project`, package maintenance commands should not quietly continue. `claro package doctor` points out the bad name, `claro package lock` refuses to write lockfile data for it, `claro package init` refuses to report the project ready while the unsafe entry remains, and `claro package remove NAME` exits with an error if the lockfile refresh still sees an unsafe package name after the removal. Learners can still recover by removing the exact unsafe entry, such as `claro package remove ../bad`; Claro rewrites the project file and lockfile without using that unsafe name as a folder path.
+If an unsafe package name somehow gets into `claro.project`, package maintenance commands should not quietly continue. `claro package doctor` points out the bad name, `claro package lock` refuses to write lockfile data for it, `claro package list` refuses to display it as a normal package, `claro package init` refuses to report the project ready while the unsafe entry remains, and `claro package remove NAME` exits with an error if the lockfile refresh still sees an unsafe package name after the removal. Learners can still recover by removing the exact unsafe entry, such as `claro package remove ../bad`; Claro rewrites the project file and lockfile without using that unsafe name as a folder path.
 
 ## Why this matters
 
