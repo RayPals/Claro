@@ -123,6 +123,12 @@ def main():
             fail("package doctor must reject a manifest whose name does not match the project package")
         if "BAD package manifest name: math-tools" not in out:
             fail(f"package doctor manifest-name diagnostic was unclear:\n{out}")
+        manifest_path.write_text(manifest.replace("name: math-tools", "name: math-tools-extra"), encoding="utf-8")
+        rc, out = run([str(EXE), "package", "doctor"], work)
+        if rc == 0:
+            fail("package doctor must reject a manifest name that only starts with the project package name")
+        if "BAD package manifest name: math-tools" not in out:
+            fail(f"Package manifest prefix-match diagnostic was unclear:\n{out}")
         manifest_path.write_text(manifest, encoding="utf-8")
 
         (work / "claro.lock").write_text(

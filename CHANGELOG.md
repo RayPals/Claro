@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.18.26-dev exact package manifest-name validation
+
+- Added package-security coverage for a manifest name that only starts with the expected package name, such as `name: math-tools-extra` for package `math-tools`.
+- Changed `claro package doctor` to compare the complete `name:` value, preventing prefix matches from being accepted as valid manifests.
+
 ## v1.18.26-dev package list unsafe-name diagnostic
 
 - Added focused package-security validation for `claro package list` when `claro.project` already contains an unsafe package name such as `../bad`.
