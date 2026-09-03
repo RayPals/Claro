@@ -152,6 +152,18 @@ def main():
         if "BAD package name: ../bad" not in out:
             fail(f"package remove unsafe-name diagnostic was unclear:\n{out}")
 
+        rc, out = run([str(EXE), "package", "remove", "../bad"], work)
+        if rc != 0:
+            fail(f"package remove should let learners remove an unsafe package entry from claro.project:\n{out}")
+        if "Removed package from project: ../bad" not in out:
+            fail(f"package remove unsafe-entry recovery output was unclear:\n{out}")
+        project_after_bad_remove = read(work / "claro.project")
+        if "package: ../bad" in project_after_bad_remove:
+            fail("package remove should remove the unsafe package entry from claro.project")
+        lock_after_bad_remove = read(work / "claro.lock")
+        if "package: ../bad" in lock_after_bad_remove:
+            fail("package remove should not keep unsafe package entries in claro.lock after recovery")
+
     print("Package security validation OK")
 
 
