@@ -297,6 +297,8 @@ packages/
 `claro package doctor` also checks that every listed package has a manifest whose
 `name:` matches the package name in `claro.project`; a mismatch is reported as
 `BAD package manifest name` instead of being treated as a healthy package.
+It also compares the complete `checksum:` field, so extra or trailing checksum
+text is rejected as `BAD package checksum`.
 
 Starter projects created with `claro new MyProject` use the same `manifest-version: 1` and `lock-version: 1` headers as `claro package init`, so the first project files match the package maintenance tools.
 

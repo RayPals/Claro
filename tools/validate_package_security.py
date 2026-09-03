@@ -104,6 +104,16 @@ def main():
             fail(f"package doctor stale-lock diagnostic was unclear:\n{out}")
         (work / "claro.lock").write_text(lock, encoding="utf-8")
 
+        checksum_line = next((line for line in manifest.splitlines() if line.startswith("checksum:")), "")
+        checksum = checksum_line.split(":", 1)[1].strip()
+        manifest_path.write_text(manifest.replace("checksum: " + checksum, "checksum: " + checksum + "-extra"), encoding="utf-8")
+        rc, out = run([str(EXE), "package", "doctor"], work)
+        if rc == 0:
+            fail("package doctor must reject a manifest checksum with trailing data")
+        if "BAD package checksum: math-tools" not in out:
+            fail(f"Package manifest checksum diagnostic was unclear:\n{out}")
+        manifest_path.write_text(manifest, encoding="utf-8")
+
         rc, out = run([str(EXE), "package", "doctor"], work)
         if rc != 0:
             fail(out)

@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.18.26-dev exact package checksum validation
+
+- Added package-security coverage for a manifest checksum with valid digest text followed by extra data.
+- Changed `claro package doctor` to compare the complete `checksum:` field instead of accepting a checksum as a substring.
+
 ## v1.18.26-dev exact package manifest-name validation
 
 - Added package-security coverage for a manifest name that only starts with the expected package name, such as `name: math-tools-extra` for package `math-tools`.
