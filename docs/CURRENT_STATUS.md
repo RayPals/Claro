@@ -98,7 +98,7 @@ Ready now:
 - local project files such as `claro.project`, `claro.lock`, and `packages/`
 - starter projects from `claro new` now use the same manifest-version and lock-version headers as `claro package init`
 - project-name safety checks for `claro new`, so unsafe names such as `../bad` are rejected before Claro creates folders
-- package-name safety checks when adding packages, including the 64-character package-name limit, when `claro package doctor` audits an existing `claro.project`, when `claro package lock` writes lockfile data, when `claro package list` shows existing packages, when `claro package init` sees unsafe names already present in `claro.project`, when `claro package add` sees unsafe names already present in `claro.project`, when `claro package remove` refreshes the lockfile after an edit, when learners need to remove an unsafe package entry that is already present, and when `claro package doctor` verifies lockfile checksums for listed packages
+- package-name safety checks when adding packages, including the 64-character package-name limit, when `claro package doctor` audits an existing `claro.project`, when `claro package lock` writes lockfile data, when `claro package list` shows existing packages, when `claro package init` sees unsafe names already present in `claro.project`, when `claro package add` sees unsafe names already present in `claro.project`, when `claro package remove` refreshes the lockfile after an edit, when learners need to remove an unsafe package entry that is already present, when `claro package doctor` verifies lockfile checksums for listed packages, and when `claro package doctor` rejects lockfile package entries that are not listed in `claro.project`
 
 Still needed:
 - install from local path

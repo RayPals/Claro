@@ -111,6 +111,17 @@ def main():
             if phrase not in out:
                 fail(f"package doctor output missing {phrase!r}:\n{out}")
 
+        (work / "claro.lock").write_text(
+            lock + "package: ghost\nchecksum: 12345678\n",
+            encoding="utf-8",
+        )
+        rc, out = run([str(EXE), "package", "doctor"], work)
+        if rc == 0:
+            fail("package doctor must reject lockfile packages that are not listed in claro.project")
+        if "BAD lock package not in claro.project: ghost" not in out:
+            fail(f"package doctor orphan-lock diagnostic was unclear:\n{out}")
+        (work / "claro.lock").write_text(lock, encoding="utf-8")
+
         rc, out = run([str(EXE), "package", "add", "../bad"], work)
         if rc == 0:
             fail("Unsafe package names with path separators must be rejected")
