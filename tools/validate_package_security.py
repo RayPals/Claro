@@ -31,7 +31,26 @@ def main():
         fail(f"Expected {EXPECTED_VERSION}, got:\n{out}")
 
     with tempfile.TemporaryDirectory() as td:
-        work = Path(td)
+        root = Path(td)
+        work = root / "work"
+        work.mkdir()
+
+        rc, out = run([str(EXE), "new", "../bad"], work)
+        if rc == 0:
+            fail("Unsafe project names with path separators must be rejected")
+        if "Project names may use only" not in out:
+            fail(f"Unsafe project-name diagnostic was unclear:\n{out}")
+        if (root / "bad").exists():
+            fail("Unsafe project name should not create a folder outside the current project area")
+
+        long_project_name = "P" * 65
+        rc, out = run([str(EXE), "new", long_project_name], work)
+        if rc == 0:
+            fail("Project names longer than 64 characters must be rejected before paths are created")
+        if "Project names must be 64 characters or fewer" not in out:
+            fail(f"Long project-name diagnostic was unclear:\n{out}")
+        if (work / long_project_name).exists():
+            fail("Long project name should not create a project folder")
 
         rc, out = run([str(EXE), "new", "StarterApp"], work)
         if rc != 0:

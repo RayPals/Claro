@@ -65,7 +65,13 @@ checksum: 1234abcd
 
 `claro.lock` records the release version, lock format, packages, and checksums so future registry work has a stable safety foundation.
 
-## Safety rules
+## Project-name safety
+
+`claro new NAME` checks the project name before creating folders. Project names may use only letters, numbers, dash, and underscore, and they must be 64 characters or fewer.
+
+This keeps mistakes like `../bad` from creating a project outside the folder where the learner is working.
+
+## Package-name safety
 
 Package names may use only:
 
