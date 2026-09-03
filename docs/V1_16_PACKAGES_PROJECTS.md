@@ -63,7 +63,7 @@ source: local
 checksum: 1234abcd
 ```
 
-`claro.lock` records the release version, lock format, packages, and checksums so future registry work has a stable safety foundation.
+`claro.lock` records the release version, lock format, packages, and checksums so future registry work has a stable safety foundation. `claro package doctor` checks those lockfile checksums for listed packages and reports `BAD lock checksum: name` if the lockfile is stale or edited incorrectly.
 
 ## Project-name safety
 

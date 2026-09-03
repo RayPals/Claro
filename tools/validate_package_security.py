@@ -93,10 +93,21 @@ def main():
             if phrase not in lock:
                 fail(f"claro.lock missing {phrase!r}:\n{lock}")
 
+        (work / "claro.lock").write_text(
+            lock.replace("checksum:", "checksum: bad", 1),
+            encoding="utf-8",
+        )
+        rc, out = run([str(EXE), "package", "doctor"], work)
+        if rc == 0:
+            fail("package doctor must reject stale lockfile checksums")
+        if "BAD lock checksum: math-tools" not in out:
+            fail(f"package doctor stale-lock diagnostic was unclear:\n{out}")
+        (work / "claro.lock").write_text(lock, encoding="utf-8")
+
         rc, out = run([str(EXE), "package", "doctor"], work)
         if rc != 0:
             fail(out)
-        for phrase in ["OK package manifest: math-tools", "OK package checksum: math-tools", "Package/project files look ready."]:
+        for phrase in ["OK package manifest: math-tools", "OK package checksum: math-tools", "OK lock checksum: math-tools", "Package/project files look ready."]:
             if phrase not in out:
                 fail(f"package doctor output missing {phrase!r}:\n{out}")
 
