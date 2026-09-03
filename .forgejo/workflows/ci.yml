@@ -21,6 +21,8 @@ jobs:
         run: python3 tools/validate_typecheck_diagnostics.py
       - name: Validate version convention
         run: python3 tools/validate_version_convention.py
+      - name: Validate package security
+        run: python3 tools/validate_package_security.py
       - name: Validate CI workflow coverage
         run: python3 tools/validate_ci_workflow.py
       - name: Check lessons
