@@ -131,6 +131,17 @@ def main():
         if "BAD package name: ../bad" not in out:
             fail(f"package lock unsafe-name diagnostic was unclear:\n{out}")
 
+        rc, out = run([str(EXE), "package", "add", "science"], work)
+        if rc == 0:
+            fail("package add must not report success while unsafe package names remain in claro.project")
+        if "BAD package name: ../bad" not in out:
+            fail(f"package add existing unsafe-name diagnostic was unclear:\n{out}")
+        project_after_failed_add = read(work / "claro.project")
+        if "package: science" in project_after_failed_add:
+            fail("package add should not append a package while unsafe names remain in claro.project")
+        if (work / "packages" / "science").exists():
+            fail("package add should not create a package folder while unsafe names remain in claro.project")
+
         (work / "claro.project").write_text(
             "manifest-version: 1\nname: ClaroProject\nmain: main.claro\nversion: v1.18.26\npackages:\npackage: math-tools\npackage: ../bad\n",
             encoding="utf-8",
