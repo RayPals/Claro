@@ -111,6 +111,20 @@ def main():
             if phrase not in out:
                 fail(f"package doctor output missing {phrase!r}:\n{out}")
 
+        manifest_path.unlink()
+        rc, out = run([str(EXE), "package", "doctor"], work)
+        if rc == 0:
+            fail("package doctor must reject a listed package whose manifest is missing")
+        if "MISSING package manifest: math-tools" not in out:
+            fail(f"package doctor missing-manifest diagnostic was unclear:\n{out}")
+        manifest_path.write_text(manifest.replace("name: math-tools", "name: other-tools"), encoding="utf-8")
+        rc, out = run([str(EXE), "package", "doctor"], work)
+        if rc == 0:
+            fail("package doctor must reject a manifest whose name does not match the project package")
+        if "BAD package manifest name: math-tools" not in out:
+            fail(f"package doctor manifest-name diagnostic was unclear:\n{out}")
+        manifest_path.write_text(manifest, encoding="utf-8")
+
         (work / "claro.lock").write_text(
             lock + "package: ghost\nchecksum: 12345678\n",
             encoding="utf-8",
