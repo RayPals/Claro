@@ -185,6 +185,17 @@ def main():
             fail(f"package doctor orphan-lock diagnostic was unclear:\n{out}")
         (work / "claro.lock").write_text(lock, encoding="utf-8")
 
+        (work / "claro.lock").write_text(
+            lock + "package: math-tools\nchecksum: " + checksum + "\n",
+            encoding="utf-8",
+        )
+        rc, out = run([str(EXE), "package", "doctor"], work)
+        if rc == 0:
+            fail("package doctor must reject duplicate lockfile package entries")
+        if "DUPLICATE lock package: math-tools" not in out:
+            fail(f"package doctor duplicate-lock diagnostic was unclear:\n{out}")
+        (work / "claro.lock").write_text(lock, encoding="utf-8")
+
         (work / "claro.project").write_text(
             project + "package: math-tools\npackage: math-tools\n",
             encoding="utf-8",
