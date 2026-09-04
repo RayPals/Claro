@@ -104,6 +104,7 @@ Ready now:
 - `claro package doctor` requires the complete supported `manifest-version: 1` value, so a prefix such as `manifest-version: 10` cannot be accepted
 - `claro package doctor` compares the complete manifest `checksum:` value, so a valid checksum followed by extra text is rejected
 - `claro package doctor` requires the complete supported `manifest-version: 1` value in `claro.project`, so a prefix such as `manifest-version: 10` is rejected
+- `claro package doctor` requires the complete supported `version: 1` value in each local package manifest, so a prefix such as `version: 10` is rejected
 
 Still needed:
 - install from local path
