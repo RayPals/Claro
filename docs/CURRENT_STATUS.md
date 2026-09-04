@@ -109,6 +109,7 @@ Ready now:
 - package project entries must be unique; `claro package doctor`, `list`, `add`, `init`, and `lock` reject duplicate names instead of generating ambiguous package or lockfile data
 - lockfile package entries must also be unique; `claro package doctor` reports duplicate lock entries instead of accepting ambiguous package/checksum data
 - package manifest `name:` entries must also be unique; `claro package doctor` reports `BAD package manifest name` instead of accepting ambiguous package identity data
+- package manifest `checksum:` entries must also be unique; `claro package doctor` reports `BAD package checksum` instead of accepting ambiguous integrity data
 
 Still needed:
 - install from local path

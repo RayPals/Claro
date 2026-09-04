@@ -4,6 +4,7 @@
 
 - `claro package doctor` now rejects duplicate package entries in `claro.lock` instead of allowing ambiguous lockfile data.
 - `claro package doctor` now rejects duplicate `name:` entries in a package manifest instead of accepting ambiguous package identity data.
+- `claro package doctor` now rejects duplicate `checksum:` entries in a package manifest instead of accepting ambiguous integrity data.
 - `claro package doctor` now rejects listed package manifests whose `version:` only starts with the supported local package version, such as `version: 10`.
 - `claro package doctor` now rejects listed package manifests whose `source:` only starts with the supported local source, such as `source: local-extra`.
 - `claro package doctor` now rejects project files whose `manifest-version:` only starts with the supported value, such as `manifest-version: 10`.

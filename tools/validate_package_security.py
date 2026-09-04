@@ -156,6 +156,15 @@ def main():
             fail(f"Package duplicate manifest-name diagnostic was unclear:\n{out}")
         manifest_path.write_text(manifest, encoding="utf-8")
 
+        duplicate_checksum_manifest = manifest + "checksum: " + checksum + "\n"
+        manifest_path.write_text(duplicate_checksum_manifest, encoding="utf-8")
+        rc, out = run([str(EXE), "package", "doctor"], work)
+        if rc == 0:
+            fail("package doctor must reject duplicate package manifest checksums")
+        if "BAD package checksum: math-tools" not in out:
+            fail(f"Package duplicate checksum diagnostic was unclear:\n{out}")
+        manifest_path.write_text(manifest, encoding="utf-8")
+
         rc, out = run([str(EXE), "package", "doctor"], work)
         if rc != 0:
             fail(out)
