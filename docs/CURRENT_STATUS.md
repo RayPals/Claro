@@ -111,6 +111,7 @@ Ready now:
 - package manifest `name:` entries must also be unique; `claro package doctor` reports `BAD package manifest name` instead of accepting ambiguous package identity data
 - package manifest `checksum:` entries must also be unique; `claro package doctor` reports `BAD package checksum` instead of accepting ambiguous integrity data
 - package manifest `version:` entries must also be unique and must contain exactly `1`; `claro package doctor` reports `BAD package version` instead of accepting ambiguous package metadata
+- project manifests must contain exactly one `manifest-version: 1` field; duplicate or prefix-matching values are rejected with `BAD project manifest version: expected 1`
 - project manifests must contain exactly one non-empty `name:` field; `claro package doctor` reports `BAD project manifest name: expected a non-empty name` when the project identity is missing or blank
 
 Still needed:

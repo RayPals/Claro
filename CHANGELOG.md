@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- `claro package doctor` now rejects duplicate `manifest-version:` fields in `claro.project` instead of accepting the first value and overlooking ambiguous project metadata.
+
 - `claro package doctor` now rejects duplicate package entries in `claro.lock` instead of allowing ambiguous lockfile data.
 - `claro package doctor` now rejects duplicate `name:` entries in a package manifest instead of accepting ambiguous package identity data.
 - `claro package doctor` now rejects duplicate `checksum:` entries in a package manifest instead of accepting ambiguous integrity data.

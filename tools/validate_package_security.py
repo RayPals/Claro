@@ -234,6 +234,14 @@ def main():
         if "BAD project manifest name: expected a non-empty name" not in out:
             fail(f"Package project-name diagnostic was unclear:\n{out}")
         (work / "claro.project").write_text(project, encoding="utf-8")
+        duplicate_project_manifest = project_with_package + "manifest-version: 1\n"
+        (work / "claro.project").write_text(duplicate_project_manifest, encoding="utf-8")
+        rc, out = run([str(EXE), "package", "doctor"], work)
+        if rc == 0:
+            fail("package doctor must reject duplicate project manifest versions")
+        if "BAD project manifest version: expected 1" not in out:
+            fail(f"Package duplicate project manifest-version diagnostic was unclear:\n{out}")
+        (work / "claro.project").write_text(project, encoding="utf-8")
 
         (work / "claro.project").write_text(
             project + "package: math-tools\npackage: math-tools\n",
