@@ -117,6 +117,7 @@ def main():
 
         checksum_line = next((line for line in manifest.splitlines() if line.startswith("checksum:")), "")
         checksum = checksum_line.split(":", 1)[1].strip()
+        project_with_package = read(work / "claro.project")
         manifest_path.write_text(manifest.replace("checksum: " + checksum, "checksum: " + checksum + "-extra"), encoding="utf-8")
         rc, out = run([str(EXE), "package", "doctor"], work)
         if rc == 0:
@@ -213,6 +214,18 @@ def main():
         if "DUPLICATE lock package: math-tools" not in out:
             fail(f"package doctor duplicate-lock diagnostic was unclear:\n{out}")
         (work / "claro.lock").write_text(lock, encoding="utf-8")
+        (work / "claro.project").write_text(project_with_package, encoding="utf-8")
+
+        (work / "claro.project").write_text(
+            project_with_package.replace("name: ClaroProject", "name:", 1),
+            encoding="utf-8",
+        )
+        rc, out = run([str(EXE), "package", "doctor"], work)
+        if rc == 0:
+            fail("package doctor must reject a project manifest with an empty name")
+        if "BAD project manifest name: expected a non-empty name" not in out:
+            fail(f"Package project-name diagnostic was unclear:\n{out}")
+        (work / "claro.project").write_text(project, encoding="utf-8")
 
         (work / "claro.project").write_text(
             project + "package: math-tools\npackage: math-tools\n",

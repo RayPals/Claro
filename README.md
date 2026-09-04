@@ -299,6 +299,8 @@ packages/
 `BAD package manifest name` instead of being treated as a healthy package.
 It also compares the complete `checksum:` field, so extra or trailing checksum
 text, or a duplicate checksum field, is rejected as `BAD package checksum`.
+The project manifest must also contain exactly one non-empty `name:` field;
+otherwise doctor reports `BAD project manifest name: expected a non-empty name`.
 
 Starter projects created with `claro new MyProject` use the same `manifest-version: 1` and `lock-version: 1` headers as `claro package init`, so the first project files match the package maintenance tools.
 
