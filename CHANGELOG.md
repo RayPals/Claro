@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.18.26-dev exact package manifest-version validation
+
+- Added package-security coverage for a manifest version that only starts with the supported version, such as `manifest-version: 10` for the current `manifest-version: 1` format.
+- Changed `claro package doctor` to compare the complete `manifest-version:` value instead of accepting a version as a substring.
+
 ## v1.18.26-dev exact package checksum validation
 
 - Added package-security coverage for a manifest checksum with valid digest text followed by extra data.

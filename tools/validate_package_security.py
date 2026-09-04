@@ -113,6 +113,13 @@ def main():
         if "BAD package checksum: math-tools" not in out:
             fail(f"Package manifest checksum diagnostic was unclear:\n{out}")
         manifest_path.write_text(manifest, encoding="utf-8")
+        manifest_path.write_text(manifest.replace("manifest-version: 1", "manifest-version: 10"), encoding="utf-8")
+        rc, out = run([str(EXE), "package", "doctor"], work)
+        if rc == 0:
+            fail("package doctor must reject a manifest version that only starts with the supported version")
+        if "MISSING package manifest: math-tools" not in out:
+            fail(f"Package manifest-version diagnostic was unclear:\n{out}")
+        manifest_path.write_text(manifest, encoding="utf-8")
 
         rc, out = run([str(EXE), "package", "doctor"], work)
         if rc != 0:

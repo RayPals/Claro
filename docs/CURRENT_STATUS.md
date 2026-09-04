@@ -101,6 +101,7 @@ Ready now:
 - package-name safety checks when adding packages, including the 64-character package-name limit, when `claro package doctor` audits an existing `claro.project`, when `claro package lock` writes lockfile data, when `claro package list` shows existing packages, when `claro package init` sees unsafe names already present in `claro.project`, when `claro package add` sees unsafe names already present in `claro.project`, when `claro package remove` refreshes the lockfile after an edit, when learners need to remove an unsafe package entry that is already present, when `claro package doctor` verifies lockfile checksums for listed packages, and when `claro package doctor` rejects lockfile package entries that are not listed in `claro.project`
 - `claro package doctor` rejects a listed package manifest whose `name:` does not match the package name in `claro.project`
 - `claro package doctor` compares the complete manifest `name:` value, so a prefix such as `math-tools-extra` cannot be accepted for package `math-tools`
+- `claro package doctor` requires the complete supported `manifest-version: 1` value, so a prefix such as `manifest-version: 10` cannot be accepted
 - `claro package doctor` compares the complete manifest `checksum:` value, so a valid checksum followed by extra text is rejected
 
 Still needed:
