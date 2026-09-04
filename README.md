@@ -89,6 +89,7 @@ END
 NEW Player player
 SET player.name "Jon"
 SET player.score 10
+SET player.score player.score + 1
 
 DO player.show
 DO player.add 5

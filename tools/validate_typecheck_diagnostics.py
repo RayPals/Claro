@@ -101,6 +101,9 @@ EXPECTED = {
     "tests/typecheck_object_field_unknown_expression_bad.claro": [
         "tests/typecheck_object_field_unknown_expression_bad.claro:7: Object Player has no field level. Check the field name or add the field to the class with the right type.",
     ],
+    "tests/typecheck_object_field_expression_bad.claro": [
+        "tests/typecheck_object_field_expression_bad.claro:8: Type mismatch for field player.score: expected NUMBER, but this value looks like TEXT.",
+    ],
     "tests/typecheck_object_field_check_type_text_bad.claro": [
         "tests/typecheck_object_field_check_type_text_bad.claro:7: Type check failed: expected NUMBER, but player.name looks like TEXT.",
     ],
@@ -133,6 +136,7 @@ EXPECTED_OK = [
     "tests/typecheck_method_good.claro",
     "tests/typecheck_method_call_good.claro",
     "tests/typecheck_object_field_good.claro",
+    "tests/typecheck_object_field_expression_good.claro",
     "tests/typecheck_object_field_text_good.claro",
     "tests/typecheck_object_field_yesno_good.claro",
     "tests/typecheck_object_field_check_type_number_good.claro",

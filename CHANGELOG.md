@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Object-field expression validation
+
+- Added positive and negative typecheck fixtures for assigning object fields from another field and from an arithmetic field expression.
+- Added both fixtures to `claro validate` and the focused typecheck diagnostics validator.
+
 - `claro package doctor` now rejects duplicate `manifest-version:` fields in `claro.project` instead of accepting the first value and overlooking ambiguous project metadata.
 
 - `claro package doctor` now rejects duplicate package entries in `claro.lock` instead of allowing ambiguous lockfile data.
