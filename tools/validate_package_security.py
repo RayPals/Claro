@@ -139,6 +139,14 @@ def main():
             fail(f"Package manifest version diagnostic was unclear:\n{out}")
         manifest_path.write_text(manifest, encoding="utf-8")
 
+        manifest_path.write_text(manifest.replace("source: local", "source: local-extra"), encoding="utf-8")
+        rc, out = run([str(EXE), "package", "doctor"], work)
+        if rc == 0:
+            fail("package doctor must reject a package source that only starts with the supported source")
+        if "BAD package source: math-tools" not in out:
+            fail(f"Package manifest source diagnostic was unclear:\n{out}")
+        manifest_path.write_text(manifest, encoding="utf-8")
+
         rc, out = run([str(EXE), "package", "doctor"], work)
         if rc != 0:
             fail(out)

@@ -3,6 +3,7 @@
 ## Unreleased
 
 - `claro package doctor` now rejects listed package manifests whose `version:` only starts with the supported local package version, such as `version: 10`.
+- `claro package doctor` now rejects listed package manifests whose `source:` only starts with the supported local source, such as `source: local-extra`.
 - `claro package doctor` now rejects project files whose `manifest-version:` only starts with the supported value, such as `manifest-version: 10`.
 
 ## v1.18.26-dev exact package manifest-version validation
