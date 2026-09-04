@@ -75,6 +75,17 @@ def main():
             if phrase not in project:
                 fail(f"claro.project missing {phrase!r}:\n{project}")
 
+        (work / "claro.project").write_text(
+            project.replace("manifest-version: 1", "manifest-version: 10", 1),
+            encoding="utf-8",
+        )
+        rc, out = run([str(EXE), "package", "doctor"], work)
+        if rc == 0:
+            fail("package doctor must reject a project manifest version that only starts with the supported version")
+        if "BAD project manifest version: expected 1" not in out:
+            fail(f"Package project manifest-version diagnostic was unclear:\n{out}")
+        (work / "claro.project").write_text(project, encoding="utf-8")
+
         rc, out = run([str(EXE), "package", "add", "math-tools"], work)
         if rc != 0:
             fail(out)

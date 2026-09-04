@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- `claro package doctor` now rejects project files whose `manifest-version:` only starts with the supported value, such as `manifest-version: 10`.
+
 ## v1.18.26-dev exact package manifest-version validation
 
 - Added package-security coverage for a manifest version that only starts with the supported version, such as `manifest-version: 10` for the current `manifest-version: 1` format.
