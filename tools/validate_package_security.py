@@ -156,6 +156,20 @@ def main():
             fail(f"Package manifest source diagnostic was unclear:\n{out}")
         manifest_path.write_text(manifest, encoding="utf-8")
 
+        for sources in [("local", "local"), ("local", "remote"), ("remote", "local")]:
+            duplicate_source_manifest = manifest.replace(
+                "source: local", "\n".join("source: " + source for source in sources), 1
+            )
+            manifest_path.write_text(duplicate_source_manifest, encoding="utf-8")
+            rc, out = run([str(EXE), "package", "doctor"], work)
+            if rc == 0:
+                fail(f"package doctor must reject duplicate package manifest sources: {sources}")
+            if "BAD package source: math-tools" not in out:
+                fail(f"Package duplicate source diagnostic was unclear:\n{out}")
+            if read(manifest_path) != duplicate_source_manifest:
+                fail("package doctor must not rewrite a manifest with duplicate sources")
+        manifest_path.write_text(manifest, encoding="utf-8")
+
         duplicate_name_manifest = manifest + "name: other-tools\n"
         manifest_path.write_text(duplicate_name_manifest, encoding="utf-8")
         rc, out = run([str(EXE), "package", "doctor"], work)
