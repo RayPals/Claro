@@ -67,6 +67,8 @@ checksum: 1234abcd
 
 If `package doctor` reports `BAD package source: math-tools`, open `packages/math-tools/claro.package` and keep exactly one `source: local` line. Duplicate `source:` lines are rejected even when both say `local`, or when a valid line appears before or after an unsupported source. The doctor leaves the file unchanged so you can review and repair it yourself.
 
+If `package doctor` reports `BAD lock checksum: math-tools`, check the `math-tools` entry in `claro.lock`. Each package must have exactly one matching `checksum:` line. Duplicate checksums are rejected even when they agree, or when a correct checksum appears before or after an incorrect one. The doctor leaves the file unchanged. After reviewing your project and package manifests, run `claro package lock` to regenerate the lockfile, then run `claro package doctor` again.
+
 ## Project-name safety
 
 `claro new NAME` checks the project name before creating folders. Project names may use only letters, numbers, dash, and underscore, and they must be 64 characters or fewer.

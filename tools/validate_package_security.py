@@ -115,6 +115,22 @@ def main():
             fail(f"package doctor stale-lock diagnostic was unclear:\n{out}")
         (work / "claro.lock").write_text(lock, encoding="utf-8")
 
+        for sums in [(checksum, checksum), (checksum, "bad"), ("bad", checksum)]:
+            duplicate_lock = lock.replace(
+                "checksum: " + checksum,
+                "\n".join("checksum: " + value for value in sums),
+                1,
+            )
+            (work / "claro.lock").write_text(duplicate_lock, encoding="utf-8")
+            rc, out = run([str(EXE), "package", "doctor"], work)
+            if rc == 0:
+                fail(f"package doctor must reject duplicate lock checksums: {sums}")
+            if "BAD lock checksum: math-tools" not in out:
+                fail(f"Duplicate lock checksum diagnostic was unclear:\n{out}")
+            if read(work / "claro.lock") != duplicate_lock:
+                fail("package doctor must not rewrite a lockfile with duplicate checksums")
+        (work / "claro.lock").write_text(lock, encoding="utf-8")
+
         checksum_line = next((line for line in manifest.splitlines() if line.startswith("checksum:")), "")
         checksum = checksum_line.split(":", 1)[1].strip()
         project_with_package = read(work / "claro.project")
