@@ -105,6 +105,7 @@ Ready now:
 - `claro package doctor` compares the complete manifest `checksum:` value, so a valid checksum followed by extra text is rejected
 - `claro package doctor` requires the complete supported `manifest-version: 1` value in `claro.project`, so a prefix such as `manifest-version: 10` is rejected
 - `claro package doctor` requires the complete supported `version: 1` value in each local package manifest, so a prefix such as `version: 10` is rejected
+- `claro package doctor` requires exactly one current `version: v1.18.26` line in `claro.lock`, so stale, missing, blank, or duplicate lockfile release versions are rejected
 - `claro package doctor` requires the complete supported `source: local` value in each local package manifest, so a prefix such as `source: local-extra` is rejected
 - package project entries must be unique; `claro package doctor`, `list`, `add`, `init`, and `lock` reject duplicate names instead of generating ambiguous package or lockfile data
 - lockfile package entries must also be unique; `claro package doctor` reports duplicate lock entries instead of accepting ambiguous package/checksum data

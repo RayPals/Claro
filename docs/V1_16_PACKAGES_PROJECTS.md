@@ -77,7 +77,13 @@ If `package doctor` reports `BAD lock checksum: math-tools`, check the `math-too
 BAD lock version: expected exactly one lock-version: 1 line
 ```
 
-The doctor leaves your files unchanged. After reviewing your project and package manifests, run `claro package lock` to regenerate the lockfile, then run `claro package doctor` again. Spaces around the value and capitalization of the field name are accepted, as with other lockfile fields. Valid generated lockfiles continue to work unchanged; this check does not add registry downloads or verify package content hashes.
+The lockfile must also contain exactly one current release line, `version: v1.18.26`. A missing, stale, blank, or duplicate release line fails with:
+
+```text
+BAD lock release version: expected exactly one version: v1.18.26 line
+```
+
+The doctor leaves your files unchanged. After reviewing your project and package manifests, run `claro package lock` to regenerate the lockfile, then run `claro package doctor` again. Spaces around values and capitalization of the lock-format field name are accepted, as with other lockfile fields. Valid generated lockfiles continue to work unchanged; this check does not add registry downloads or verify package content hashes.
 
 ## Project-name safety
 

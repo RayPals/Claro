@@ -127,6 +127,15 @@ def main():
                 fail(f"Lock format-version diagnostic was unclear:\n{out}")
             if read(work / "claro.lock") != invalid_lock:
                 fail("package doctor must not rewrite an invalid lock format version")
+        invalid_release_lock = lock.replace("version: v1.18.26", "version: v1.18.25", 1)
+        (work / "claro.lock").write_text(invalid_release_lock, encoding="utf-8")
+        rc, out = run([str(EXE), "package", "doctor"], work)
+        if rc == 0:
+            fail("package doctor must reject a lockfile for a different Claro release")
+        if "BAD lock release version: expected exactly one version: v1.18.26 line" not in out:
+            fail(f"Lock release-version diagnostic was unclear:\n{out}")
+        if read(work / "claro.lock") != invalid_release_lock:
+            fail("package doctor must not rewrite an invalid lock release version")
         (work / "claro.lock").write_text(lock, encoding="utf-8")
 
         (work / "claro.lock").write_text(
