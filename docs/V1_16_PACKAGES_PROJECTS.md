@@ -69,6 +69,16 @@ If `package doctor` reports `BAD package source: math-tools`, open `packages/mat
 
 If `package doctor` reports `BAD lock checksum: math-tools`, check the `math-tools` entry in `claro.lock`. Each package must have exactly one matching `checksum:` line. Duplicate checksums are rejected even when they agree, or when a correct checksum appears before or after an incorrect one. The doctor leaves the file unchanged. After reviewing your project and package manifests, run `claro package lock` to regenerate the lockfile, then run `claro package doctor` again.
 
+## Lock format safety
+
+`claro package doctor` requires exactly one `lock-version: 1` line in `claro.lock`. Missing, empty, unsupported (such as `10`), or duplicate format versions now fail with:
+
+```text
+BAD lock version: expected exactly one lock-version: 1 line
+```
+
+The doctor leaves your files unchanged. After reviewing your project and package manifests, run `claro package lock` to regenerate the lockfile, then run `claro package doctor` again. Spaces around the value and capitalization of the field name are accepted, as with other lockfile fields. Valid generated lockfiles continue to work unchanged; this check does not add registry downloads or verify package content hashes.
+
 ## Project-name safety
 
 `claro new NAME` checks the project name before creating folders. Project names may use only letters, numbers, dash, and underscore, and they must be 64 characters or fewer.

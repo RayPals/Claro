@@ -104,6 +104,31 @@ def main():
             if phrase not in lock:
                 fail(f"claro.lock missing {phrase!r}:\n{lock}")
 
+        for version_line in ["lock-version: 1", "  LOCK-VERSION: \t1 \t"]:
+            valid_lock = lock.replace("lock-version: 1", version_line, 1)
+            (work / "claro.lock").write_text(valid_lock, encoding="utf-8")
+            rc, out = run([str(EXE), "package", "doctor"], work)
+            if rc != 0 or "Package/project files look ready." not in out:
+                fail(f"package doctor must accept a supported lock format version:\n{out}")
+            if read(work / "claro.lock") != valid_lock:
+                fail("package doctor must not rewrite a valid lockfile")
+        (work / "claro.lock").write_text(lock, encoding="utf-8")
+
+        for version_lines in ["", "lock-version: 10", "lock-version:",
+                              "lock-version: 1\nlock-version: 1",
+                              "lock-version: 1\nlock-version: 10",
+                              "lock-version: 10\nlock-version: 1"]:
+            invalid_lock = lock.replace("lock-version: 1", version_lines, 1)
+            (work / "claro.lock").write_text(invalid_lock, encoding="utf-8")
+            rc, out = run([str(EXE), "package", "doctor"], work)
+            if rc == 0:
+                fail(f"package doctor must reject invalid lock format versions: {version_lines!r}")
+            if "BAD lock version: expected exactly one lock-version: 1 line" not in out:
+                fail(f"Lock format-version diagnostic was unclear:\n{out}")
+            if read(work / "claro.lock") != invalid_lock:
+                fail("package doctor must not rewrite an invalid lock format version")
+        (work / "claro.lock").write_text(lock, encoding="utf-8")
+
         (work / "claro.lock").write_text(
             lock.replace("checksum:", "checksum: bad", 1),
             encoding="utf-8",
