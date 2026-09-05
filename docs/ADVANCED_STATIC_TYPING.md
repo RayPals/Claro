@@ -246,6 +246,17 @@ Output:
 Type mismatch for field player.score: expected NUMBER, but this value looks like TEXT.
 ```
 
+Simple expressions are checked too. Text joined with a number has a `TEXT` result, so this mistake is caught before running the program:
+
+```claro
+SET player.name "Ada"
+SET player.score player.name + 1
+```
+
+```text
+Type mismatch for field player.score: expected NUMBER, but this value looks like TEXT.
+```
+
 If a learner assigns to a field the class did not declare, `claro typecheck` now names the object class and suggests the matching `HAS` line:
 
 ```claro

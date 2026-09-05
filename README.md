@@ -215,6 +215,8 @@ It also catches direct assignments to undeclared fields and suggests the matchin
 Object Player has no field level. Check the field name or add HAS level NUMBER to the class.
 ```
 
+The same check follows simple arithmetic and text-concatenation expressions. For example, `SET player.score player.name + 1` reports that the value looks like `TEXT`, rather than silently accepting an expression whose result cannot fit the `NUMBER` field.
+
 TEXT-valued and YESNO-valued field-name mistakes are validated too:
 
 ```text
