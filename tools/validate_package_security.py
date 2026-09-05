@@ -166,12 +166,21 @@ def main():
         if "BAD package checksum: math-tools" not in out:
             fail(f"Package manifest checksum diagnostic was unclear:\n{out}")
         manifest_path.write_text(manifest, encoding="utf-8")
-        manifest_path.write_text(manifest.replace("manifest-version: 1", "manifest-version: 10"), encoding="utf-8")
-        rc, out = run([str(EXE), "package", "doctor"], work)
-        if rc == 0:
-            fail("package doctor must reject a manifest version that only starts with the supported version")
-        if "MISSING package manifest: math-tools" not in out:
-            fail(f"Package manifest-version diagnostic was unclear:\n{out}")
+        for format_lines in ["", "manifest-version:", "manifest-version: 10",
+                             "manifest-version: 1\nmanifest-version: 1",
+                             "manifest-version: 1\nmanifest-version: 10",
+                             "manifest-version: 10\nmanifest-version: 1"]:
+            invalid_manifest = manifest.replace("manifest-version: 1", format_lines, 1)
+            manifest_path.write_text(invalid_manifest, encoding="utf-8")
+            rc, out = run([str(EXE), "package", "doctor"], work)
+            if rc == 0:
+                fail(f"package doctor must reject an invalid package manifest format: {format_lines!r}")
+            diagnostic = ("BAD package manifest version: math-tools. Keep exactly one "
+                          "manifest-version: 1 line in packages/math-tools/claro.package.")
+            if diagnostic not in out or "MISSING package manifest: math-tools" in out:
+                fail(f"Package manifest-version diagnostic was unclear:\n{out}")
+            if read(manifest_path) != invalid_manifest:
+                fail("package doctor must not rewrite an invalid package manifest")
         manifest_path.write_text(manifest, encoding="utf-8")
         duplicate_version_manifest = manifest + "version: 1\n"
         manifest_path.write_text(duplicate_version_manifest, encoding="utf-8")
