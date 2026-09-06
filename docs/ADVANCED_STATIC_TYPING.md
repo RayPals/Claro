@@ -43,6 +43,19 @@ Output:
 Type mismatch for map scores: expected NUMBER value, but this value looks like TEXT.
 ```
 
+## Nested container values
+
+A typed list can contain a typed map. `claro typecheck` keeps the map's own type metadata while checking the outer list:
+
+```claro
+SET people AS LIST OF MAP TO LIST
+SET person AS MAP OF TEXT TO MAP
+PUT person KEY "name" VALUE "Ada"
+ADD person TO people
+```
+
+This is accepted with `Type check OK`. More complex nested container operations and full key/value inference remain future work.
+
 ## Function parameter checks
 
 Claro now has a small static-checking foundation for function arguments. Keep the beginner-friendly function syntax, then put the expected type inside the function with `CHECK TYPE`:

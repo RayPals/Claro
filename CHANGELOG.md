@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Nested container type validation
+
+- Added a focused nested-container typecheck example for adding a typed map to a typed list.
+- Updated container matching so `LIST OF MAP` accepts map values with their own type metadata while preserving existing list/map mismatch diagnostics.
+
 ### Object-field expression validation
 
 - Added positive and negative typecheck fixtures for assigning object fields from another field and from an arithmetic field expression.
