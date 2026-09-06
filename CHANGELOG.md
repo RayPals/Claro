@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### CI release-gate validator hardening
+
+- Added focused regression coverage for the workflow validator.
+- `tools/validate_ci_workflow.py` now checks release commands inside actual `run` steps, so commented-out commands cannot make CI coverage appear complete.
+
 ### Object-alias field CHECK TYPE diagnostics
 
 - Added focused typecheck coverage for `CHECK TYPE alias.field IS TYPE` after a simple object alias.
