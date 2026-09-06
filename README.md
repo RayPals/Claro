@@ -215,6 +215,18 @@ It also catches direct assignments to undeclared fields and suggests the matchin
 Object Player has no field level. Check the field name or add HAS level NUMBER to the class.
 ```
 
+The same field check follows a simple object alias. After `SET alias player`, assignments through `alias.score` still use the field type declared by `Player`:
+
+```claro
+NEW Player player
+SET alias player
+SET alias.score "ten"
+```
+
+```text
+Type mismatch for field alias.score: expected NUMBER, but this value looks like TEXT.
+```
+
 The same check follows simple arithmetic and text-concatenation expressions. For example, `SET player.score player.name + 1` reports that the value looks like `TEXT`, rather than silently accepting an expression whose result cannot fit the `NUMBER` field.
 
 TEXT-valued and YESNO-valued field-name mistakes are validated too:

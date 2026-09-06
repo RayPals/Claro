@@ -56,6 +56,24 @@ ADD person TO people
 
 This is accepted with `Type check OK`. More complex nested container operations and full key/value inference remain future work.
 
+## Object aliases and field checks
+
+When a simple object is assigned to another variable, `claro typecheck` preserves its class for direct field assignments:
+
+```claro
+NEW Player player
+SET alias player
+SET alias.score 10
+```
+
+If the value has the wrong type, the diagnostic names the alias and the expected class field type:
+
+```text
+Type mismatch for field alias.score: expected NUMBER, but this value looks like TEXT.
+```
+
+This is intentionally limited to simple aliases. Broader object-flow analysis through branches, loops, and complex expressions remains planned.
+
 ## Function parameter checks
 
 Claro now has a small static-checking foundation for function arguments. Keep the beginner-friendly function syntax, then put the expected type inside the function with `CHECK TYPE`:

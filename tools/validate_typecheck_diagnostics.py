@@ -134,6 +134,9 @@ EXPECTED = {
     "tests/typecheck_object_field_unknown_object_bad.claro": [
         "tests/typecheck_object_field_unknown_object_bad.claro:5: Object player is not known yet. Create it with NEW ClassName player before setting player.score.",
     ],
+    "tests/typecheck_object_field_alias_bad.claro": [
+        "tests/typecheck_object_field_alias_bad.claro:7: Type mismatch for field alias.score: expected NUMBER, but this value looks like TEXT.",
+    ],
 }
 
 EXPECTED_OK = [
@@ -149,6 +152,7 @@ EXPECTED_OK = [
     "tests/typecheck_object_field_check_type_number_good.claro",
     "tests/typecheck_object_field_check_type_text_good.claro",
     "tests/typecheck_object_field_check_type_text_yesno_good.claro",
+    "tests/typecheck_object_field_alias_good.claro",
     "tests/typecheck_nested_container_good.claro",
     "tests/37_object_field_types.claro",
 ]
