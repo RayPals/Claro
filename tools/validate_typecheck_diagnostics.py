@@ -140,6 +140,9 @@ EXPECTED = {
     "tests/typecheck_object_field_alias_bad.claro": [
         "tests/typecheck_object_field_alias_bad.claro:7: Type mismatch for field alias.score: expected NUMBER, but this value looks like TEXT.",
     ],
+    "tests/typecheck_object_field_check_type_alias_bad.claro": [
+        "tests/typecheck_object_field_check_type_alias_bad.claro:8: Type check failed: expected TEXT, but alias.score looks like NUMBER.",
+    ],
 }
 
 EXPECTED_OK = [

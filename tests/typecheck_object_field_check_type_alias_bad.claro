@@ -1,0 +1,8 @@
+CLASS Player
+    HAS score NUMBER
+END
+
+NEW Player player
+SET alias player
+SET alias.score 10
+CHECK TYPE alias.score IS TEXT

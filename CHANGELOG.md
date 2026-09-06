@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Object-alias field CHECK TYPE diagnostics
+
+- Added focused typecheck coverage for `CHECK TYPE alias.field IS TYPE` after a simple object alias.
+- `claro typecheck` now compares an aliased object's declared field type with the requested `CHECK TYPE` type.
+
 ### Nested container type validation
 
 - Added a focused nested-container typecheck example for adding a typed map to a typed list.

@@ -74,6 +74,21 @@ Type mismatch for field alias.score: expected NUMBER, but this value looks like 
 
 This is intentionally limited to simple aliases. Broader object-flow analysis through branches, loops, and complex expressions remains planned.
 
+`CHECK TYPE` also follows this simple alias for direct field metadata checks:
+
+```claro
+NEW Player player
+SET alias player
+SET alias.score 10
+CHECK TYPE alias.score IS NUMBER
+```
+
+If the requested type is wrong, the diagnostic names the alias and the declared field type:
+
+```text
+Type check failed: expected TEXT, but alias.score looks like NUMBER.
+```
+
 ## Function parameter checks
 
 Claro now has a small static-checking foundation for function arguments. Keep the beginner-friendly function syntax, then put the expected type inside the function with `CHECK TYPE`:
