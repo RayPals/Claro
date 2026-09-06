@@ -152,6 +152,9 @@ EXPECTED = {
     "tests/typecheck_object_alias_method_bad.claro": [
         "tests/typecheck_object_alias_method_bad.claro:12: Type mismatch for method Player.add: parameter points needs NUMBER, but this argument looks like TEXT.",
     ],
+    "tests/typecheck_object_alias_method_call_bad.claro": [
+        "tests/typecheck_object_alias_method_call_bad.claro:12: Type mismatch for method Player.add: parameter points needs NUMBER, but this argument looks like TEXT.",
+    ],
 }
 
 EXPECTED_OK = [
@@ -169,6 +172,7 @@ EXPECTED_OK = [
     "tests/typecheck_object_field_check_type_text_yesno_good.claro",
     "tests/typecheck_object_field_alias_good.claro",
     "tests/typecheck_object_field_check_type_chained_alias_good.claro",
+    "tests/typecheck_object_alias_method_call_good.claro",
     "tests/typecheck_nested_container_good.claro",
     "tests/37_object_field_types.claro",
 ]
