@@ -74,7 +74,7 @@ Type mismatch for field alias.score: expected NUMBER, but this value looks like 
 
 This is intentionally limited to simple aliases. Broader object-flow analysis through branches, loops, and complex expressions remains planned.
 
-`CHECK TYPE` also follows this simple alias for direct field metadata checks:
+`CHECK TYPE` also follows simple aliases for direct field metadata checks. This includes a second alias, so learners can give an object a more descriptive local name without losing the class field information:
 
 ```claro
 NEW Player player
@@ -83,10 +83,26 @@ SET alias.score 10
 CHECK TYPE alias.score IS NUMBER
 ```
 
+```claro
+SET backup alias
+CHECK TYPE backup.score IS NUMBER
+```
+
 If the requested type is wrong, the diagnostic names the alias and the declared field type:
 
 ```text
 Type check failed: expected TEXT, but alias.score looks like NUMBER.
+```
+
+The same diagnostic remains specific after the second alias:
+
+```claro
+SET backup alias
+CHECK TYPE backup.score IS TEXT
+```
+
+```text
+Type check failed: expected TEXT, but backup.score looks like NUMBER.
 ```
 
 ## Function parameter checks
