@@ -107,6 +107,9 @@ EXPECTED = {
     "tests/typecheck_object_field_compound_bad.claro": [
         "tests/typecheck_object_field_compound_bad.claro:8: Type mismatch for field player.score: expected NUMBER, but this value looks like TEXT.",
     ],
+    "tests/typecheck_object_field_text_expression_bad.claro": [
+        "tests/typecheck_object_field_text_expression_bad.claro:8: Type mismatch for field player.name: expected TEXT, but this value looks like NUMBER.",
+    ],
     "tests/typecheck_object_field_check_type_text_bad.claro": [
         "tests/typecheck_object_field_check_type_text_bad.claro:7: Type check failed: expected NUMBER, but player.name looks like TEXT.",
     ],

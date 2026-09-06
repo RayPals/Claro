@@ -257,6 +257,17 @@ SET player.score player.name + 1
 Type mismatch for field player.score: expected NUMBER, but this value looks like TEXT.
 ```
 
+The reverse mismatch is checked as well. A numeric expression cannot be stored in a `TEXT` field:
+
+```claro
+SET player.score 10
+SET player.name player.score + 1
+```
+
+```text
+Type mismatch for field player.name: expected TEXT, but this value looks like NUMBER.
+```
+
 If a learner assigns to a field the class did not declare, `claro typecheck` now names the object class and suggests the matching `HAS` line:
 
 ```claro

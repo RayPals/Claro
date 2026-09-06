@@ -6,6 +6,7 @@
 
 - Added positive and negative typecheck fixtures for assigning object fields from another field and from an arithmetic field expression.
 - Added both fixtures to `claro validate` and the focused typecheck diagnostics validator.
+- Added a focused negative fixture for the reverse expression mismatch: storing a numeric expression in a `TEXT` object field now remains covered by the release validation matrix.
 
 - `claro package doctor` now rejects duplicate `manifest-version:` fields in `claro.project` instead of accepting the first value and overlooking ambiguous project metadata.
 
