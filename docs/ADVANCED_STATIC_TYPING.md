@@ -89,6 +89,22 @@ Type mismatch for field backup.score: expected NUMBER, but this value looks like
 
 This remains limited to direct assignments through simple alias chains; control-flow and complex object-flow analysis are still planned.
 
+`CHECK TYPE` also preserves TEXT field metadata through the same chained aliases:
+
+```claro
+CLASS Player
+    HAS name TEXT
+END
+
+NEW Player player
+SET alias player
+SET backup alias
+SET player.name "Ada"
+CHECK TYPE backup.name IS TEXT
+```
+
+This confirms the declared field type without requiring the learner to repeat the original object variable name. The broader limits are unchanged: aliases created through branches, loops, or complex expressions are still planned.
+
 `CHECK TYPE` also follows simple aliases for direct field metadata checks. This includes a second alias, so learners can give an object a more descriptive local name without losing the class field information:
 
 ```claro
