@@ -146,6 +146,9 @@ EXPECTED = {
     "tests/typecheck_object_field_check_type_chained_alias_bad.claro": [
         "tests/typecheck_object_field_check_type_chained_alias_bad.claro:8: Type check failed: expected TEXT, but backup.score looks like NUMBER.",
     ],
+    "tests/typecheck_object_field_chained_alias_bad.claro": [
+        "tests/typecheck_object_field_chained_alias_bad.claro:8: Type mismatch for field backup.score: expected NUMBER, but this value looks like TEXT.",
+    ],
     "tests/typecheck_object_alias_method_bad.claro": [
         "tests/typecheck_object_alias_method_bad.claro:12: Type mismatch for method Player.add: parameter points needs NUMBER, but this argument looks like TEXT.",
     ],

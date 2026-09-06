@@ -74,6 +74,21 @@ Type mismatch for field alias.score: expected NUMBER, but this value looks like 
 
 This is intentionally limited to simple aliases. Broader object-flow analysis through branches, loops, and complex expressions remains planned.
 
+The same field-assignment check follows a second simple alias. This lets a learner use a more descriptive name without losing the class field type:
+
+```claro
+SET backup alias
+SET backup.score "ten"
+```
+
+Output:
+
+```text
+Type mismatch for field backup.score: expected NUMBER, but this value looks like TEXT.
+```
+
+This remains limited to direct assignments through simple alias chains; control-flow and complex object-flow analysis are still planned.
+
 `CHECK TYPE` also follows simple aliases for direct field metadata checks. This includes a second alias, so learners can give an object a more descriptive local name without losing the class field information:
 
 ```claro
