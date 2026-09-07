@@ -175,7 +175,7 @@ Ready now:
 - metadata JSON
 - completion list
 - diagnostics helper
-- Forgejo/Gitea CI coverage for the current release validation gates (`claro validate`, typecheck diagnostics validation, version convention validation, package security validation, and the CI workflow coverage check); the workflow validator verifies these commands occur in executable `run` steps rather than comments
+- Forgejo/Gitea CI coverage for the current release validation gates (`claro validate`, typecheck diagnostics validation, version convention validation, package security validation, and the CI workflow coverage check); the workflow validator verifies these commands, including its own command, occur in executable `run` steps rather than comments
 
 Still needed:
 - syntax highlighting package

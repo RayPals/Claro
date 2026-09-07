@@ -26,8 +26,13 @@ class ValidateCiWorkflowTests(unittest.TestCase):
             run: python3 tools/validate_version_convention.py
           - name: Packages
             run: python3 tools/validate_package_security.py
+          - name: CI workflow
+            run: python3 tools/validate_ci_workflow.py
         """
         self.assertEqual(MODULE.missing_release_gates(workflow), [])
+
+    def test_requires_the_workflow_validator_to_run_in_ci(self):
+        self.assertIn("python3 tools/validate_ci_workflow.py", MODULE.REQUIRED_COMMANDS)
 
     def test_rejects_commands_that_only_appear_in_comments(self):
         workflow = """

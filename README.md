@@ -28,6 +28,8 @@ python3 tools/validate_package_security.py
 python3 tools/validate_ci_workflow.py
 ```
 
+The CI workflow validator also requires its own command to remain in an executable `run` step, so the release-gate check cannot silently disappear from CI.
+
 ## Beginner-first syntax
 
 Claro accepts both the sentence-like style and the shorter simple style:

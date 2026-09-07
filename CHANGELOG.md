@@ -11,6 +11,7 @@
 
 - Added focused regression coverage for the workflow validator.
 - `tools/validate_ci_workflow.py` now checks release commands inside actual `run` steps, so commented-out commands cannot make CI coverage appear complete.
+- The validator now requires its own executable CI command, protecting the workflow coverage check from being removed silently.
 
 ### Object-alias field CHECK TYPE diagnostics
 

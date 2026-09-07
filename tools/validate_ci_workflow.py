@@ -11,6 +11,7 @@ REQUIRED_COMMANDS = [
     "python3 tools/validate_typecheck_diagnostics.py",
     "python3 tools/validate_version_convention.py",
     "python3 tools/validate_package_security.py",
+    "python3 tools/validate_ci_workflow.py",
 ]
 
 
