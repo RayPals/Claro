@@ -89,14 +89,14 @@ Type mismatch for field backup.score: expected NUMBER, but this value looks like
 
 This remains limited to direct assignments through simple alias chains; control-flow and complex object-flow analysis are still planned.
 
-Text operands are also identified when they appear in subtraction, multiplication, or division expressions. This catches a common beginner mistake such as subtracting a text field from a number field:
+Text operands are also identified when they appear in subtraction, multiplication, or division expressions. The diagnostic names the operator and the text operand, which catches a common beginner mistake such as subtracting a text field from a number field:
 
 ```claro
 SET player.score player.score - player.name
 ```
 
 ```text
-Type mismatch for field player.score: expected NUMBER, but this value looks like TEXT.
+Type mismatch for field player.score: subtraction needs NUMBER values, but player.name looks like TEXT.
 ```
 
 The same learner-facing result is preserved for multiplication, so the checker does not lose the useful `TEXT` type when the invalid expression uses `*`:
@@ -106,7 +106,7 @@ SET player.score player.score * player.name
 ```
 
 ```text
-Type mismatch for field player.score: expected NUMBER, but this value looks like TEXT.
+Type mismatch for field player.score: multiplication needs NUMBER values, but player.name looks like TEXT.
 ```
 
 Division is covered in the same way:
@@ -116,7 +116,7 @@ SET player.score player.score / player.name
 ```
 
 ```text
-Type mismatch for field player.score: expected NUMBER, but this value looks like TEXT.
+Type mismatch for field player.score: division needs NUMBER values, but player.name looks like TEXT.
 ```
 
 Numeric division remains accepted in a NUMBER field, so the type checker protects both sides of this operator without rejecting a valid beginner expression:
@@ -136,7 +136,7 @@ SET player.score player.score * 2
 
 The focused validation matrix keeps this valid arithmetic case beside the multiplication text-operand diagnostic, so a useful expression is not confused with the nearby beginner mistake.
 
-The expression checker still deliberately reports only the type it can infer; full operator-specific rules remain future work.
+The expression checker now gives operator-specific guidance for known TEXT operands in subtraction, multiplication, and division. Broader expression inference remains future work.
 
 `CHECK TYPE` also preserves TEXT field metadata through the same chained aliases:
 

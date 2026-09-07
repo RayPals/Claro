@@ -236,6 +236,7 @@ The checker also identifies text operands in other arithmetic expressions. For e
 ```text
 Type mismatch for field player.score: subtraction needs NUMBER values, but player.name looks like TEXT.
 Type mismatch for field player.score: multiplication needs NUMBER values, but player.name looks like TEXT.
+Type mismatch for field player.score: division needs NUMBER values, but player.name looks like TEXT.
 ```
 
 TEXT-valued and YESNO-valued field-name mistakes are validated too:
