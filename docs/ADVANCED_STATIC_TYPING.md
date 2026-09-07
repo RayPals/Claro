@@ -128,6 +128,14 @@ SET player.score player.score / 2
 
 This example is included in the focused typecheck validation matrix.
 
+Numeric multiplication is accepted in a NUMBER field as well:
+
+```claro
+SET player.score player.score * 2
+```
+
+The focused validation matrix keeps this valid arithmetic case beside the multiplication text-operand diagnostic, so a useful expression is not confused with the nearby beginner mistake.
+
 The expression checker still deliberately reports only the type it can infer; full operator-specific rules remain future work.
 
 `CHECK TYPE` also preserves TEXT field metadata through the same chained aliases:

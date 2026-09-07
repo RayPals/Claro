@@ -175,6 +175,7 @@ EXPECTED_OK = [
     "tests/typecheck_object_field_expression_good.claro",
     "tests/typecheck_object_field_compound_good.claro",
     "tests/typecheck_object_field_division_good.claro",
+    "tests/typecheck_object_field_multiplication_good.claro",
     "tests/typecheck_object_field_text_good.claro",
     "tests/typecheck_object_field_yesno_good.claro",
     "tests/typecheck_object_field_check_type_number_good.claro",
