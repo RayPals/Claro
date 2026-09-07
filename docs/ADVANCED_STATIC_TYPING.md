@@ -99,6 +99,16 @@ SET player.score player.score - player.name
 Type mismatch for field player.score: expected NUMBER, but this value looks like TEXT.
 ```
 
+The same learner-facing result is preserved for multiplication, so the checker does not lose the useful `TEXT` type when the invalid expression uses `*`:
+
+```claro
+SET player.score player.score * player.name
+```
+
+```text
+Type mismatch for field player.score: expected NUMBER, but this value looks like TEXT.
+```
+
 The expression checker still deliberately reports only the type it can infer; full operator-specific rules remain future work.
 
 `CHECK TYPE` also preserves TEXT field metadata through the same chained aliases:
