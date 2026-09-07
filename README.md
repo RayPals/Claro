@@ -229,6 +229,12 @@ Type mismatch for field alias.score: expected NUMBER, but this value looks like 
 
 The same check follows simple arithmetic and text-concatenation expressions. For example, `SET player.score player.name + 1` reports that the value looks like `TEXT`, rather than silently accepting an expression whose result cannot fit the `NUMBER` field.
 
+The checker also identifies text operands in other arithmetic expressions. For example, `SET player.score player.score - player.name` reports the text result instead of silently treating an invalid numeric subtraction as unknown:
+
+```text
+Type mismatch for field player.score: expected NUMBER, but this value looks like TEXT.
+```
+
 TEXT-valued and YESNO-valued field-name mistakes are validated too:
 
 ```text

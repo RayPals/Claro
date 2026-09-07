@@ -57,6 +57,7 @@ Ready now:
 
 Still needed:
 - Keep the focused typecheck validator's fixture list complete as new positive and negative examples are added.
+- The expression checker now carries a known TEXT operand through all arithmetic operators so object-field diagnostics do not hide subtraction, multiplication, or division mistakes; operator-specific diagnostics remain planned.
 - richer typed function signatures and return values
 - type checking through branches and loops
 - richer object field type checking beyond simple direct assignments

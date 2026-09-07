@@ -546,7 +546,7 @@ static const char *simple_expr_type(Var *types,const char *expr){
    char *left=substr(t,t+i), *right=xstrdup(t+i+1); const char *lt,*rt;
    lt=simple_expr_type(types,left); rt=simple_expr_type(types,right);
    free(left); free(right);
-   if(t[i]=='+'&&((lt&&ci_eq(lt,"TEXT"))||(rt&&ci_eq(rt,"TEXT")))) return "TEXT";
+   if((lt&&ci_eq(lt,"TEXT"))||(rt&&ci_eq(rt,"TEXT"))) return "TEXT";
    if(lt&&rt&&ci_eq(lt,"NUMBER")&&ci_eq(rt,"NUMBER")) return "NUMBER";
    return NULL;
   }
