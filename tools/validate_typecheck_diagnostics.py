@@ -114,7 +114,7 @@ EXPECTED = {
         "tests/typecheck_object_field_subtraction_bad.claro:8: Type mismatch for field player.score: subtraction needs NUMBER values, but player.name looks like TEXT.",
     ],
     "tests/typecheck_object_field_multiplication_bad.claro": [
-        "tests/typecheck_object_field_multiplication_bad.claro:8: Type mismatch for field player.score: expected NUMBER, but this value looks like TEXT.",
+        "tests/typecheck_object_field_multiplication_bad.claro:8: Type mismatch for field player.score: multiplication needs NUMBER values, but player.name looks like TEXT.",
     ],
     "tests/typecheck_object_field_division_bad.claro": [
         "tests/typecheck_object_field_division_bad.claro:8: Type mismatch for field player.score: expected NUMBER, but this value looks like TEXT.",
