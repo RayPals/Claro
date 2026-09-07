@@ -174,6 +174,7 @@ EXPECTED_OK = [
     "tests/typecheck_object_field_check_type_chained_alias_good.claro",
     "tests/typecheck_object_field_check_type_chained_alias_text_good.claro",
     "tests/typecheck_object_alias_method_call_good.claro",
+    "tests/typecheck_object_alias_method_do_good.claro",
     "tests/typecheck_nested_container_good.claro",
     "tests/typecheck_good.claro",
     "tests/typecheck_container_good.claro",

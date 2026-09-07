@@ -22,6 +22,12 @@ class ValidateTypecheckDiagnosticsTests(unittest.TestCase):
         fixtures.add("tests/37_object_field_types.claro")
         self.assertEqual(listed, fixtures)
 
+    def test_includes_modern_chained_alias_method_success_fixture(self):
+        self.assertIn(
+            "tests/typecheck_object_alias_method_do_good.claro",
+            MODULE.EXPECTED_OK,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
