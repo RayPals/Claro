@@ -119,6 +119,15 @@ SET player.score player.score / player.name
 Type mismatch for field player.score: expected NUMBER, but this value looks like TEXT.
 ```
 
+Numeric division remains accepted in a NUMBER field, so the type checker protects both sides of this operator without rejecting a valid beginner expression:
+
+```claro
+SET player.score 10
+SET player.score player.score / 2
+```
+
+This example is included in the focused typecheck validation matrix.
+
 The expression checker still deliberately reports only the type it can infer; full operator-specific rules remain future work.
 
 `CHECK TYPE` also preserves TEXT field metadata through the same chained aliases:
