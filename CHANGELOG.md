@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Complete typecheck fixture validation
+
+- Added regression coverage requiring the focused typecheck validator to list every `typecheck_*.claro` fixture, plus the existing object-field validation script.
+- Added the two previously omitted positive fixtures so `tools/validate_typecheck_diagnostics.py` now exercises the complete typecheck fixture set.
+
 ### CI release-gate validator hardening
 
 - Added focused regression coverage for the workflow validator.
