@@ -205,6 +205,23 @@ STALE_PHRASES = [
 ]
 
 
+def validate_fixture_coverage():
+    discovered = {
+        path.relative_to(ROOT).as_posix()
+        for path in (ROOT / "tests").glob("typecheck_*.claro")
+    }
+    listed = set(EXPECTED) | set(EXPECTED_OK)
+    missing = sorted(discovered - listed)
+    extra = sorted(listed - discovered - {"tests/37_object_field_types.claro"})
+    if missing or extra:
+        details = []
+        if missing:
+            details.append("unlisted fixtures: " + ", ".join(missing))
+        if extra:
+            details.append("missing fixture files: " + ", ".join(extra))
+        raise SystemExit("Typecheck fixture coverage mismatch: " + "; ".join(details))
+
+
 def run_typecheck(path):
     result = subprocess.run(
         [str(EXE), "typecheck", path],
@@ -251,6 +268,7 @@ def main():
     if not EXE.exists():
         raise SystemExit(f"Missing Claro executable: {EXE}")
 
+    validate_fixture_coverage()
     for path in EXPECTED:
         run_typecheck(path)
 

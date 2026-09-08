@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Reject unlisted typecheck fixtures
+
+- `tools/validate_typecheck_diagnostics.py` now discovers `tests/typecheck_*.claro` files and fails when a fixture is missing from the validator's positive or negative lists.
+- This keeps new learner-facing typecheck examples from silently escaping release validation.
+
 ### Explain text operands in object-field addition
 
 - Added focused typecheck coverage for `SET player.score player.name + 1`.
