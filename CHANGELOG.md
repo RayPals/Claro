@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Diagnose explicitly typed unknown object fields
+
+- Added focused typecheck coverage for `SET player.level NUMBER 3` when `Player` declares no `level` field.
+- `claro typecheck` now gives the same beginner-facing missing-`HAS` hint for explicitly typed unknown fields as it does for untyped field assignments.
+
 ### Reject unlisted typecheck fixtures
 
 - `tools/validate_typecheck_diagnostics.py` now discovers `tests/typecheck_*.claro` files and fails when a fixture is missing from the validator's positive or negative lists.
