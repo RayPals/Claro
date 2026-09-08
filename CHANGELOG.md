@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Check simple function return types
+
+- Added `TEACH name ... RETURNS TYPE` syntax for a focused static return check.
+- `claro typecheck` now reports the expected and inferred types when a `RETURN` expression does not match.
+- Added positive and negative fixtures and wired both into `claro validate` and the complete typecheck diagnostics validator.
+
 ### Diagnose explicitly typed unknown object fields
 
 - Added focused typecheck coverage for `SET player.level NUMBER 3` when `Player` declares no `level` field.

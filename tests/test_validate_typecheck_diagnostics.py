@@ -40,6 +40,10 @@ class ValidateTypecheckDiagnosticsTests(unittest.TestCase):
             MODULE.EXPECTED_OK,
         )
 
+    def test_includes_typed_function_return_fixtures(self):
+        self.assertIn("tests/typecheck_function_return_bad.claro", MODULE.EXPECTED)
+        self.assertIn("tests/typecheck_function_return_good.claro", MODULE.EXPECTED_OK)
+
 
 if __name__ == "__main__":
     unittest.main()

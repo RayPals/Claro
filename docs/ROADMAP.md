@@ -45,8 +45,8 @@ See `CURRENT_STATUS.md` for the detailed feature matrix.
 Goal: make larger beginner programs safer without making first scripts harder.
 
 Needed next:
-- richer typed function signatures
-- typed function returns
+- richer typed function signatures beyond the focused simple `RETURNS TYPE` check
+- typed function returns beyond the focused simple `RETURNS TYPE` check
 - type checking across branches and loops
 - typed imports/modules
 - broader object field checking and method return typing

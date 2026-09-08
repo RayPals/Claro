@@ -1,0 +1,6 @@
+TEACH square amount RETURNS NUMBER
+    CHECK TYPE amount IS NUMBER
+    RETURN amount
+END
+
+DO square 4
