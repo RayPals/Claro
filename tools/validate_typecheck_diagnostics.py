@@ -22,6 +22,9 @@ EXPECTED = {
     "tests/typecheck_function_return_bad.claro": [
         "tests/typecheck_function_return_bad.claro:3: Type mismatch for return from square: expected NUMBER, but this value looks like TEXT.",
     ],
+    "tests/typecheck_function_missing_return_bad.claro": [
+        "tests/typecheck_function_missing_return_bad.claro:3: Function square declares RETURNS NUMBER but has no RETURN statement. Add RETURN with a NUMBER value.",
+    ],
     "tests/typecheck_method_return_bad.claro": [
         "tests/typecheck_method_return_bad.claro:3: Type mismatch for return from Player.score: expected NUMBER, but this value looks like TEXT.",
     ],

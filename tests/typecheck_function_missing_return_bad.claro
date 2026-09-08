@@ -1,0 +1,5 @@
+TEACH square amount RETURNS NUMBER
+    SAY amount
+END
+
+DO square 4

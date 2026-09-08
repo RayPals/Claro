@@ -162,7 +162,7 @@ Function square only accepts 1 argument, but this call gives 2. Remove the extra
 Function squre is not known yet. Check the function name or add TEACH squre before calling it.
 ```
 
-Simple functions and object methods can also declare a return type. `claro typecheck` checks each `RETURN` expression against it:
+Simple functions and object methods can also declare a return type. `claro typecheck` checks each `RETURN` expression against it and reports a missing return when a declaration never returns a value:
 
 ```claro
 TEACH square amount RETURNS NUMBER
@@ -172,6 +172,12 @@ END
 ```
 
 The same focused check applies to methods such as `Player.score RETURNS NUMBER`; a wrong return reports the full method name, for example: `Type mismatch for return from Player.score: expected NUMBER, but this value looks like TEXT.`
+
+If a function or method declares `RETURNS TYPE` but contains no `RETURN`, the checker points out the missing statement:
+
+```text
+Function square declares RETURNS NUMBER but has no RETURN statement. Add RETURN with a NUMBER value.
+```
 
 The unknown-function diagnostic is validated for both modern `DO squre 4` and compatibility `CALL squre WITH 4` calls. Compatibility calls that leave `WITH` empty, such as `CALL greet WITH`, now count as zero arguments, so learners get the same missing-argument guidance as `DO greet` instead of the checker treating the blank as an argument.
 
