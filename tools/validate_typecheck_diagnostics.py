@@ -184,6 +184,7 @@ EXPECTED_OK = [
     "tests/typecheck_object_field_yesno_good.claro",
     "tests/typecheck_object_field_check_type_number_good.claro",
     "tests/typecheck_object_field_check_type_text_good.claro",
+    "tests/typecheck_object_field_check_type_yesno_good.claro",
     "tests/typecheck_object_field_check_type_text_yesno_good.claro",
     "tests/typecheck_object_field_alias_good.claro",
     "tests/typecheck_object_field_check_type_chained_alias_good.claro",
