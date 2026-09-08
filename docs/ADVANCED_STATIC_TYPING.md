@@ -164,6 +164,14 @@ SET player.name "Ada " + player.name
 
 This reverse-order concatenation is also covered by focused validation, so learners can build text from either side without losing the declared `TEXT` field type.
 
+Two TEXT fields can be combined as well:
+
+```claro
+SET player.name player.name + player.nickname
+```
+
+The focused validation matrix covers this field-to-field form so a learner can build text from named object fields without losing the declared `TEXT` type.
+
 `CHECK TYPE` also preserves TEXT field metadata through the same chained aliases:
 
 ```claro
