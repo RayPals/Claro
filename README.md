@@ -126,6 +126,13 @@ SAY kind
 CHECK TYPE score IS NUMBER
 ```
 
+`CHECK TYPE` names a real Claro type. If a type name is misspelled, the checker explains the allowed beginner types instead of reporting a confusing value mismatch:
+
+```text
+CHECK TYPE score IS BANANA
+CHECK TYPE needs a known type such as NUMBER, TEXT, YESNO, LIST, or MAP, but BANANA is not a Claro type.
+```
+
 Advanced container checks are available through `claro typecheck`:
 
 ```claro

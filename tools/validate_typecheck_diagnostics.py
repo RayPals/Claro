@@ -149,6 +149,9 @@ EXPECTED = {
     "tests/typecheck_object_field_check_type_unknown_object_bad.claro": [
         "tests/typecheck_object_field_check_type_unknown_object_bad.claro:5: Object player is not known yet. Create it with NEW ClassName player before checking player.score.",
     ],
+    "tests/typecheck_invalid_expected_type_bad.claro": [
+        "tests/typecheck_invalid_expected_type_bad.claro:2: CHECK TYPE needs a known type such as NUMBER, TEXT, YESNO, LIST, or MAP, but BANANA is not a Claro type.",
+    ],
     "tests/typecheck_object_field_unknown_object_bad.claro": [
         "tests/typecheck_object_field_unknown_object_bad.claro:5: Object player is not known yet. Create it with NEW ClassName player before setting player.score.",
     ],
