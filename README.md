@@ -239,6 +239,15 @@ Type mismatch for field player.score: multiplication needs NUMBER values, but pl
 Type mismatch for field player.score: division needs NUMBER values, but player.name looks like TEXT.
 ```
 
+Valid numeric subtraction is covered too:
+
+```claro
+SET player.score 10
+SET player.score player.score - 2
+```
+
+The focused typecheck validation keeps this valid subtraction example beside the existing valid multiplication and division examples, so a useful expression is not confused with a nearby text-operand mistake.
+
 TEXT-valued and YESNO-valued field-name mistakes are validated too:
 
 ```text

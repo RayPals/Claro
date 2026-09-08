@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Complete numeric object-field arithmetic coverage
+
+- Added a focused positive typecheck fixture for numeric subtraction in an object field.
+- Added the fixture to both the complete typecheck diagnostics validator and `claro validate`, keeping valid subtraction beside the existing division/multiplication positives and text-operand diagnostics.
+
 ### Complete typecheck fixture validation
 
 - Added regression coverage requiring the focused typecheck validator to list every `typecheck_*.claro` fixture, plus the existing object-field validation script.
