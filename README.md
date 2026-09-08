@@ -229,12 +229,13 @@ SET alias.score "ten"
 Type mismatch for field alias.score: expected NUMBER, but this value looks like TEXT.
 ```
 
-The same check follows simple arithmetic and text-concatenation expressions. For example, `SET player.score player.name + 1` reports that the value looks like `TEXT`, rather than silently accepting an expression whose result cannot fit the `NUMBER` field.
+The same check follows simple arithmetic and text-concatenation expressions. For example, `SET player.score player.name + 1` now names the text operand and explains that addition into a `NUMBER` field needs numeric values, rather than silently accepting an expression whose result cannot fit the field.
 
-The checker also identifies text operands in other arithmetic expressions. For example, `SET player.score player.score - player.name` now explains the operator rule and names the operand, rather than silently treating an invalid numeric subtraction as unknown:
+The checker identifies text operands in arithmetic expressions and explains the operator rule instead of treating an invalid numeric field assignment as an unknown expression:
 
 ```text
 Type mismatch for field player.score: subtraction needs NUMBER values, but player.name looks like TEXT.
+Type mismatch for field player.score: addition needs NUMBER values, but player.name looks like TEXT.
 Type mismatch for field player.score: multiplication needs NUMBER values, but player.name looks like TEXT.
 Type mismatch for field player.score: division needs NUMBER values, but player.name looks like TEXT.
 ```

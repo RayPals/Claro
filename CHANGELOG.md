@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Explain text operands in object-field addition
+
+- Added focused typecheck coverage for `SET player.score player.name + 1`.
+- `claro typecheck` now names the `TEXT` operand and explains that addition into a `NUMBER` field needs numeric values, matching the existing subtraction, multiplication, and division diagnostics.
+
 ### Complete numeric object-field arithmetic coverage
 
 - Added a focused positive typecheck fixture for numeric subtraction in an object field.

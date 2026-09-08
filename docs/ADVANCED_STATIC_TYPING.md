@@ -89,7 +89,17 @@ Type mismatch for field backup.score: expected NUMBER, but this value looks like
 
 This remains limited to direct assignments through simple alias chains; control-flow and complex object-flow analysis are still planned.
 
-Text operands are also identified when they appear in subtraction, multiplication, or division expressions. The diagnostic names the operator and the text operand, which catches a common beginner mistake such as subtracting a text field from a number field:
+Text operands are also identified when they appear in arithmetic expressions assigned to NUMBER fields. The diagnostic names the operator and the text operand, which catches a common beginner mistake such as adding a text field to a number field:
+
+```claro
+SET player.score player.name + 1
+```
+
+```text
+Type mismatch for field player.score: addition needs NUMBER values, but player.name looks like TEXT.
+```
+
+Subtraction, multiplication, and division use the same beginner-facing guidance:
 
 ```claro
 SET player.score player.score - player.name
