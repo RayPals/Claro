@@ -304,6 +304,29 @@ Each form reports the same beginner-facing fix:
 Function squre is not known yet. Check the function name or add TEACH squre before calling it.
 ```
 
+## Function and method return checks
+
+Simple functions and object methods can declare a return type with `RETURNS TYPE`. `claro typecheck` checks each simple `RETURN` expression before the program runs:
+
+```claro
+CLASS Player
+    TEACH score amount RETURNS NUMBER
+        RETURN amount
+    END
+END
+
+NEW Player player
+DO player.score 4
+```
+
+Returning text from this method produces a learner-facing diagnostic that names the class and method:
+
+```text
+Type mismatch for return from Player.score: expected NUMBER, but this value looks like TEXT.
+```
+
+This is a focused check for simple return expressions. Branch-sensitive return analysis and richer method signatures remain planned.
+
 ## Object method parameter checks
 
 Claro also checks simple object method arguments when the method body names a parameter with `CHECK TYPE`. This keeps the method syntax beginner-readable while giving a clearer error before the program runs:

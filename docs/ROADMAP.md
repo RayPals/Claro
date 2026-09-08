@@ -46,10 +46,10 @@ Goal: make larger beginner programs safer without making first scripts harder.
 
 Needed next:
 - richer typed function signatures beyond the focused simple `RETURNS TYPE` check
-- typed function returns beyond the focused simple `RETURNS TYPE` check
+- typed function returns beyond the focused simple function/method `RETURNS TYPE` check
 - type checking across branches and loops
 - typed imports/modules
-- broader object field checking and method return typing
+- broader object field checking and richer method return typing
 - clearer error messages for type mismatches
 
 ### 2. Objects and classes polish
@@ -58,7 +58,7 @@ Goal: keep object-oriented examples readable enough for beginners.
 
 Needed next:
 - constructor-style defaults or beginner-friendly initialization helpers
-- method return checks
+- richer method return checks beyond the focused simple `RETURNS TYPE` check
 - object printing/debugging helpers
 - better examples that avoid abstract toy OOP
 
