@@ -1,0 +1,7 @@
+CLASS Player
+    HAS name TEXT
+END
+
+NEW Player player
+SET player.name "Ada"
+SET player.name player.name + " Lovelace"

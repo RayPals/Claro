@@ -148,6 +148,14 @@ The focused validation matrix keeps this valid arithmetic case beside the multip
 
 The expression checker now gives operator-specific guidance for known TEXT operands in subtraction, multiplication, and division. Broader expression inference remains future work.
 
+Text concatenation is also accepted when the result is assigned to a TEXT field. This keeps a common beginner pattern type-safe without treating every `+` expression as numeric:
+
+```claro
+SET player.name player.name + " Lovelace"
+```
+
+The focused typecheck validation matrix covers this positive case beside the existing numeric-expression and text-operand checks.
+
 `CHECK TYPE` also preserves TEXT field metadata through the same chained aliases:
 
 ```claro
