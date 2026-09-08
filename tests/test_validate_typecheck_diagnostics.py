@@ -34,6 +34,12 @@ class ValidateTypecheckDiagnosticsTests(unittest.TestCase):
             MODULE.EXPECTED_OK,
         )
 
+    def test_includes_reverse_text_concatenation_success_fixture(self):
+        self.assertIn(
+            "tests/typecheck_object_field_text_concat_reverse_good.claro",
+            MODULE.EXPECTED_OK,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

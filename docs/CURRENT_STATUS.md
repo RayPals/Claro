@@ -57,7 +57,7 @@ Ready now:
 
 Still needed:
 - Keep the focused typecheck validator's fixture list complete as new positive and negative examples are added.
-- The expression checker now carries a known TEXT operand through all arithmetic operators so object-field diagnostics do not hide addition, subtraction, multiplication, or division mistakes; focused numeric-subtraction, numeric-division, and numeric-multiplication positives plus text-operand addition, subtraction, multiplication, and division negatives protect this behavior. Text concatenation into a TEXT field also has a focused positive fixture. Each numeric operator names the text operand and explains that it needs NUMBER values.
+- The expression checker now carries a known TEXT operand through all arithmetic operators so object-field diagnostics do not hide addition, subtraction, multiplication, or division mistakes; focused numeric-subtraction, numeric-division, and numeric-multiplication positives plus text-operand addition, subtraction, multiplication, and division negatives protect this behavior. Text concatenation into a TEXT field has focused positive fixtures for both operand orders. Each numeric operator names the text operand and explains that it needs NUMBER values.
 - richer typed function signatures and return values
 - type checking through branches and loops
 - richer object field type checking beyond simple direct assignments

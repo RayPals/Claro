@@ -156,6 +156,14 @@ SET player.name player.name + " Lovelace"
 
 The focused typecheck validation matrix covers this positive case beside the existing numeric-expression and text-operand checks.
 
+The same rule works when the literal comes first:
+
+```claro
+SET player.name "Ada " + player.name
+```
+
+This reverse-order concatenation is also covered by focused validation, so learners can build text from either side without losing the declared `TEXT` field type.
+
 `CHECK TYPE` also preserves TEXT field metadata through the same chained aliases:
 
 ```claro
