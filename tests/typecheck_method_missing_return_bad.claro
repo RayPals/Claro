@@ -1,0 +1,5 @@
+CLASS Player
+    TEACH score amount RETURNS NUMBER
+        SAY amount
+    END
+END
