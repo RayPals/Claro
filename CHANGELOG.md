@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Validate compatibility method return types
+
+- Added focused coverage proving that the older `TEACH ... TAKES ... RETURNS TYPE` / `LEARNED` method syntax receives the same learner-facing return-type diagnostic as modern methods.
+- Added the compatibility method fixture to the complete typecheck diagnostics validator.
+
 ### Validate compatibility function return types
 
 - Added focused coverage proving that the older `TEACH ... TAKES ... RETURNS TYPE` / `LEARNED` syntax receives the same learner-facing return-type diagnostic as modern functions.

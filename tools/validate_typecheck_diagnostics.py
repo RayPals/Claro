@@ -37,6 +37,9 @@ EXPECTED = {
     "tests/typecheck_method_return_bad.claro": [
         "tests/typecheck_method_return_bad.claro:3: Type mismatch for return from Player.score: expected NUMBER, but this value looks like TEXT.",
     ],
+    "tests/typecheck_method_compat_return_bad.claro": [
+        "tests/typecheck_method_compat_return_bad.claro:4: Type mismatch for return from Player.score: expected NUMBER, but this value looks like TEXT.",
+    ],
     "tests/typecheck_method_return_expression_bad.claro": [
         "tests/typecheck_method_return_expression_bad.claro:4: Type mismatch for return from Player.label: expected TEXT, but this value looks like NUMBER.",
     ],
