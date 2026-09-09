@@ -22,6 +22,9 @@ EXPECTED = {
     "tests/typecheck_function_return_bad.claro": [
         "tests/typecheck_function_return_bad.claro:3: Type mismatch for return from square: expected NUMBER, but this value looks like TEXT.",
     ],
+    "tests/typecheck_function_compat_return_bad.claro": [
+        "tests/typecheck_function_compat_return_bad.claro:3: Type mismatch for return from square: expected NUMBER, but this value looks like TEXT.",
+    ],
     "tests/typecheck_function_return_expression_bad.claro": [
         "tests/typecheck_function_return_expression_bad.claro:3: Type mismatch for return from label: expected TEXT, but this value looks like NUMBER.",
     ],
@@ -205,6 +208,7 @@ EXPECTED = {
 EXPECTED_OK = [
     "tests/typecheck_function_good.claro",
     "tests/typecheck_function_return_good.claro",
+    "tests/typecheck_function_compat_return_good.claro",
     "tests/typecheck_function_return_expression_good.claro",
     "tests/typecheck_method_return_good.claro",
     "tests/typecheck_method_return_expression_good.claro",

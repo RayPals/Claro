@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Validate compatibility function return types
+
+- Added focused coverage proving that the older `TEACH ... TAKES ... RETURNS TYPE` / `LEARNED` syntax receives the same learner-facing return-type diagnostic as modern functions.
+- Added the compatibility fixture to both `claro validate` and the complete typecheck diagnostics validator.
+
 ### Validate unknown method return types
 
 - Added focused `claro typecheck` regression coverage for an object method declaring an unsupported `RETURNS` type such as `BANANA`.
