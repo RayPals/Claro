@@ -325,7 +325,13 @@ Returning text from this method produces a learner-facing diagnostic that names 
 Type mismatch for return from Player.score: expected NUMBER, but this value looks like TEXT.
 ```
 
-This is a focused check for simple return expressions. When a parameter has a `CHECK TYPE` declaration, that known type also informs arithmetic return expressions in functions and methods, so `RETURN amount + 1` is checked against the declared return type. The focused validation matrix covers both method success and mismatch fixtures. Branch-sensitive return analysis and richer method signatures remain planned.
+This is a focused check for simple return expressions. When a parameter has a `CHECK TYPE` declaration, that known type also informs arithmetic return expressions in functions and methods, so `RETURN amount + 1` is checked against the declared return type. A declared return with no `RETURN`, or with a `RETURN` only inside an `IF`, gets a beginner-facing message explaining that the function may finish without returning the promised type:
+
+```text
+Function choose declares RETURNS NUMBER but does not return a NUMBER value on every path. Add RETURN to each branch or after the conditional.
+```
+
+The focused validation matrix covers modern and compatibility syntax, method success and mismatch fixtures, missing returns, and conditional-only returns. Full path-sensitive analysis proving that every `IF`/`ELSE` branch returns remains planned.
 
 ## Object method parameter checks
 

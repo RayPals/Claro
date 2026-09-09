@@ -1,0 +1,5 @@
+TEACH choose flag RETURNS NUMBER
+    IF flag
+        RETURN 1
+    END
+END
