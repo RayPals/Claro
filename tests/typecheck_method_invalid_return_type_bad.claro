@@ -1,0 +1,5 @@
+CLASS Player
+    TEACH score amount RETURNS BANANA
+        RETURN amount
+    END
+END

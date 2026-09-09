@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Validate unknown method return types
+
+- Added focused `claro typecheck` regression coverage for an object method declaring an unsupported `RETURNS` type such as `BANANA`.
+- The release validator now checks function and method unknown-return-type diagnostics separately.
+
 ### Diagnose unknown declared return types
 
 - `claro typecheck` now reports a learner-facing error when a function or object method declares an unsupported `RETURNS` type such as `BANANA`.
