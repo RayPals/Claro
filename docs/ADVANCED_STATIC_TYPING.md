@@ -325,7 +325,7 @@ Returning text from this method produces a learner-facing diagnostic that names 
 Type mismatch for return from Player.score: expected NUMBER, but this value looks like TEXT.
 ```
 
-This is a focused check for simple return expressions. Branch-sensitive return analysis and richer method signatures remain planned.
+This is a focused check for simple return expressions. When a parameter has a `CHECK TYPE` declaration, that known type also informs arithmetic return expressions, so `RETURN amount + 1` is checked against the declared return type. Branch-sensitive return analysis and richer method signatures remain planned.
 
 ## Object method parameter checks
 

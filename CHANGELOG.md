@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Check typed parameter expressions in returns
+
+- `claro typecheck` now carries a function or method parameter's `CHECK TYPE` metadata into later return-expression inference.
+- Added positive and negative arithmetic return fixtures so a declared return type cannot silently accept an expression whose parameter type is already known.
+
 ### Check simple function return types
 
 - Added `TEACH name ... RETURNS TYPE` syntax for a focused static return check.
