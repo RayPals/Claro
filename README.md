@@ -173,6 +173,12 @@ END
 
 The same focused check applies to methods such as `Player.score RETURNS NUMBER`; a wrong return reports the full method name, for example: `Type mismatch for return from Player.score: expected NUMBER, but this value looks like TEXT.`
 
+If a function or method declares `RETURNS TYPE` but uses `RETURN` without a value, the checker points out the missing expression:
+
+```text
+Function square needs a NUMBER value after RETURN. Add a NUMBER expression.
+```
+
 If a function or method declares `RETURNS TYPE` but contains no `RETURN`, the checker points out the missing statement:
 
 ```text

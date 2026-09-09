@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Diagnose empty typed returns
+
+- `claro typecheck` now reports a beginner-facing error when a function or method declares `RETURNS TYPE` but uses `RETURN` without a value.
+- Added a focused negative fixture and release-validation coverage for the missing return expression.
+
 ### Check typed parameter expressions in returns
 
 - `claro typecheck` now carries a function or method parameter's `CHECK TYPE` metadata into later return-expression inference.
