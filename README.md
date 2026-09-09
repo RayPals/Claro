@@ -193,7 +193,7 @@ Return declarations must use a known Claro type. If the type name is misspelled,
 Function square declares an unknown return type BANANA. Use a Claro type such as NUMBER, TEXT, YESNO, LIST, or MAP.
 ```
 
-The same check applies to methods, so `Player.score RETURNS BANANA` reports `Method Player.score declares an unknown return type BANANA...` instead of allowing a misspelled type into a class definition.
+The same check applies to methods, so `Player.score RETURNS BANANA` reports `Method Player.score declares an unknown return type BANANA...` instead of allowing a misspelled type into a class definition. Complete `IF`/`ELSE` return branches are also accepted inside typed functions and methods, including a nested conditional whose own branches all return; an incomplete path still gets a missing-return diagnostic.
 
 The unknown-function diagnostic is validated for both modern `DO squre 4` and compatibility `CALL squre WITH 4` calls. Compatibility calls that leave `WITH` empty, such as `CALL greet WITH`, now count as zero arguments, so learners get the same missing-argument guidance as `DO greet` instead of the checker treating the blank as an argument.
 

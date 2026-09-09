@@ -1,0 +1,13 @@
+TEACH choose flag RETURNS NUMBER
+    IF flag
+        IF flag
+            RETURN 1
+        ELSE
+            RETURN 2
+        END
+    ELSE
+        RETURN 3
+    END
+END
+
+DO choose YES

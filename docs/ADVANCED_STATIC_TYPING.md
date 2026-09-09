@@ -56,6 +56,26 @@ ADD person TO people
 
 This is accepted with `Type check OK`. More complex nested container operations and full key/value inference remain future work.
 
+## Complete conditional returns
+
+When a function declares a return type, `claro typecheck` accepts nested conditionals when every branch returns a value of that type:
+
+```claro
+TEACH choose flag RETURNS NUMBER
+    IF flag
+        IF flag
+            RETURN 1
+        ELSE
+            RETURN 2
+        END
+    ELSE
+        RETURN 3
+    END
+END
+```
+
+An incomplete branch still produces a missing-return diagnostic. Deeper control-flow analysis through loops and more complex conditions remains planned.
+
 ## Object aliases and field checks
 
 When a simple object is assigned to another variable, `claro typecheck` preserves its class for direct field assignments:
