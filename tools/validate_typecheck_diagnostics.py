@@ -31,6 +31,9 @@ EXPECTED = {
     "tests/typecheck_method_return_bad.claro": [
         "tests/typecheck_method_return_bad.claro:3: Type mismatch for return from Player.score: expected NUMBER, but this value looks like TEXT.",
     ],
+    "tests/typecheck_method_return_expression_bad.claro": [
+        "tests/typecheck_method_return_expression_bad.claro:4: Type mismatch for return from Player.label: expected TEXT, but this value looks like NUMBER.",
+    ],
     "tests/typecheck_method_missing_return_bad.claro": [
         "tests/typecheck_method_missing_return_bad.claro:4: Method Player.score declares RETURNS NUMBER but has no RETURN statement. Add RETURN with a NUMBER value.",
     ],
@@ -195,6 +198,7 @@ EXPECTED_OK = [
     "tests/typecheck_function_return_good.claro",
     "tests/typecheck_function_return_expression_good.claro",
     "tests/typecheck_method_return_good.claro",
+    "tests/typecheck_method_return_expression_good.claro",
     "tests/typecheck_function_multi_good.claro",
     "tests/typecheck_method_good.claro",
     "tests/typecheck_method_call_good.claro",

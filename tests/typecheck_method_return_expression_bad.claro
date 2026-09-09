@@ -1,0 +1,6 @@
+CLASS Player
+    TEACH label amount RETURNS TEXT
+        CHECK TYPE amount IS NUMBER
+        RETURN amount + 1
+    END
+END
