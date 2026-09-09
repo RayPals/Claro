@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Diagnose unknown declared return types
+
+- `claro typecheck` now reports a learner-facing error when a function or object method declares an unsupported `RETURNS` type such as `BANANA`.
+- Added focused negative-fixture coverage and release-validator coverage for the invalid declaration.
+
 ### Diagnose empty typed returns
 
 - `claro typecheck` now reports a beginner-facing error when a function or method declares `RETURNS TYPE` but uses `RETURN` without a value.

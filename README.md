@@ -185,6 +185,12 @@ If a function or method declares `RETURNS TYPE` but contains no `RETURN`, the ch
 Function square declares RETURNS NUMBER but has no RETURN statement. Add RETURN with a NUMBER value.
 ```
 
+Return declarations must use a known Claro type. If the type name is misspelled, the checker explains the supported beginner types:
+
+```text
+Function square declares an unknown return type BANANA. Use a Claro type such as NUMBER, TEXT, YESNO, LIST, or MAP.
+```
+
 The unknown-function diagnostic is validated for both modern `DO squre 4` and compatibility `CALL squre WITH 4` calls. Compatibility calls that leave `WITH` empty, such as `CALL greet WITH`, now count as zero arguments, so learners get the same missing-argument guidance as `DO greet` instead of the checker treating the blank as an argument.
 
 For functions with more than one checked parameter, Claro reports each mismatched argument with the parameter name:
