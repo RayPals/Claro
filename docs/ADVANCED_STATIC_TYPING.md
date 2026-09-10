@@ -58,6 +58,16 @@ This is accepted with `Type check OK`. More complex nested container operations 
 
 ## Complete conditional returns
 
+Return declarations accept the same case-insensitive keyword style as the rest of Claro. For example, `returns NUMBER` still enables return checking:
+
+```claro
+TEACH square amount returns NUMBER
+    RETURN "oops"
+END
+```
+
+This reports a normal return mismatch naming `NUMBER` and `TEXT`; capitalization style does not disable the safety check.
+
 When a function declares a return type, `claro typecheck` accepts nested conditionals when every branch returns a value of that type:
 
 ```claro
