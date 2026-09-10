@@ -84,6 +84,15 @@ END
 Type mismatch for return from Player.score: expected NUMBER, but this value looks like TEXT.
 ```
 
+A correct compatibility call also remains valid when the declaration uses lowercase `returns`:
+
+```claro
+NEW Player player
+CALL player.score WITH 4
+```
+
+This success path is included in the focused typecheck validation matrix.
+
 When a function declares a return type, `claro typecheck` accepts nested conditionals when every branch returns a value of that type:
 
 ```claro
