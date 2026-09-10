@@ -92,6 +92,9 @@ EXPECTED = {
     "tests/typecheck_method_missing_unchecked_arg_bad.claro": [
         "tests/typecheck_method_missing_unchecked_arg_bad.claro:10: Method Player.rename needs 1 argument, but this call gives 0. Add the missing argument.",
     ],
+    "tests/typecheck_method_call_missing_unchecked_arg_bad.claro": [
+        "tests/typecheck_method_call_missing_unchecked_arg_bad.claro:10: Method Player.rename needs 1 argument, but this call gives 0. Add the missing argument.",
+    ],
     "tests/typecheck_method_extra_arg_bad.claro": [
         "tests/typecheck_method_extra_arg_bad.claro:11: Method Player.add only accepts 1 argument, but this call gives 2. Remove the extra argument.",
     ],

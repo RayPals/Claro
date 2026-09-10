@@ -68,6 +68,12 @@ class ValidateTypecheckDiagnosticsTests(unittest.TestCase):
     def test_includes_compatibility_method_return_success_fixture(self):
         self.assertIn("tests/typecheck_method_compat_return_good.claro", MODULE.EXPECTED_OK)
 
+    def test_includes_compatibility_missing_method_argument_fixture(self):
+        self.assertIn(
+            "tests/typecheck_method_call_missing_unchecked_arg_bad.claro",
+            MODULE.EXPECTED,
+        )
+
     def test_release_validation_runs_method_call_fixture(self):
         result = subprocess.run(
             [str(ROOT / "claro"), "validate"],
