@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Validate the complete typecheck matrix
+
+- `claro validate` now runs the complete focused typecheck fixture matrix, including method-call, alias, return, and expression fixtures that were previously covered only by the standalone diagnostic validator.
+
 ### Validate compatibility method return types
 
 - Added focused coverage proving that the older `TEACH ... TAKES ... RETURNS TYPE` / `LEARNED` method syntax receives the same learner-facing return-type diagnostic as modern methods.

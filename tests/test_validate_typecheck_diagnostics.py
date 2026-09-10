@@ -2,6 +2,7 @@
 """Regression tests for complete typecheck fixture coverage."""
 import importlib.util
 from pathlib import Path
+import subprocess
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -62,6 +63,16 @@ class ValidateTypecheckDiagnosticsTests(unittest.TestCase):
 
     def test_includes_compatibility_method_return_success_fixture(self):
         self.assertIn("tests/typecheck_method_compat_return_good.claro", MODULE.EXPECTED_OK)
+
+    def test_release_validation_runs_method_call_fixture(self):
+        result = subprocess.run(
+            [str(ROOT / "claro"), "validate"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("tests/typecheck_method_call_bad.claro", result.stdout)
 
 
 if __name__ == "__main__":
