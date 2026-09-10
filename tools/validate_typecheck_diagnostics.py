@@ -49,6 +49,9 @@ EXPECTED = {
     "tests/typecheck_method_missing_return_bad.claro": [
         "tests/typecheck_method_missing_return_bad.claro:4: Method Player.score declares RETURNS NUMBER but has no RETURN statement. Add RETURN with a NUMBER value.",
     ],
+    "tests/typecheck_method_branch_missing_return_bad.claro": [
+        "tests/typecheck_method_branch_missing_return_bad.claro:6: Method Player.choose declares RETURNS NUMBER but does not return a NUMBER value on every path. Add RETURN to each branch or after the conditional.",
+    ],
     "tests/typecheck_function_multi_bad.claro": [
         "tests/typecheck_function_multi_bad.claro:8: Type mismatch for function label: parameter name needs TEXT, but this argument looks like NUMBER.",
         "tests/typecheck_function_multi_bad.claro:8: Type mismatch for function label: parameter age needs NUMBER, but this argument looks like TEXT.",

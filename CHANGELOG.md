@@ -7,6 +7,11 @@
 - Added focused coverage proving that the older `TEACH ... TAKES ... RETURNS TYPE` / `LEARNED` method syntax receives the same learner-facing return-type diagnostic as modern methods.
 - Added the compatibility method fixture to the complete typecheck diagnostics validator.
 
+### Validate incomplete method return paths
+
+- Added focused typecheck coverage proving that a typed method with an incomplete conditional return reports the same learner-facing missing-path diagnostic as a typed function.
+- Added the method fixture to both `claro validate` and the complete typecheck diagnostics validator.
+
 ### Validate compatibility function return types
 
 - Added focused coverage proving that the older `TEACH ... TAKES ... RETURNS TYPE` / `LEARNED` syntax receives the same learner-facing return-type diagnostic as modern functions.
