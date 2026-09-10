@@ -28,6 +28,10 @@ class ValidateTypecheckDiagnosticsTests(unittest.TestCase):
             "tests/typecheck_object_alias_method_do_good.claro",
             MODULE.EXPECTED_OK,
         )
+    def test_has_compatibility_chained_alias_method_extra_arg_fixture(self):
+        self.assertTrue(
+            (ROOT / "tests/typecheck_object_alias_method_call_extra_arg_bad.claro").exists()
+        )
 
     def test_includes_dedicated_yesno_field_check_success_fixture(self):
         self.assertIn(

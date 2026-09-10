@@ -407,7 +407,7 @@ Output:
 Method Player.add only accepts 1 argument, but this call gives 2. Remove the extra argument.
 ```
 
-Both sides of this narrow method foundation are covered by validation: `tests/typecheck_method_good.claro` checks that `DO player.add 5` is accepted, `tests/typecheck_method_bad.claro` checks the friendly wrong-type diagnostic, `tests/typecheck_method_missing_arg_bad.claro` checks the missing checked-argument diagnostic, and `tests/typecheck_method_extra_arg_bad.claro` checks the extra-argument diagnostic. Multi-method class examples are covered too, including the extra-argument case where the checked method appears after another method in the same class.
+Both sides of this narrow method foundation are covered by validation: `tests/typecheck_method_good.claro` checks that `DO player.add 5` is accepted, `tests/typecheck_method_bad.claro` checks the friendly wrong-type diagnostic, `tests/typecheck_method_missing_arg_bad.claro` checks the missing checked-argument diagnostic, and `tests/typecheck_method_extra_arg_bad.claro` checks the extra-argument diagnostic. Multi-method class examples are covered too, including the extra-argument case where the checked method appears after another method in the same class. A compatibility `CALL second.add WITH 5, 6` through a two-step alias is also covered by `tests/typecheck_object_alias_method_call_extra_arg_bad.claro`, preserving the same actionable extra-argument message for older lessons.
 
 If the method call comes before the object is created, the type checker now gives the learner the missing setup step. The modern `DO` form and the older compatibility `CALL ... WITH` form both get this guidance, even when the method name is also a typo:
 

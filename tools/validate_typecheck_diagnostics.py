@@ -212,6 +212,9 @@ EXPECTED = {
     "tests/typecheck_object_alias_method_call_bad.claro": [
         "tests/typecheck_object_alias_method_call_bad.claro:12: Type mismatch for method Player.add: parameter points needs NUMBER, but this argument looks like TEXT.",
     ],
+    "tests/typecheck_object_alias_method_call_extra_arg_bad.claro": [
+        "tests/typecheck_object_alias_method_call_extra_arg_bad.claro:12: Method Player.add only accepts 1 argument, but this call gives 2. Remove the extra argument.",
+    ],
 }
 
 EXPECTED_OK = [
