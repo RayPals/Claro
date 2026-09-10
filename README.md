@@ -173,7 +173,7 @@ END
 
 The same focused check applies to methods such as `Player.score RETURNS NUMBER`; a wrong return reports the full method name, for example: `Type mismatch for return from Player.score: expected NUMBER, but this value looks like TEXT.`
 
-The older compatibility spelling keeps the same return check for functions and methods. For example, `TEACH square TAKES amount RETURNS NUMBER` with `LEARNED` and `CALL square WITH 4` is checked before it runs, so older lessons get the same type-safety feedback. A compatibility method such as `TEACH score TAKES amount RETURNS NUMBER` inside a class is checked the same way.
+The older compatibility spelling keeps the same return check for functions and methods. For example, `TEACH square TAKES amount RETURNS NUMBER` with `LEARNED` and `CALL square WITH 4` is checked before it runs, so older lessons get the same type-safety feedback. A compatibility method such as `TEACH score TAKES amount RETURNS NUMBER` inside a class is checked the same way; a correct `CALL player.score WITH 4` path is covered by release validation too.
 
 If a function or method declares `RETURNS TYPE` but uses `RETURN` without a value, the checker points out the missing expression:
 
