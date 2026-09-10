@@ -223,6 +223,7 @@ EXPECTED_OK = [
     "tests/typecheck_function_nested_branch_complete_good.claro",
     "tests/typecheck_method_return_good.claro",
     "tests/typecheck_method_return_expression_good.claro",
+    "tests/typecheck_method_nested_branch_complete_good.claro",
     "tests/typecheck_function_multi_good.claro",
     "tests/typecheck_method_good.claro",
     "tests/typecheck_method_call_good.claro",

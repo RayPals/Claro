@@ -351,7 +351,7 @@ This is a focused check for simple return expressions. When a parameter has a `C
 Function choose declares RETURNS NUMBER but does not return a NUMBER value on every path. Add RETURN to each branch or after the conditional.
 ```
 
-The focused validation matrix covers modern and compatibility syntax, method success and mismatch fixtures, missing returns, and conditional-only returns. Full path-sensitive analysis proving that every `IF`/`ELSE` branch returns remains planned.
+The focused validation matrix covers modern and compatibility syntax, method success and mismatch fixtures, missing returns, and conditional-only returns. It also includes a positive nested `IF`/`ELSE` return example inside a method, so a complete nested method path is protected from regression. Full path-sensitive analysis proving that every `IF`/`ELSE` branch returns remains planned.
 
 ## Object method parameter checks
 
