@@ -23,6 +23,7 @@ Validated in this package:
 # Validation passed. Claro v1.18.26 networking reliability is ready for use.
 
 python3 tools/validate_typecheck_diagnostics.py
+python3 tools/validate_ide_metadata.py
 python3 tools/validate_version_convention.py
 python3 tools/validate_package_security.py
 python3 tools/validate_ci_workflow.py

@@ -31,6 +31,9 @@ def main():
 
     if ".claro" not in data["file_extensions"]:
         fail("IDE metadata must advertise the .claro file extension")
+    for keyword in ("RETURNS", "CHECK", "TYPE"):
+        if keyword not in data["keywords"]:
+            fail(f"IDE metadata must include the current typed-language keyword: {keyword}")
     if "LIST OF TEXT" not in data["types"]:
         fail("IDE metadata must include typed container types")
     if not any(cmd.get("name") == "typecheck" for cmd in data["commands"]):

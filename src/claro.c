@@ -721,7 +721,7 @@ static int print_ide_info(void){
  printf("  \"language\": \"Claro\",\n");
  printf("  \"version\": \"v1.18.26\",\n");
  printf("  \"file_extensions\": [\".claro\"],\n");
- printf("  \"keywords\": [\"SAY\",\"ASK\",\"SET\",\"IF\",\"ELSE\",\"ENDIF\",\"END\",\"REPEAT\",\"UNTIL\",\"TEACH\",\"LEARNED\",\"DO\",\"RETURN\",\"CLASS\",\"HAS\",\"NEW\",\"IMPORT\",\"TRY\",\"CATCH\",\"ENDTRY\",\"START TASK\",\"YIELD\",\"WAIT TASK\",\"TASK STATUS\",\"HTTP CHECK\",\"HTTP GET\",\"HTTP SAVE\",\"OPEN WINDOW\"],\n");
+ printf("  \"keywords\": [\"SAY\",\"ASK\",\"SET\",\"IF\",\"ELSE\",\"ENDIF\",\"END\",\"REPEAT\",\"UNTIL\",\"TEACH\",\"TAKES\",\"RETURNS\",\"CHECK\",\"TYPE\",\"LEARNED\",\"DO\",\"CALL\",\"WITH\",\"RETURN\",\"CLASS\",\"HAS\",\"NEW\",\"IMPORT\",\"TRY\",\"CATCH\",\"ENDTRY\",\"START TASK\",\"YIELD\",\"WAIT TASK\",\"TASK STATUS\",\"HTTP CHECK\",\"HTTP GET\",\"HTTP SAVE\",\"OPEN WINDOW\"],\n");
  printf("  \"types\": [\"NUMBER\",\"TEXT\",\"YESNO\",\"LIST\",\"LIST OF TEXT\",\"LIST OF NUMBER\",\"LIST OF YESNO\",\"MAP\",\"MAP OF TEXT\",\"MAP OF NUMBER\",\"MAP OF YESNO\",\"OBJECT\",\"ANY\"],\n");
  printf("  \"commands\": [\n");
  printf("    {\"name\": \"run\", \"usage\": \"claro run\", \"description\": \"Run main.claro or the project main script\"},\n");

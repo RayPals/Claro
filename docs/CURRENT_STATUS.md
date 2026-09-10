@@ -175,7 +175,7 @@ Status: **Foundation present**
 Ready now:
 - `claro ide`
 - metadata JSON
-- completion list
+- completion list, including the current typed-language keywords `RETURNS`, `CHECK`, and `TYPE`
 - diagnostics helper
 - Forgejo/Gitea CI coverage for the current release validation gates (`claro validate`, typecheck diagnostics validation, version convention validation, package security validation, and the CI workflow coverage check); the workflow validator verifies these commands, including its own command, occur in executable `run` steps rather than comments
 

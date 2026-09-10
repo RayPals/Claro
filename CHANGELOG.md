@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Advertise typed-language keywords to IDE helpers
+
+- Added `RETURNS`, `CHECK`, and `TYPE` to `claro ide` keyword metadata so editor integrations can recognize the current typed function and type-checking syntax.
+- Extended the IDE metadata validator and documented the updated completion surface.
+
 ### Validate the complete typecheck matrix
 
 - `claro validate` now runs the complete focused typecheck fixture matrix, including method-call, alias, return, and expression fixtures that were previously covered only by the standalone diagnostic validator.
