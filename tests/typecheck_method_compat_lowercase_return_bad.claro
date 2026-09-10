@@ -1,0 +1,8 @@
+CLASS Player
+    TEACH score TAKES amount returns NUMBER
+        RETURN "oops"
+    LEARNED
+END
+
+NEW Player player
+CALL player.score WITH 4

@@ -68,6 +68,22 @@ END
 
 This reports a normal return mismatch naming `NUMBER` and `TEXT`; capitalization style does not disable the safety check.
 
+The same case-insensitive return declaration rule applies to compatibility methods. A lowercase `returns` still checks the method's `RETURN` value:
+
+```claro
+CLASS Player
+    TEACH score TAKES amount returns NUMBER
+        RETURN "oops"
+    LEARNED
+END
+```
+
+`claro typecheck` reports:
+
+```text
+Type mismatch for return from Player.score: expected NUMBER, but this value looks like TEXT.
+```
+
 When a function declares a return type, `claro typecheck` accepts nested conditionals when every branch returns a value of that type:
 
 ```claro
