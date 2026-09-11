@@ -10,6 +10,8 @@ Claro stays plain-text first: simple enough to start with `SET name "Jon"`, but 
 
 **Current release:** Claro v1.18.26
 
+For the current feature map and beginner-safe limits, start with [`docs/CURRENT_STATUS.md`](docs/CURRENT_STATUS.md). The sequenced development priorities are in [`docs/ROADMAP.md`](docs/ROADMAP.md); older release-candidate notes are historical.
+
 Validated in this package:
 
 ```bash
@@ -195,6 +197,8 @@ Function square declares an unknown return type BANANA. Use a Claro type such as
 ```
 
 The same check applies to methods, so `Player.score RETURNS BANANA` reports `Method Player.score declares an unknown return type BANANA...` instead of allowing a misspelled type into a class definition. If a return expression cannot be understood yet, the diagnostic names the function or method and the type it needs; this is covered for both modern and older compatibility method syntax. When a NUMBER return contains a known TEXT operand in arithmetic, the checker names the operation and operand, for example: `Type mismatch for return from total: addition needs NUMBER values, but "oops" looks like TEXT.` Complete `IF`/`ELSE` return branches are also accepted inside typed functions and methods, including a nested conditional whose own branches all return; an incomplete path still gets a missing-return diagnostic.
+
+The same return diagnostic names subtraction when a NUMBER return mixes in a known TEXT operand, so the learner sees both the operation rule and the offending value instead of only a generic return mismatch.
 
 Claro keywords are case-insensitive here, so `returns NUMBER` is accepted as the same return declaration as `RETURNS NUMBER`. The type checker keeps the return-value diagnostic when a lowercase declaration is used, which helps learners who are still learning Claro's capitalization style.
 
