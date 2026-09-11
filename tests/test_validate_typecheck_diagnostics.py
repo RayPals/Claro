@@ -87,6 +87,16 @@ class ValidateTypecheckDiagnosticsTests(unittest.TestCase):
         self.assertIn("tests/typecheck_method_return_expression_bad.claro", MODULE.EXPECTED)
         self.assertIn("tests/typecheck_method_return_expression_good.claro", MODULE.EXPECTED_OK)
 
+    def test_includes_unknown_method_return_expression_fixtures(self):
+        self.assertIn(
+            "tests/typecheck_method_unknown_return_expression_bad.claro",
+            MODULE.EXPECTED,
+        )
+        self.assertIn(
+            "tests/typecheck_method_unknown_return_expression_good.claro",
+            MODULE.EXPECTED_OK,
+        )
+
     def test_includes_method_field_return_diagnostic_fixture(self):
         self.assertIn("tests/typecheck_method_field_return_bad.claro", MODULE.EXPECTED)
         self.assertIn("tests/typecheck_method_field_return_good.claro", MODULE.EXPECTED_OK)
