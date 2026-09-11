@@ -49,6 +49,16 @@ class ValidateTypecheckDiagnosticsTests(unittest.TestCase):
         self.assertIn("tests/typecheck_function_return_bad.claro", MODULE.EXPECTED)
         self.assertIn("tests/typecheck_function_return_good.claro", MODULE.EXPECTED_OK)
 
+    def test_includes_unknown_function_return_expression_fixtures(self):
+        self.assertIn(
+            "tests/typecheck_function_unknown_return_expression_bad.claro",
+            MODULE.EXPECTED,
+        )
+        self.assertIn(
+            "tests/typecheck_function_unknown_return_expression_good.claro",
+            MODULE.EXPECTED_OK,
+        )
+
     def test_includes_lowercase_compatibility_return_success_fixture(self):
         self.assertIn(
             "tests/typecheck_function_lowercase_return_good.claro",

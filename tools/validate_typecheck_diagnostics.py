@@ -31,6 +31,9 @@ EXPECTED = {
     "tests/typecheck_function_return_expression_bad.claro": [
         "tests/typecheck_function_return_expression_bad.claro:3: Type mismatch for return from label: expected TEXT, but this value looks like NUMBER.",
     ],
+    "tests/typecheck_function_unknown_return_expression_bad.claro": [
+        "tests/typecheck_function_unknown_return_expression_bad.claro:2: Function square's return value could not be understood yet. Use a NUMBER expression after RETURN.",
+    ],
     "tests/typecheck_function_missing_return_bad.claro": [
         "tests/typecheck_function_missing_return_bad.claro:3: Function square declares RETURNS NUMBER but has no RETURN statement. Add RETURN with a NUMBER value.",
     ],
@@ -236,6 +239,7 @@ EXPECTED_OK = [
     "tests/typecheck_function_compat_lowercase_return_good.claro",
     "tests/typecheck_function_lowercase_return_good.claro",
     "tests/typecheck_function_return_expression_good.claro",
+    "tests/typecheck_function_unknown_return_expression_good.claro",
     "tests/typecheck_function_branch_complete_good.claro",
     "tests/typecheck_function_nested_branch_complete_good.claro",
     "tests/typecheck_method_return_good.claro",

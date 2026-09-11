@@ -58,6 +58,22 @@ This is accepted with `Type check OK`. More complex nested container operations 
 
 ## Complete conditional returns
 
+### Return expressions that need more information
+
+When a typed function or method returns a name or expression whose type the focused checker cannot infer yet, `claro typecheck` reports that clearly instead of silently accepting it:
+
+```claro
+TEACH square amount RETURNS NUMBER
+    RETURN missing
+END
+```
+
+```text
+Function square's return value could not be understood yet. Use a NUMBER expression after RETURN.
+```
+
+Use a known typed value, such as a parameter checked with `CHECK TYPE`, while broader expression inference remains future work.
+
 Return declarations accept the same case-insensitive keyword style as the rest of Claro. For example, `returns NUMBER` still enables return checking:
 
 ```claro
