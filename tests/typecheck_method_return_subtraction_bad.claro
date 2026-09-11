@@ -1,0 +1,8 @@
+CLASS Player
+    HAS score NUMBER
+
+    TEACH total amount RETURNS NUMBER
+        CHECK TYPE amount IS NUMBER
+        RETURN amount - "oops"
+    END
+END
