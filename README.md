@@ -194,7 +194,7 @@ Return declarations must use a known Claro type. If the type name is misspelled,
 Function square declares an unknown return type BANANA. Use a Claro type such as NUMBER, TEXT, YESNO, LIST, or MAP.
 ```
 
-The same check applies to methods, so `Player.score RETURNS BANANA` reports `Method Player.score declares an unknown return type BANANA...` instead of allowing a misspelled type into a class definition. Complete `IF`/`ELSE` return branches are also accepted inside typed functions and methods, including a nested conditional whose own branches all return; an incomplete path still gets a missing-return diagnostic.
+The same check applies to methods, so `Player.score RETURNS BANANA` reports `Method Player.score declares an unknown return type BANANA...` instead of allowing a misspelled type into a class definition. If a return expression cannot be understood yet, the diagnostic names the function or method and the type it needs; this is covered for both modern and older compatibility method syntax. Complete `IF`/`ELSE` return branches are also accepted inside typed functions and methods, including a nested conditional whose own branches all return; an incomplete path still gets a missing-return diagnostic.
 
 Claro keywords are case-insensitive here, so `returns NUMBER` is accepted as the same return declaration as `RETURNS NUMBER`. The type checker keeps the return-value diagnostic when a lowercase declaration is used, which helps learners who are still learning Claro's capitalization style.
 

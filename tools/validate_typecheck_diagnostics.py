@@ -58,6 +58,9 @@ EXPECTED = {
     "tests/typecheck_method_unknown_return_expression_bad.claro": [
         "tests/typecheck_method_unknown_return_expression_bad.claro:4: Method Player.square's return value could not be understood yet. Use a NUMBER expression after RETURN.",
     ],
+    "tests/typecheck_method_compat_unknown_return_expression_bad.claro": [
+        "tests/typecheck_method_compat_unknown_return_expression_bad.claro:4: Method Player.square's return value could not be understood yet. Use a NUMBER expression after RETURN.",
+    ],
     "tests/typecheck_method_field_return_bad.claro": [
         "tests/typecheck_method_field_return_bad.claro:5: Type mismatch for return from Player.label: expected TEXT, but this value looks like NUMBER.",
     ],
