@@ -74,6 +74,17 @@ Function square's return value could not be understood yet. Use a NUMBER express
 
 Use a known typed value, such as a parameter checked with `CHECK TYPE`, while broader expression inference remains future work.
 
+Known NUMBER parameters can also be used in arithmetic return expressions. Numeric division is accepted when both operands are known numbers:
+
+```claro
+TEACH halve amount RETURNS NUMBER
+    CHECK TYPE amount IS NUMBER
+    RETURN amount / 2
+END
+```
+
+This valid division case is included in the focused typecheck validation matrix beside the diagnostic for using a TEXT operand in division.
+
 Return declarations accept the same case-insensitive keyword style as the rest of Claro. For example, `returns NUMBER` still enables return checking:
 
 ```claro
