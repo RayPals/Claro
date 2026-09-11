@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Validate division return diagnostics
+
+- Added focused `claro typecheck` coverage proving that a typed function returning `amount / "oops"` identifies division, the required `NUMBER` operands, and the offending `TEXT` value.
+- Wired the negative fixture into the complete typecheck validator and `claro validate` coverage.
+
 ### Validate numeric function return expressions
 
 - Added a focused positive typecheck fixture proving that a typed function can return a numeric multiplication expression after `CHECK TYPE` establishes its parameter type.
