@@ -29,7 +29,7 @@ python3 tools/validate_package_security.py
 python3 tools/validate_ci_workflow.py
 ```
 
-The CI workflow validator also requires its own command to remain in an executable `run` step, so the release-gate check cannot silently disappear from CI.
+The CI workflow validator also requires its own command to remain in an executable `run` step, so the release-gate check cannot silently disappear from CI. `make` builds both `claro` and `claro.exe`, allowing the version validator to exercise the same source build on every platform.
 
 ## Beginner-first syntax
 
