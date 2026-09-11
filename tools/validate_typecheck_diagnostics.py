@@ -37,6 +37,9 @@ EXPECTED = {
     "tests/typecheck_function_return_subtraction_bad.claro": [
         "tests/typecheck_function_return_subtraction_bad.claro:3: Type mismatch for return from total: subtraction needs NUMBER values, but \"oops\" looks like TEXT.",
     ],
+    "tests/typecheck_function_return_multiplication_bad.claro": [
+        "tests/typecheck_function_return_multiplication_bad.claro:3: Type mismatch for return from total: multiplication needs NUMBER values, but \"oops\" looks like TEXT.",
+    ],
     "tests/typecheck_method_return_subtraction_bad.claro": [
         "tests/typecheck_method_return_subtraction_bad.claro:6: Type mismatch for return from Player.total: subtraction needs NUMBER values, but \"oops\" looks like TEXT.",
     ],
