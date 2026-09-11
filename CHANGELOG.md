@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Validate numeric function return expressions
+
+- Added a focused positive typecheck fixture proving that a typed function can return a numeric multiplication expression after `CHECK TYPE` establishes its parameter type.
+- Wired the fixture into the standalone typecheck validator and `claro validate`.
+
 ### Advertise typed-language keywords to IDE helpers
 
 - Added `RETURNS`, `CHECK`, and `TYPE` to `claro ide` keyword metadata so editor integrations can recognize the current typed function and type-checking syntax.
