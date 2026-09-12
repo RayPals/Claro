@@ -49,6 +49,9 @@ EXPECTED = {
     "tests/typecheck_method_return_division_bad.claro": [
         "tests/typecheck_method_return_division_bad.claro:6: Type mismatch for return from Player.total: division needs NUMBER values, but \"oops\" looks like TEXT.",
     ],
+    "tests/typecheck_method_return_multiplication_bad.claro": [
+        "tests/typecheck_method_return_multiplication_bad.claro:6: Type mismatch for return from Player.total: multiplication needs NUMBER values, but \"oops\" looks like TEXT.",
+    ],
     "tests/typecheck_function_unknown_return_expression_bad.claro": [
         "tests/typecheck_function_unknown_return_expression_bad.claro:2: Function square's return value could not be understood yet. Use a NUMBER expression after RETURN.",
     ],
@@ -273,6 +276,7 @@ EXPECTED_OK = [
     "tests/typecheck_method_compat_return_good.claro",
     "tests/typecheck_method_compat_lowercase_return_good.claro",
     "tests/typecheck_method_return_expression_good.claro",
+    "tests/typecheck_method_return_multiplication_good.claro",
     "tests/typecheck_method_unknown_return_expression_good.claro",
     "tests/typecheck_method_nested_branch_complete_good.claro",
     "tests/typecheck_function_multi_good.claro",
