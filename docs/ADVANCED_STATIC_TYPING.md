@@ -85,6 +85,19 @@ END
 
 This valid division case is included in the focused typecheck validation matrix beside the diagnostic for using a TEXT operand in division.
 
+The same protection applies to object methods. A checked NUMBER parameter can be divided by a number and returned as NUMBER:
+
+```claro
+CLASS Player
+    TEACH total amount RETURNS NUMBER
+        CHECK TYPE amount IS NUMBER
+        RETURN amount / 2
+    END
+END
+```
+
+This valid method-division case is included in the focused typecheck validation matrix beside the method diagnostic for using a TEXT operand in division.
+
 Return declarations accept the same case-insensitive keyword style as the rest of Claro. For example, `returns NUMBER` still enables return checking:
 
 ```claro
