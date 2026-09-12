@@ -297,6 +297,22 @@ The focused validation matrix keeps this valid arithmetic case beside the multip
 
 The expression checker now gives operator-specific guidance for known TEXT operands in subtraction, multiplication, and division, including typed method return expressions. Broader expression inference remains future work.
 
+Compatibility methods use the same arithmetic return checks as modern methods. This older spelling is accepted when a checked NUMBER parameter is used in a numeric addition:
+
+```claro
+CLASS Player
+    TEACH score TAKES amount RETURNS NUMBER
+        CHECK TYPE amount IS NUMBER
+        RETURN amount + 2
+    LEARNED
+ENDCLASS
+
+NEW Player player
+CALL player.score WITH 4
+```
+
+The focused validation matrix covers this positive compatibility example alongside subtraction, multiplication, and division.
+
 Text concatenation is also accepted when the result is assigned to a TEXT field. This keeps a common beginner pattern type-safe without treating every `+` expression as numeric:
 
 ```claro

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Validate compatibility method addition returns
+
+- Added focused positive typecheck coverage proving that the older `TEACH ... TAKES ... RETURNS NUMBER` / `LEARNED` method syntax accepts a numeric addition return after `CHECK TYPE` establishes the parameter type.
+- Wired the fixture into the standalone typecheck validator and `claro validate`.
+
 ### Validate compatibility method multiplication returns
 
 - Added focused release validation for compatibility (`TAKES` / `LEARNED`) methods returning numeric multiplication results.
