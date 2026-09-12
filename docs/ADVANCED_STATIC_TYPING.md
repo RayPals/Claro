@@ -228,7 +228,7 @@ SET player.score player.score * 2
 
 The focused validation matrix keeps this valid arithmetic case beside the multiplication text-operand diagnostic, so a useful expression is not confused with the nearby beginner mistake.
 
-The expression checker now gives operator-specific guidance for known TEXT operands in subtraction, multiplication, and division. Broader expression inference remains future work.
+The expression checker now gives operator-specific guidance for known TEXT operands in subtraction, multiplication, and division, including typed method return expressions. Broader expression inference remains future work.
 
 Text concatenation is also accepted when the result is assigned to a TEXT field. This keeps a common beginner pattern type-safe without treating every `+` expression as numeric:
 

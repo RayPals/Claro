@@ -46,6 +46,9 @@ EXPECTED = {
     "tests/typecheck_method_return_subtraction_bad.claro": [
         "tests/typecheck_method_return_subtraction_bad.claro:6: Type mismatch for return from Player.total: subtraction needs NUMBER values, but \"oops\" looks like TEXT.",
     ],
+    "tests/typecheck_method_return_division_bad.claro": [
+        "tests/typecheck_method_return_division_bad.claro:6: Type mismatch for return from Player.total: division needs NUMBER values, but \"oops\" looks like TEXT.",
+    ],
     "tests/typecheck_function_unknown_return_expression_bad.claro": [
         "tests/typecheck_function_unknown_return_expression_bad.claro:2: Function square's return value could not be understood yet. Use a NUMBER expression after RETURN.",
     ],
