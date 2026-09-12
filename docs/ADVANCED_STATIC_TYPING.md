@@ -157,7 +157,20 @@ CLASS Player
 ENDCLASS
 ```
 
-The matching `CALL player.score WITH 4` path is included in focused validation.
+This matching `CALL player.score WITH 4` path is included in focused validation.
+
+Compatibility methods support numeric subtraction in the same focused way:
+
+```claro
+CLASS Player
+    TEACH score TAKES amount RETURNS NUMBER
+        CHECK TYPE amount IS NUMBER
+        RETURN amount - 2
+    LEARNED
+ENDCLASS
+```
+
+The matching `CALL player.score WITH 4` success path is included in focused validation alongside the modern method subtraction case.
 
 When a function declares a return type, `claro typecheck` accepts nested conditionals when every branch returns a value of that type:
 

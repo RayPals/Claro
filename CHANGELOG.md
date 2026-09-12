@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Validate compatibility method subtraction returns
+
+- Added focused positive typecheck coverage proving that the older `TEACH ... TAKES ... RETURNS NUMBER` / `LEARNED` method syntax accepts a numeric subtraction return after `CHECK TYPE` establishes the parameter type.
+- Wired the fixture into the standalone typecheck validator and `claro validate`.
+
 ### Validate numeric function subtraction returns
 
 - Added focused positive typecheck coverage proving that a typed function can return a numeric subtraction expression after `CHECK TYPE` establishes its parameter type.
