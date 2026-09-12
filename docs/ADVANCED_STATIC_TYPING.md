@@ -85,6 +85,17 @@ END
 
 This valid division case is included in the focused typecheck validation matrix beside the diagnostic for using a TEXT operand in division.
 
+Subtraction follows the same rule:
+
+```claro
+TEACH difference amount RETURNS NUMBER
+    CHECK TYPE amount IS NUMBER
+    RETURN amount - 2
+END
+```
+
+The focused validator checks this positive function case as well as the matching subtraction diagnostic for a TEXT operand.
+
 The same protection applies to object methods. A checked NUMBER parameter can be divided by a number and returned as NUMBER:
 
 ```claro

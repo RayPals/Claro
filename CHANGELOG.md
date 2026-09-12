@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Validate numeric function subtraction returns
+
+- Added focused positive typecheck coverage proving that a typed function can return a numeric subtraction expression after `CHECK TYPE` establishes its parameter type.
+- Wired the fixture into the standalone typecheck validator and `claro validate`.
+
 ### Validate division return diagnostics
 
 - Added focused `claro typecheck` coverage proving that a typed function returning `amount / "oops"` identifies division, the required `NUMBER` operands, and the offending `TEXT` value.

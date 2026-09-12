@@ -271,6 +271,7 @@ EXPECTED_OK = [
     "tests/typecheck_function_return_expression_good.claro",
     "tests/typecheck_function_return_multiplication_good.claro",
     "tests/typecheck_function_return_division_good.claro",
+    "tests/typecheck_function_return_subtraction_good.claro",
     "tests/typecheck_function_unknown_return_expression_good.claro",
     "tests/typecheck_function_branch_complete_good.claro",
     "tests/typecheck_function_nested_branch_complete_good.claro",
