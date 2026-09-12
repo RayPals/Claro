@@ -133,6 +133,21 @@ CALL player.score WITH 4
 
 This success path is included in the focused typecheck validation matrix.
 
+Compatibility methods also keep arithmetic return checks when they use the older
+`TAKES` / `LEARNED` spelling. For example, this checked division remains a valid
+NUMBER return:
+
+```claro
+CLASS Player
+    TEACH score TAKES amount RETURNS NUMBER
+        CHECK TYPE amount IS NUMBER
+        RETURN amount / 2
+    LEARNED
+ENDCLASS
+```
+
+The matching `CALL player.score WITH 4` path is included in focused validation.
+
 When a function declares a return type, `claro typecheck` accepts nested conditionals when every branch returns a value of that type:
 
 ```claro
