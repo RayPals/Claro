@@ -159,6 +159,26 @@ ENDCLASS
 
 This matching `CALL player.score WITH 4` path is included in focused validation.
 
+The same compatibility method return check explains an addition mistake instead of
+falling back to a generic return error:
+
+```claro
+CLASS Player
+    TEACH total TAKES amount RETURNS NUMBER
+        CHECK TYPE amount IS NUMBER
+        RETURN amount + "oops"
+    LEARNED
+ENDCLASS
+```
+
+`claro typecheck` reports:
+
+```text
+Type mismatch for return from Player.total: addition needs NUMBER values, but "oops" looks like TEXT.
+```
+
+This negative compatibility fixture is part of focused release validation.
+
 Compatibility methods support numeric subtraction in the same focused way:
 
 ```claro
