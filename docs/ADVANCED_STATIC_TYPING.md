@@ -172,6 +172,21 @@ ENDCLASS
 
 The matching `CALL player.score WITH 4` success path is included in focused validation alongside the modern method subtraction case.
 
+Compatibility methods also keep numeric multiplication return checks. This older
+`TAKES` / `LEARNED` spelling accepts a checked NUMBER parameter multiplied by a
+number and returned as NUMBER:
+
+```claro
+CLASS Player
+    TEACH score TAKES amount RETURNS NUMBER
+        CHECK TYPE amount IS NUMBER
+        RETURN amount * 2
+    LEARNED
+ENDCLASS
+```
+
+The matching `CALL player.score WITH 4` success path is included in focused validation.
+
 When a function declares a return type, `claro typecheck` accepts nested conditionals when every branch returns a value of that type:
 
 ```claro

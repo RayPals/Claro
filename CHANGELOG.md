@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Validate compatibility method multiplication returns
+
+- Added focused release validation for compatibility (`TAKES` / `LEARNED`) methods returning numeric multiplication results.
+
 ### Validate compatibility method subtraction returns
 
 - Added focused positive typecheck coverage proving that the older `TEACH ... TAKES ... RETURNS NUMBER` / `LEARNED` method syntax accepts a numeric subtraction return after `CHECK TYPE` establishes the parameter type.
