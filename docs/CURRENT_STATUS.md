@@ -61,6 +61,7 @@ Ready now:
 Still needed:
 - Keep the focused typecheck validator's fixture list complete as new positive and negative examples are added. `claro validate` now executes the complete focused fixture matrix as well, so release validation cannot silently omit a listed typecheck example.
 - The expression checker now carries a known TEXT operand through all arithmetic operators so object-field and typed-function-return diagnostics do not hide addition, subtraction, multiplication, or division mistakes; focused numeric-subtraction, numeric-division, and numeric-multiplication positives plus text-operand addition, subtraction, multiplication, and division negatives protect this behavior. Typed-function return diagnostics now also have focused division coverage. Text concatenation into a TEXT field has focused positive fixtures for both operand orders, including concatenation of two TEXT object fields. Each numeric operator names the text operand and explains that it needs NUMBER values.
+- Method return validation now has a focused positive subtraction fixture alongside the existing arithmetic return coverage, so a checked NUMBER method parameter and numeric subtraction remain accepted by the release validator.
 - richer typed function signatures and return values beyond the focused simple function/method `RETURNS TYPE` check
 - type checking through branches and loops
 - richer object field type checking beyond simple direct assignments

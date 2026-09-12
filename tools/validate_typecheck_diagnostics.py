@@ -280,6 +280,7 @@ EXPECTED_OK = [
     "tests/typecheck_method_compat_lowercase_return_good.claro",
     "tests/typecheck_method_return_expression_good.claro",
     "tests/typecheck_method_return_multiplication_good.claro",
+    "tests/typecheck_method_return_subtraction_good.claro",
     "tests/typecheck_method_return_addition_good.claro",
     "tests/typecheck_method_unknown_return_expression_good.claro",
     "tests/typecheck_method_nested_branch_complete_good.claro",
