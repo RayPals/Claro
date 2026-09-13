@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Validate compatibility method subtraction diagnostics
+
+- Added focused negative typecheck coverage proving that the older `TAKES` / `LEARNED` method syntax identifies a TEXT operand in a NUMBER subtraction return and explains the required operand type.
+- Wired the fixture into the standalone typecheck validator and `claro validate`.
+
 ### Validate compatibility method addition diagnostics
 
 - Added focused negative typecheck coverage proving that the older `TAKES` / `LEARNED` method syntax identifies a TEXT operand in a NUMBER addition return and explains the required operand type.

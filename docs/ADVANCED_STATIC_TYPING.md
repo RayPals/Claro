@@ -333,6 +333,25 @@ CALL player.score WITH 4
 
 The focused validation matrix covers this positive compatibility example alongside subtraction, multiplication, and division.
 
+The same operator-specific diagnostic is covered for older compatibility methods:
+
+```claro
+CLASS Player
+    TEACH total TAKES amount RETURNS NUMBER
+        CHECK TYPE amount IS NUMBER
+        RETURN amount - "oops"
+    LEARNED
+ENDCLASS
+```
+
+Claro reports:
+
+```text
+Type mismatch for return from Player.total: subtraction needs NUMBER values, but "oops" looks like TEXT.
+```
+
+This keeps `TAKES` / `LEARNED` lessons aligned with the modern method syntax.
+
 Text concatenation is also accepted when the result is assigned to a TEXT field. This keeps a common beginner pattern type-safe without treating every `+` expression as numeric:
 
 ```claro
