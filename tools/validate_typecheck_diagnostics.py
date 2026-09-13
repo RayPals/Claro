@@ -281,6 +281,12 @@ EXPECTED = {
     "tests/typecheck_method_compat_text_field_assignment_bad.claro": [
         "tests/typecheck_method_compat_text_field_assignment_bad.claro:4: Type mismatch for field name in Player.rename: expected TEXT, but this value looks like NUMBER.",
     ],
+    "tests/typecheck_method_yesno_field_assignment_bad.claro": [
+        "tests/typecheck_method_yesno_field_assignment_bad.claro:4: Type mismatch for field ready in Player.toggle: expected YESNO, but this value looks like TEXT.",
+    ],
+    "tests/typecheck_method_compat_yesno_field_assignment_bad.claro": [
+        "tests/typecheck_method_compat_yesno_field_assignment_bad.claro:4: Type mismatch for field ready in Player.toggle: expected YESNO, but this value looks like TEXT.",
+    ],
     "tests/typecheck_method_field_check_type_bad.claro": [
         "tests/typecheck_method_field_check_type_bad.claro:4: Type check failed in Player.rename: expected NUMBER, but name looks like TEXT.",
     ],

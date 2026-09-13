@@ -825,7 +825,7 @@ Output:
 Function greet needs 1 argument, but this call gives 0. Add the missing argument.
 ```
 
-The same method-aware diagnostic is used when a method directly assigns the wrong value to a class field. For example, `SET name 123` inside `Player.rename` reports `Type mismatch for field name in Player.rename: expected TEXT, but this value looks like NUMBER.` The operator-specific form also remains available: `SET score score + name` inside `Player.add RETURNS NUMBER` reports `Type mismatch for field score in Player.add: addition needs NUMBER values, but name looks like TEXT.` These focused checks cover typed method bodies; broader control-flow and object-flow analysis remains planned.
+The same method-aware diagnostic is used when a method directly assigns the wrong value to a class field. For example, `SET name 123` inside `Player.rename` reports `Type mismatch for field name in Player.rename: expected TEXT, but this value looks like NUMBER.` The operator-specific form also remains available: `SET score score + name` inside `Player.add RETURNS NUMBER` reports `Type mismatch for field score in Player.add: addition needs NUMBER values, but name looks like TEXT.` YESNO fields use the same clear method context: assigning text to `HAS ready YESNO` inside `Player.toggle` reports `Type mismatch for field ready in Player.toggle: expected YESNO, but this value looks like TEXT.` Both modern `DO` and compatibility `CALL ... WITH` method forms are covered by the focused validation matrix. These focused checks cover typed method bodies; broader control-flow and object-flow analysis remains planned.
 
 ## Status
 
