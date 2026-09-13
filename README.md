@@ -347,6 +347,8 @@ Object player is not known yet. Create it with NEW ClassName player before setti
 
 The checker also names typed method-body field checks and assignments. Inside `Player.rename`, `CHECK TYPE name IS NUMBER` reports `Type check failed in Player.rename: expected NUMBER, but name looks like TEXT.` Inside `Player.rename`, `SET name 123` reports `Type mismatch for field name in Player.rename: expected TEXT, but this value looks like NUMBER.` Inside `Player.add RETURNS NUMBER`, `SET score score + name` reports `Type mismatch for field score in Player.add: addition needs NUMBER values, but name looks like TEXT.` so the learner sees that the field belongs to the current class method, not an unrelated variable.
 
+The release validator also runs the modern and compatibility method-body field diagnostic fixtures, so these learner-facing errors remain part of `claro validate`, not only the standalone typecheck diagnostic script.
+
 ## Project and package workflow
 
 v1.18.26 hardens Claro's project/package workflow.

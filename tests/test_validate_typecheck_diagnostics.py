@@ -192,6 +192,16 @@ class ValidateTypecheckDiagnosticsTests(unittest.TestCase):
             MODULE.EXPECTED_OK,
         )
 
+    def test_release_validation_runs_method_field_diagnostic_fixtures(self):
+        source = (ROOT / "src" / "claro.c").read_text()
+        for fixture in (
+            "tests/typecheck_method_field_assignment_bad.claro",
+            "tests/typecheck_method_text_field_assignment_bad.claro",
+            "tests/typecheck_method_compat_text_field_assignment_bad.claro",
+            "tests/typecheck_method_field_check_type_bad.claro",
+        ):
+            self.assertIn(f'"{fixture}"', source)
+
     def test_release_validation_runs_method_call_fixture(self):
         result = subprocess.run(
             [str(ROOT / "claro"), "validate"],
