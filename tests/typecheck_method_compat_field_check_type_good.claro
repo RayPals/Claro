@@ -1,0 +1,9 @@
+CLASS Player
+    HAS name TEXT
+    TEACH rename TAKES replacement
+        CHECK TYPE name IS TEXT
+    LEARNED
+ENDCLASS
+
+NEW Player player
+CALL player.rename WITH "Ada"

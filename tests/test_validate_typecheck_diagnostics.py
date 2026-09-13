@@ -202,6 +202,16 @@ class ValidateTypecheckDiagnosticsTests(unittest.TestCase):
             MODULE.EXPECTED_OK,
         )
 
+    def test_includes_compatibility_method_field_check_type_fixtures(self):
+        self.assertIn(
+            "tests/typecheck_method_compat_field_check_type_bad.claro",
+            MODULE.EXPECTED,
+        )
+        self.assertIn(
+            "tests/typecheck_method_compat_field_check_type_good.claro",
+            MODULE.EXPECTED_OK,
+        )
+
     def test_release_validation_runs_method_field_diagnostic_fixtures(self):
         source = (ROOT / "src" / "claro.c").read_text()
         for fixture in (
