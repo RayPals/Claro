@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Validate compatibility method multiplication diagnostics
+
+- Added focused negative typecheck coverage proving that the older `TAKES` / `LEARNED` method syntax identifies a TEXT operand in a NUMBER multiplication return and explains the required operand type.
+- Wired the fixture into the standalone typecheck validator and `claro validate`.
+
 ### Validate compatibility method division diagnostics
 
 - Added focused negative typecheck coverage proving that the older `TAKES` / `LEARNED` method syntax identifies a TEXT operand in a NUMBER division return and explains the required operand type.
