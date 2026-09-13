@@ -1,0 +1,11 @@
+CLASS Player
+    HAS score NUMBER
+
+    TEACH add RETURNS NUMBER
+        SET score score + 1
+        RETURN score
+    END
+END
+
+NEW Player player
+DO player.add

@@ -304,6 +304,7 @@ EXPECTED_OK = [
     "tests/typecheck_method_return_subtraction_good.claro",
     "tests/typecheck_method_return_addition_good.claro",
     "tests/typecheck_method_unknown_return_expression_good.claro",
+    "tests/typecheck_method_field_assignment_good.claro",
     "tests/typecheck_method_nested_branch_complete_good.claro",
     "tests/typecheck_function_multi_good.claro",
     "tests/typecheck_method_good.claro",
