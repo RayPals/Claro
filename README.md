@@ -345,7 +345,7 @@ The same missing-object guidance is now validated for direct field assignment be
 Object player is not known yet. Create it with NEW ClassName player before setting player.score.
 ```
 
-The checker also names typed method-body field assignments. Inside `Player.add RETURNS NUMBER`, `SET score score + name` reports `Type mismatch for field score in Player.add: addition needs NUMBER values, but name looks like TEXT.` so the learner sees that `score` is a class field, not an unrelated variable.
+The checker also names typed method-body field assignments. Inside `Player.rename`, `SET name 123` reports `Type mismatch for field name in Player.rename: expected TEXT, but this value looks like NUMBER.` Inside `Player.add RETURNS NUMBER`, `SET score score + name` reports `Type mismatch for field score in Player.add: addition needs NUMBER values, but name looks like TEXT.` so the learner sees that the field belongs to the current class method, not an unrelated variable.
 
 ## Project and package workflow
 
