@@ -281,6 +281,9 @@ EXPECTED = {
     "tests/typecheck_method_compat_text_field_assignment_bad.claro": [
         "tests/typecheck_method_compat_text_field_assignment_bad.claro:4: Type mismatch for field name in Player.rename: expected TEXT, but this value looks like NUMBER.",
     ],
+    "tests/typecheck_method_field_check_type_bad.claro": [
+        "tests/typecheck_method_field_check_type_bad.claro:4: Type check failed in Player.rename: expected NUMBER, but name looks like TEXT.",
+    ],
 }
 
 EXPECTED_OK = [
@@ -313,6 +316,7 @@ EXPECTED_OK = [
     "tests/typecheck_method_field_assignment_good.claro",
     "tests/typecheck_method_text_field_assignment_good.claro",
     "tests/typecheck_method_compat_text_field_assignment_good.claro",
+    "tests/typecheck_method_field_check_type_good.claro",
     "tests/typecheck_method_nested_branch_complete_good.claro",
     "tests/typecheck_function_multi_good.claro",
     "tests/typecheck_method_good.claro",

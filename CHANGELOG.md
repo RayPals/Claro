@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Method-body `CHECK TYPE` diagnostics now name the current class method when a declared field is checked against the wrong type, with focused positive and negative validation coverage.
+
 - Typecheck diagnostics for typed method-body field assignments now name the class method and arithmetic operation when a known TEXT operand is used in a NUMBER field update.
 
 ### Compatibility method field-assignment diagnostics
