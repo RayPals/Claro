@@ -345,6 +345,8 @@ The same missing-object guidance is now validated for direct field assignment be
 Object player is not known yet. Create it with NEW ClassName player before setting player.score.
 ```
 
+The checker also names typed method-body field assignments. Inside `Player.add RETURNS NUMBER`, `SET score score + name` reports `Type mismatch for field score in Player.add: addition needs NUMBER values, but name looks like TEXT.` so the learner sees that `score` is a class field, not an unrelated variable.
+
 ## Project and package workflow
 
 v1.18.26 hardens Claro's project/package workflow.

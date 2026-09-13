@@ -158,6 +158,12 @@ class ValidateTypecheckDiagnosticsTests(unittest.TestCase):
             MODULE.EXPECTED,
         )
 
+    def test_includes_method_field_assignment_diagnostic_fixture(self):
+        self.assertIn(
+            "tests/typecheck_method_field_assignment_bad.claro",
+            MODULE.EXPECTED,
+        )
+
     def test_release_validation_runs_method_call_fixture(self):
         result = subprocess.run(
             [str(ROOT / "claro"), "validate"],

@@ -272,6 +272,9 @@ EXPECTED = {
     "tests/typecheck_object_alias_method_call_extra_arg_bad.claro": [
         "tests/typecheck_object_alias_method_call_extra_arg_bad.claro:12: Method Player.add only accepts 1 argument, but this call gives 2. Remove the extra argument.",
     ],
+    "tests/typecheck_method_field_assignment_bad.claro": [
+        "tests/typecheck_method_field_assignment_bad.claro:5: Type mismatch for field score in Player.add: addition needs NUMBER values, but name looks like TEXT.",
+    ],
 }
 
 EXPECTED_OK = [

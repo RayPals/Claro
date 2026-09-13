@@ -825,6 +825,8 @@ Output:
 Function greet needs 1 argument, but this call gives 0. Add the missing argument.
 ```
 
+The same operator-specific diagnostic is used inside a typed method when it updates a class field by its simple name. For example, `SET score score + name` inside `Player.add RETURNS NUMBER` reports `Type mismatch for field score in Player.add: addition needs NUMBER values, but name looks like TEXT.` instead of describing the field as an ordinary variable. This focused check covers typed method bodies; broader control-flow and object-flow analysis remains planned.
+
 ## Status
 
 This is currently a static checker feature. It improves `claro typecheck` and validation confidence for `DO` and compatibility `CALL ... WITH` function calls, simple `DO object.method ...` calls where the object was created with `NEW Class name`, and direct assignments to known object fields. Runtime enforcement for every container mutation and richer function/object signatures can be added later after the syntax is classroom-tested.
