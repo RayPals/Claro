@@ -4,6 +4,11 @@
 
 - Typecheck diagnostics for typed method-body field assignments now name the class method and arithmetic operation when a known TEXT operand is used in a NUMBER field update.
 
+### Compatibility method field-assignment diagnostics
+
+- Added focused positive and negative typecheck fixtures for older `TEACH ... TAKES ...` / `LEARNED` methods that assign to typed class fields.
+- Release validation now preserves the learner-facing `Class.method` name in these compatibility diagnostics.
+
 ### Validate compatibility method multiplication diagnostics
 
 - Added focused negative typecheck coverage proving that the older `TAKES` / `LEARNED` method syntax identifies a TEXT operand in a NUMBER multiplication return and explains the required operand type.
