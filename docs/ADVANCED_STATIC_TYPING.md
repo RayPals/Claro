@@ -830,3 +830,5 @@ The same method-aware diagnostic is used when a method directly assigns the wron
 ## Status
 
 This is currently a static checker feature. It improves `claro typecheck` and validation confidence for `DO` and compatibility `CALL ... WITH` function calls, simple `DO object.method ...` calls where the object was created with `NEW Class name`, and direct assignments to known object fields. Runtime enforcement for every container mutation and richer function/object signatures can be added later after the syntax is classroom-tested.
+
+Method-body field assignments are covered in both modern and compatibility syntax, including a valid YESNO assignment through `TEACH toggle TAKES value` and `CALL player.toggle WITH YES`. The focused release validator keeps this positive compatibility example beside the wrong-type diagnostics.

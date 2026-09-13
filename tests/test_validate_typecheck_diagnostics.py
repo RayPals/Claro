@@ -192,6 +192,12 @@ class ValidateTypecheckDiagnosticsTests(unittest.TestCase):
             MODULE.EXPECTED,
         )
 
+    def test_includes_compatibility_yesno_method_field_assignment_success_fixture(self):
+        self.assertIn(
+            "tests/typecheck_method_compat_yesno_field_assignment_good.claro",
+            MODULE.EXPECTED_OK,
+        )
+
     def test_includes_method_field_check_type_fixtures(self):
         self.assertIn(
             "tests/typecheck_method_field_check_type_bad.claro",
