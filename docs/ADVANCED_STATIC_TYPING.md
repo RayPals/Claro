@@ -207,6 +207,25 @@ ENDCLASS
 
 The matching `CALL player.score WITH 4` success path is included in focused validation.
 
+Compatibility method division mistakes receive the same operation-specific guidance:
+
+```claro
+CLASS Player
+    TEACH total TAKES amount RETURNS NUMBER
+        CHECK TYPE amount IS NUMBER
+        RETURN amount / "oops"
+    LEARNED
+ENDCLASS
+```
+
+`claro typecheck` reports:
+
+```text
+Type mismatch for return from Player.total: division needs NUMBER values, but "oops" looks like TEXT.
+```
+
+This negative compatibility fixture is part of focused release validation.
+
 When a function declares a return type, `claro typecheck` accepts nested conditionals when every branch returns a value of that type:
 
 ```claro
