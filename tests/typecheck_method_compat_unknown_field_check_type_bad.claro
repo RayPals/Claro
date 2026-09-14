@@ -1,0 +1,10 @@
+CLASS Player
+    HAS score NUMBER
+
+    TEACH train TAKES value
+        CHECK TYPE level IS NUMBER
+    LEARNED
+END
+
+NEW Player player
+CALL player.train WITH 1
