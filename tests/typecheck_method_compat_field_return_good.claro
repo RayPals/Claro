@@ -1,0 +1,10 @@
+CLASS Player
+    HAS score NUMBER
+
+    TEACH score_value TAKES amount RETURNS NUMBER
+        RETURN score
+    LEARNED
+ENDCLASS
+
+NEW Player player
+CALL player.score_value WITH 4
