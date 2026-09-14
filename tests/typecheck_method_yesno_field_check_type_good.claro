@@ -1,0 +1,9 @@
+CLASS Player
+    HAS ready YESNO
+    TEACH toggle replacement
+        CHECK TYPE ready IS YESNO
+    END
+END
+
+NEW Player player
+DO player.toggle YES

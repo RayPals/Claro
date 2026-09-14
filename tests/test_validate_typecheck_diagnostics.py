@@ -218,6 +218,12 @@ class ValidateTypecheckDiagnosticsTests(unittest.TestCase):
             MODULE.EXPECTED_OK,
         )
 
+    def test_includes_yesno_method_field_check_type_success_fixture(self):
+        self.assertIn(
+            "tests/typecheck_method_yesno_field_check_type_good.claro",
+            MODULE.EXPECTED_OK,
+        )
+
     def test_release_validation_runs_method_field_diagnostic_fixtures(self):
         source = (ROOT / "src" / "claro.c").read_text()
         for fixture in (

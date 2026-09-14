@@ -332,6 +332,7 @@ EXPECTED_OK = [
     "tests/typecheck_method_field_check_type_good.claro",
     "tests/typecheck_method_compat_field_check_type_good.claro",
     "tests/typecheck_method_compat_yesno_field_check_type_good.claro",
+    "tests/typecheck_method_yesno_field_check_type_good.claro",
     "tests/typecheck_method_nested_branch_complete_good.claro",
     "tests/typecheck_function_multi_good.claro",
     "tests/typecheck_method_good.claro",
