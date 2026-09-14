@@ -1,0 +1,12 @@
+CLASS Player
+    HAS first TEXT
+    HAS last TEXT
+
+    TEACH full_name
+        SET first first + "!"
+        SET last "Dr. " + last
+    END
+END
+
+NEW Player player
+DO player.full_name
