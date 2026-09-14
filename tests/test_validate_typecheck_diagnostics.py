@@ -170,6 +170,12 @@ class ValidateTypecheckDiagnosticsTests(unittest.TestCase):
             MODULE.EXPECTED_OK,
         )
 
+    def test_includes_compatibility_unknown_method_field_assignment_fixture(self):
+        self.assertIn(
+            "tests/typecheck_method_compat_unknown_field_bad.claro",
+            MODULE.EXPECTED,
+        )
+
     def test_includes_method_text_field_assignment_diagnostic_fixture(self):
         self.assertIn(
             "tests/typecheck_method_text_field_assignment_bad.claro",
@@ -233,6 +239,7 @@ class ValidateTypecheckDiagnosticsTests(unittest.TestCase):
             "tests/typecheck_method_yesno_field_assignment_bad.claro",
             "tests/typecheck_method_compat_yesno_field_assignment_bad.claro",
             "tests/typecheck_method_field_check_type_bad.claro",
+            "tests/typecheck_method_compat_unknown_field_bad.claro",
         ):
             self.assertIn(f'"{fixture}"', source)
 

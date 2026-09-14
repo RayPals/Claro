@@ -76,7 +76,7 @@ The diagnostic is:
 Object Player has no field level. Check the field name or add HAS level NUMBER to the class.
 ```
 
-This narrow check covers direct method assignments with a known expression. Broader local-variable and control-flow analysis remains future work.
+This narrow check covers direct method assignments with a known expression in both modern `TEACH ... END` and compatibility `TEACH ... TAKES ... LEARNED` methods. Broader local-variable and control-flow analysis remains future work.
 
 ## Complete conditional returns
 

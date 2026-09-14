@@ -278,6 +278,9 @@ EXPECTED = {
     "tests/typecheck_method_unknown_field_bad.claro": [
         "tests/typecheck_method_unknown_field_bad.claro:5: Object Player has no field level. Check the field name or add HAS level NUMBER to the class.",
     ],
+    "tests/typecheck_method_compat_unknown_field_bad.claro": [
+        "tests/typecheck_method_compat_unknown_field_bad.claro:5: Object Player has no field level. Check the field name or add HAS level NUMBER to the class.",
+    ],
     "tests/typecheck_method_unknown_field_check_type_bad.claro": [
         "tests/typecheck_method_unknown_field_check_type_bad.claro:5: Object Player has no field level. Check the field name or add HAS level NUMBER to the class.",
     ],

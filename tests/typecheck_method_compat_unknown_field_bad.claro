@@ -1,0 +1,10 @@
+CLASS Player
+    HAS score NUMBER
+
+    TEACH train TAKES value
+        SET level 3
+    LEARNED
+ENDCLASS
+
+NEW Player player
+CALL player.train WITH 1
