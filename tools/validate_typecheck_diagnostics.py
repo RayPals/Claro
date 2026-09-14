@@ -293,6 +293,9 @@ EXPECTED = {
     "tests/typecheck_method_compat_field_check_type_bad.claro": [
         "tests/typecheck_method_compat_field_check_type_bad.claro:4: Type check failed in Player.rename: expected NUMBER, but name looks like TEXT.",
     ],
+    "tests/typecheck_method_compat_yesno_field_check_type_bad.claro": [
+        "tests/typecheck_method_compat_yesno_field_check_type_bad.claro:4: Type check failed in Player.toggle: expected TEXT, but ready looks like YESNO.",
+    ],
 }
 
 EXPECTED_OK = [
@@ -328,6 +331,7 @@ EXPECTED_OK = [
     "tests/typecheck_method_compat_yesno_field_assignment_good.claro",
     "tests/typecheck_method_field_check_type_good.claro",
     "tests/typecheck_method_compat_field_check_type_good.claro",
+    "tests/typecheck_method_compat_yesno_field_check_type_good.claro",
     "tests/typecheck_method_nested_branch_complete_good.claro",
     "tests/typecheck_function_multi_good.claro",
     "tests/typecheck_method_good.claro",

@@ -1,0 +1,9 @@
+CLASS Player
+    HAS ready YESNO
+    TEACH toggle TAKES replacement
+        CHECK TYPE ready IS TEXT
+    LEARNED
+ENDCLASS
+
+NEW Player player
+CALL player.toggle WITH YES
