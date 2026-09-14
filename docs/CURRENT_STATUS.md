@@ -64,6 +64,7 @@ Still needed:
 - Method return validation now has focused positive subtraction and division fixtures alongside the existing arithmetic return coverage, including compatibility `TAKES` / `LEARNED` subtraction and division cases, so checked NUMBER method parameters and numeric subtraction or division remain accepted by the release validator in both method spellings.
 - Compatibility `TAKES` / `LEARNED` methods also have positive NUMBER, TEXT, and YESNO field-assignment coverage, and modern plus compatibility method-body `CHECK TYPE` metadata now have positive YESNO coverage beside the wrong-value diagnostics.
 - Modern method-body TEXT concatenation has positive coverage in both operand orders, such as `SET first first + "!"` and `SET last "Dr. " + last`.
+- Compatibility method-body TEXT concatenation has matching positive coverage in both operand orders, so `TAKES` / `LEARNED` methods keep the same beginner-safe field update behavior.
 - richer typed function signatures and return values beyond the focused simple function/method `RETURNS TYPE` check
 - type checking through branches and loops
 - richer object field type checking beyond simple direct assignments

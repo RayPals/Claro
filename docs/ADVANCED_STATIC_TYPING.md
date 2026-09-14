@@ -409,6 +409,17 @@ SET player.name "Ada " + player.name
 
 This reverse-order concatenation is also covered by focused validation, so learners can build text from either side without losing the declared `TEXT` field type.
 
+Compatibility methods use the same TEXT concatenation rule. The older `TAKES` / `LEARNED` spelling accepts both operand orders when a method updates declared `TEXT` fields:
+
+```claro
+TEACH full_name TAKES suffix
+    SET first first + suffix
+    SET last "Dr. " + last
+LEARNED
+```
+
+The focused validation matrix covers this compatibility example too, keeping modern and older method lessons aligned.
+
 Two TEXT fields can be combined as well:
 
 ```claro
