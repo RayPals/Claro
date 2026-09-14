@@ -56,6 +56,28 @@ ADD person TO people
 
 This is accepted with `Type check OK`. More complex nested container operations and full key/value inference remain future work.
 
+## Unknown fields inside methods
+
+When a method assigns a known value to a bare name that is not a parameter, local variable, or declared class field, `claro typecheck` reports the missing field instead of silently treating the typo as a new variable:
+
+```claro
+CLASS Player
+    HAS score NUMBER
+
+    TEACH train
+        SET level 3
+    END
+END
+```
+
+The diagnostic is:
+
+```text
+Object Player has no field level. Check the field name or add HAS level NUMBER to the class.
+```
+
+This narrow check covers direct method assignments with a known expression. Broader local-variable and control-flow analysis remains future work.
+
 ## Complete conditional returns
 
 ### Return expressions that need more information
