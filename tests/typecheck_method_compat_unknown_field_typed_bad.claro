@@ -1,0 +1,9 @@
+CLASS Player
+    HAS score NUMBER
+    TEACH set_level TAKES nothing
+        SET level NUMBER 3
+    LEARNED
+ENDCLASS
+
+NEW Player player
+CALL player.set_level WITH 0
