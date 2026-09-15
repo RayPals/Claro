@@ -346,6 +346,7 @@ EXPECTED_OK = [
     "tests/typecheck_method_unknown_return_expression_good.claro",
     "tests/typecheck_method_field_assignment_good.claro",
     "tests/typecheck_method_text_field_assignment_good.claro",
+    "tests/typecheck_method_yesno_field_assignment_good.claro",
     "tests/typecheck_method_compat_text_field_assignment_good.claro",
     "tests/typecheck_method_compat_yesno_field_assignment_good.claro",
     "tests/typecheck_method_compat_field_assignment_good.claro",

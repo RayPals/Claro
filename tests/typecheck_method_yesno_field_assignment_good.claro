@@ -1,0 +1,9 @@
+CLASS Player
+    HAS ready YESNO
+    TEACH toggle value
+        SET ready value
+    END
+END
+
+NEW Player player
+DO player.toggle YES
