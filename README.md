@@ -171,6 +171,12 @@ Function square only accepts 1 argument, but this call gives 2. Remove the extra
 Function squre is not known yet. Check the function name or add TEACH squre before calling it.
 ```
 
+If a function repeats a parameter name, `claro typecheck` reports the declaration mistake before the function is called:
+
+```text
+Function greet declares parameter name more than once. Give each parameter a different name.
+```
+
 Simple functions and object methods can also declare a return type. `claro typecheck` checks each `RETURN` expression against it and reports a missing return when a declaration never returns a value:
 
 ```claro

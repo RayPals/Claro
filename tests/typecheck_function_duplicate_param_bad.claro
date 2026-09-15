@@ -1,0 +1,4 @@
+TEACH greet name, name
+    SAY name
+END
+DO greet "Ada", "Grace"
