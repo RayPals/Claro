@@ -294,7 +294,10 @@ EXPECTED = {
         "tests/typecheck_method_compat_unknown_field_typed_bad.claro:4: Object Player has no field level. Check the field name or add HAS level NUMBER to the class.",
     ],
     "tests/typecheck_method_typed_field_assignment_bad.claro": [
-        "tests/typecheck_method_typed_field_assignment_bad.claro:5: Type mismatch for field score in Player.set_score: expected NUMBER, but this value looks like TEXT.",
+        "tests/typecheck_method_typed_field_assignment_bad.claro:5: Type mismatch for field score in Player.set_score: class declares NUMBER, but this assignment says TEXT. Use NUMBER for score.",
+    ],
+    "tests/typecheck_method_inline_field_annotation_bad.claro": [
+        "tests/typecheck_method_inline_field_annotation_bad.claro:5: Type mismatch for field score in Player.set_score: class declares NUMBER, but this assignment says TEXT. Use NUMBER for score.",
     ],
     "tests/typecheck_method_unknown_field_expression_bad.claro": [
         "tests/typecheck_method_unknown_field_expression_bad.claro:5: Object Player has no field level. Check the field name or add the field to the class with the right type.",
@@ -368,6 +371,7 @@ EXPECTED_OK = [
     "tests/typecheck_method_compat_field_check_type_good.claro",
     "tests/typecheck_method_compat_yesno_field_check_type_good.claro",
     "tests/typecheck_method_yesno_field_check_type_good.claro",
+    "tests/typecheck_method_inline_field_annotation_good.claro",
     "tests/typecheck_method_nested_branch_complete_good.claro",
     "tests/typecheck_function_multi_good.claro",
     "tests/typecheck_method_good.claro",

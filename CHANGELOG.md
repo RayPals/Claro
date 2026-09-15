@@ -1,5 +1,11 @@
 # Changelog
 
+### Align inline method-field annotations with class fields
+
+- `claro typecheck` now compares an inline method assignment annotation with the class field declared by `HAS`.
+- A mismatch such as `SET score TEXT 10` inside a method for `HAS score NUMBER` explains both types and suggests the class-declared type.
+- Added positive and negative fixtures to the complete typecheck validation matrix.
+
 - Added focused modern-method coverage for the learner-facing diagnostic produced when an undeclared field is assigned from an expression whose type is not inferable yet.
 
 ## Unreleased
