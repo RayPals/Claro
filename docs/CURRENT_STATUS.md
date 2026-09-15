@@ -68,7 +68,7 @@ Still needed:
 - type checking through branches and loops
 - richer object field type checking beyond simple direct assignments
 - typed imports/modules
-- inline method-field annotations must agree with the class `HAS` declaration; conflicting annotations now get a repair-oriented diagnostic even when the value's inferred type is otherwise correct.
+- inline method-field annotations must agree with the class `HAS` declaration in both modern `TEACH` / `END` and compatibility `TAKES` / `LEARNED` methods; conflicting annotations now get a repair-oriented diagnostic even when the value's inferred type is otherwise correct.
 
 Good starting docs:
 - `ADVANCED_STATIC_TYPING.md`

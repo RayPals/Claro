@@ -109,7 +109,7 @@ OBJECT CLASS player AS kind
 OBJECT FIELDS player AS fields
 ```
 
-Inside a method, an inline field type must agree with the class declaration. For example, `HAS score NUMBER` must not be assigned with `SET score TEXT 10`; `claro typecheck` explains the conflict and suggests `NUMBER`.
+Inside a method, an inline field type must agree with the class declaration. For example, `HAS score NUMBER` must not be assigned with `SET score TEXT 10`; `claro typecheck` explains the conflict and suggests `NUMBER`. The same check applies to older `TEACH ... TAKES ...` / `LEARNED` methods, so compatibility lessons get the same feedback.
 
 ## Static type safety
 

@@ -6,6 +6,11 @@
 - A mismatch such as `SET score TEXT 10` inside a method for `HAS score NUMBER` explains both types and suggests the class-declared type.
 - Added positive and negative fixtures to the complete typecheck validation matrix.
 
+### Validate compatibility inline method-field annotations
+
+- Added matching positive and negative coverage for `TEACH ... TAKES ...` / `LEARNED` methods.
+- Release validation now protects the same class-declared-type diagnostic for older compatibility lessons.
+
 - Added focused modern-method coverage for the learner-facing diagnostic produced when an undeclared field is assigned from an expression whose type is not inferable yet.
 
 ## Unreleased
