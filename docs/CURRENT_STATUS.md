@@ -183,7 +183,7 @@ Ready now:
 - metadata JSON
 - completion list, including the current typed-language keywords `RETURNS`, `CHECK`, and `TYPE`
 - diagnostics helper
-- Forgejo/Gitea CI coverage for the current release validation gates (`claro validate`, typecheck diagnostics validation, version convention validation, package security validation, and the CI workflow coverage check); the workflow validator verifies these commands, including its own command, occur in executable `run` steps rather than comments
+- Forgejo/Gitea CI coverage for the current release validation gates (`claro validate`, typecheck diagnostics validation, version convention validation, package security validation, compiler warning validation, and the CI workflow coverage check); the compiler warning validator rebuilds `src/claro.c` and rejects path-truncation warnings, while the workflow validator verifies these commands, including its own command, occur in executable `run` steps rather than comments
 
 Still needed:
 - syntax highlighting package

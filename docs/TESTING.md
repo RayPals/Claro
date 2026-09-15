@@ -40,7 +40,7 @@ python tools/validate_lsp_helper.py
 python tools/validate_package_security.py
 ```
 
-The Forgejo/Gitea CI workflow is expected to run the current release gates above, not only the older smoke tests. `tools/validate_ci_workflow.py` checks that coverage so CI does not drift away from the documented package validation path.
+The Forgejo/Gitea CI workflow is expected to run the current release gates above, not only the older smoke tests. This includes `tools/validate_compiler_warnings.py`, which rebuilds the C source as an object file and rejects the known path-truncation warning class. `tools/validate_ci_workflow.py` checks that coverage so CI does not drift away from the documented package validation path.
 
 Older `validate_rc*.py` scripts are kept for historical release notes. They are not the recommended current package validation path.
 
