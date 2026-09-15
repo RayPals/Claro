@@ -47,6 +47,7 @@ Keep declared return types honest: `claro typecheck` now reports friendly diagno
 8: Keep method-body coverage balanced across beginner field types and syntax generations: YESNO field assignment mismatches are now validated for both modern `DO` and compatibility `CALL ... WITH` method syntax, method-body `CHECK TYPE` metadata mismatches now have matching compatibility `TAKES` / `LEARNED` coverage alongside the modern form, compatibility YESNO field metadata has dedicated positive and negative fixtures, and compatibility method assignments to undeclared fields have the same focused missing-field diagnostic as modern methods, including a beginner-facing fallback when the assigned expression is not inferable yet.
 8a. Keep method-body text expressions balanced: modern TEXT field concatenation is covered when the field is on either side of `+`, so both common beginner word-order patterns remain accepted.
 8b. Keep compatibility method-body text expressions aligned: `TAKES` / `LEARNED` methods now have positive TEXT concatenation coverage in both operand orders beside the modern `TEACH` / `END` examples.
+8c. Keep explicit method-field annotations aligned with class declarations: `SET score TEXT "oops"` inside a method with `HAS score NUMBER` now reports the declared field mismatch instead of accepting the inline annotation; broader annotation consistency remains planned.
 
 ### 1. Strong static types
 

@@ -190,6 +190,12 @@ class ValidateTypecheckDiagnosticsTests(unittest.TestCase):
             MODULE.EXPECTED,
         )
 
+    def test_includes_explicitly_typed_method_field_assignment_diagnostic(self):
+        self.assertIn(
+            "tests/typecheck_method_typed_field_assignment_bad.claro",
+            MODULE.EXPECTED,
+        )
+
     def test_includes_method_text_field_assignment_diagnostic_fixture(self):
         self.assertIn(
             "tests/typecheck_method_text_field_assignment_bad.claro",

@@ -293,6 +293,9 @@ EXPECTED = {
     "tests/typecheck_method_compat_unknown_field_typed_bad.claro": [
         "tests/typecheck_method_compat_unknown_field_typed_bad.claro:4: Object Player has no field level. Check the field name or add HAS level NUMBER to the class.",
     ],
+    "tests/typecheck_method_typed_field_assignment_bad.claro": [
+        "tests/typecheck_method_typed_field_assignment_bad.claro:5: Type mismatch for field score in Player.set_score: expected NUMBER, but this value looks like TEXT.",
+    ],
     "tests/typecheck_method_unknown_field_expression_bad.claro": [
         "tests/typecheck_method_unknown_field_expression_bad.claro:5: Object Player has no field level. Check the field name or add the field to the class with the right type.",
     ],
