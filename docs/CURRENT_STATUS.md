@@ -70,6 +70,7 @@ Still needed:
 - typed imports/modules
 - inline method-field annotations must agree with the class `HAS` declaration in both modern `TEACH` / `END` and compatibility `TAKES` / `LEARNED` methods; conflicting annotations now get a repair-oriented diagnostic even when the value's inferred type is otherwise correct.
 - inline method-field annotations also reject unknown names such as `BANANA`, naming the field and method and suggesting the class-declared type.
+- compatibility `TEACH ... TAKES ...` / `LEARNED` methods have matching validation for unknown inline field annotations, so older lessons receive the same repair guidance.
 
 Good starting docs:
 - `ADVANCED_STATIC_TYPING.md`

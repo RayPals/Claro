@@ -1,5 +1,9 @@
 # Changelog
 
+### Validate compatibility unknown inline method-field annotations
+
+- Added focused coverage proving that compatibility `TAKES` / `LEARNED` methods reject unknown inline field annotations with the same repair-oriented diagnostic as modern methods.
+
 ### Diagnose unknown inline method-field annotations
 
 - `claro typecheck` now rejects unknown inline field annotations such as `BANANA` and suggests the class-declared `HAS` type.
