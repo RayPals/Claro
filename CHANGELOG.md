@@ -1,5 +1,7 @@
 # Changelog
 
+- Added focused modern-method coverage for the learner-facing diagnostic produced when an undeclared field is assigned from an expression whose type is not inferable yet.
+
 ## Unreleased
 
 - Method-body `CHECK TYPE` diagnostics now name the current class method when a declared field is checked against the wrong type, with focused positive and negative validation coverage.
