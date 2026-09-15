@@ -1,5 +1,10 @@
 # Changelog
 
+### Validate compatibility duplicate-parameter diagnostics
+
+- Added focused coverage proving that compatibility `TAKES` / `LEARNED` functions reject repeated parameter names with the same repair-oriented diagnostic as modern functions.
+- Added the fixture to the complete typecheck diagnostic validation matrix.
+
 ### Validate compatibility unknown inline method-field annotations
 
 - Added focused coverage proving that compatibility `TAKES` / `LEARNED` methods reject unknown inline field annotations with the same repair-oriented diagnostic as modern methods.

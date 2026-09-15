@@ -171,7 +171,7 @@ Function square only accepts 1 argument, but this call gives 2. Remove the extra
 Function squre is not known yet. Check the function name or add TEACH squre before calling it.
 ```
 
-If a function repeats a parameter name, `claro typecheck` reports the declaration mistake before the function is called:
+If a function repeats a parameter name, `claro typecheck` reports the declaration mistake before the function is called. This applies to both modern `END` functions and compatibility `TAKES` / `LEARNED` functions:
 
 ```text
 Function greet declares parameter name more than once. Give each parameter a different name.
