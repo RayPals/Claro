@@ -302,6 +302,9 @@ EXPECTED = {
     "tests/typecheck_method_compat_inline_field_annotation_bad.claro": [
         "tests/typecheck_method_compat_inline_field_annotation_bad.claro:5: Type mismatch for field score in Player.set_score: class declares NUMBER, but this assignment says TEXT. Use NUMBER for score.",
     ],
+    "tests/typecheck_method_inline_field_annotation_unknown_type_bad.claro": [
+        "tests/typecheck_method_inline_field_annotation_unknown_type_bad.claro:5: Field score in Player.set_score needs a known type such as NUMBER, TEXT, or YESNO, but BANANA is not a Claro type. Use NUMBER for score.",
+    ],
     "tests/typecheck_method_unknown_field_expression_bad.claro": [
         "tests/typecheck_method_unknown_field_expression_bad.claro:5: Object Player has no field level. Check the field name or add the field to the class with the right type.",
     ],

@@ -111,6 +111,8 @@ OBJECT FIELDS player AS fields
 
 Inside a method, an inline field type must agree with the class declaration. For example, `HAS score NUMBER` must not be assigned with `SET score TEXT 10`; `claro typecheck` explains the conflict and suggests `NUMBER`. The same check applies to older `TEACH ... TAKES ...` / `LEARNED` methods, so compatibility lessons get the same feedback.
 
+If an inline method-field annotation is not a Claro type, `claro typecheck` names the field and method and suggests the class declaration. For example, `SET score AS BANANA TO 10` reports that `BANANA` is unknown and recommends `NUMBER`.
+
 ## Static type safety
 
 Beginners can still write the simplest form:

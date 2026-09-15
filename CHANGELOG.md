@@ -1,5 +1,10 @@
 # Changelog
 
+### Diagnose unknown inline method-field annotations
+
+- `claro typecheck` now rejects unknown inline field annotations such as `BANANA` and suggests the class-declared `HAS` type.
+- Added focused negative coverage to the complete typecheck validation matrix.
+
 ### Align inline method-field annotations with class fields
 
 - `claro typecheck` now compares an inline method assignment annotation with the class field declared by `HAS`.

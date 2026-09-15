@@ -50,6 +50,7 @@ Keep declared return types honest: `claro typecheck` now reports friendly diagno
 8c. Keep explicit method-field annotations aligned with class declarations: `SET score TEXT "oops"` inside a method with `HAS score NUMBER` now reports the declared field mismatch instead of accepting the inline annotation; broader annotation consistency remains planned.
 8d. Keep inline method-field annotations consistent with `HAS` declarations: `claro typecheck` now rejects a conflicting annotation even when the assigned value itself has the class-declared type, and explains which type to use.
 8e. Keep inline method-field annotation coverage aligned across syntax generations: compatibility `TAKES` / `LEARNED` methods now have matching positive and negative fixtures, so older lessons retain the same class-declared-type guidance.
+8f. Keep inline method-field annotations learner-facing: an unknown annotation such as `BANANA` now names the field and method and suggests the `HAS` type instead of silently treating the annotation as an expression.
 
 ### 1. Strong static types
 
