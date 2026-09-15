@@ -608,6 +608,22 @@ The focused validation matrix covers modern and compatibility syntax, including 
 
 ## Object method parameter checks
 
+Method declarations also reject repeated parameter names before calls are checked. This protects both the modern `TEACH ... END` form and the compatibility `TAKES` / `LEARNED` form:
+
+```claro
+CLASS Player
+    TEACH greet name, name
+        SAY name
+    END
+END
+```
+
+```text
+Method Player.greet declares parameter name more than once. Give each parameter a different name.
+```
+
+Give every method parameter a different name. The focused validation matrix covers both method spellings.
+
 Claro also checks simple object method arguments when the method body names a parameter with `CHECK TYPE`. This keeps the method syntax beginner-readable while giving a clearer error before the program runs:
 
 ```claro

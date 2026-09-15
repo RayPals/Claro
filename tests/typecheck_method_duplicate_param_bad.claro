@@ -1,0 +1,8 @@
+CLASS Player
+    TEACH greet name, name
+        SAY name
+    END
+END
+
+NEW Player player
+DO player.greet "Ada", "Grace"
