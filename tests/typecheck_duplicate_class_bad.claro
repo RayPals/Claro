@@ -1,0 +1,7 @@
+CLASS Player
+    HAS score NUMBER
+END
+
+CLASS Player
+    HAS name TEXT
+END

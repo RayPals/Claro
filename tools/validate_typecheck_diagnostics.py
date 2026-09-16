@@ -25,6 +25,9 @@ EXPECTED = {
     "tests/typecheck_duplicate_field_bad.claro": [
         "tests/typecheck_duplicate_field_bad.claro:3: Class Player declares field score more than once. Give each field a different name.",
     ],
+    "tests/typecheck_duplicate_class_bad.claro": [
+        "tests/typecheck_duplicate_class_bad.claro:5: Class Player is declared more than once. Give each class a different name.",
+    ],
     "tests/typecheck_bad.claro": [
         "tests/typecheck_bad.claro:2: Type mismatch for score: it was first set as NUMBER, but this value looks like TEXT.",
         "tests/typecheck_bad.claro:3: Type mismatch for name: expected TEXT, but this value looks like NUMBER.",

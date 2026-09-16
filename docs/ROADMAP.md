@@ -54,6 +54,7 @@ Keep declared return types honest: `claro typecheck` now reports friendly diagno
 8g. Keep unknown inline method-field annotation diagnostics aligned across syntax generations: compatibility `TAKES` / `LEARNED` methods now have matching focused coverage for misspelled annotations.
 8h. Keep function and method declarations unambiguous: `claro typecheck` now reports repeated parameter names with a repair hint, before duplicate names can make argument diagnostics confusing, including modern and compatibility `TAKES` / `LEARNED` functions and methods. Duplicate object method names within one class now get the same declaration-time protection and a rename hint. Broader signature validation remains planned.
 8i. Keep class declarations unambiguous: duplicate `HAS` field names now get a declaration-time diagnostic with a repair hint, preventing conflicting field types from being silently accepted. Broader object declaration validation remains planned.
+8j. Keep class names unambiguous: duplicate `CLASS Player` declarations now get a declaration-time diagnostic with a rename hint, preventing two class definitions from competing for one name.
 
 ### 1. Strong static types
 
