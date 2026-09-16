@@ -179,6 +179,8 @@ Function greet declares parameter name more than once. Give each parameter a dif
 
 The same declaration check applies to object methods in both syntax styles. For example, `TEACH greet name, name` inside `CLASS Player` reports `Method Player.greet declares parameter name more than once. Give each parameter a different name.`
 
+Object methods must also have unique names within their class. If `CLASS Player` declares `TEACH show` twice, `claro typecheck` reports `Method Player.show is declared more than once. Give each method a different name.` Rename one method before calling it.
+
 Simple functions and object methods can also declare a return type. `claro typecheck` checks each `RETURN` expression against it and reports a missing return when a declaration never returns a value:
 
 ```claro

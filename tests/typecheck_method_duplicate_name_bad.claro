@@ -1,0 +1,12 @@
+CLASS Player
+    TEACH show
+        SAY "first"
+    END
+
+    TEACH show
+        SAY "second"
+    END
+END
+
+NEW Player player
+DO player.show

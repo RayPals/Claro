@@ -19,6 +19,9 @@ EXPECTED = {
     "tests/typecheck_method_compat_duplicate_param_bad.claro": [
         "tests/typecheck_method_compat_duplicate_param_bad.claro:2: Method Player.greet declares parameter name more than once. Give each parameter a different name.",
     ],
+    "tests/typecheck_method_duplicate_name_bad.claro": [
+        "tests/typecheck_method_duplicate_name_bad.claro:6: Method Player.show is declared more than once. Give each method a different name.",
+    ],
     "tests/typecheck_bad.claro": [
         "tests/typecheck_bad.claro:2: Type mismatch for score: it was first set as NUMBER, but this value looks like TEXT.",
         "tests/typecheck_bad.claro:3: Type mismatch for name: expected TEXT, but this value looks like NUMBER.",
