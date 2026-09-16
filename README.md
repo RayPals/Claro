@@ -183,7 +183,7 @@ Object methods must also have unique names within their class. If `CLASS Player`
 
 Class fields must also have unique names. If `CLASS Player` declares `HAS score NUMBER` twice, or declares the same field with another type, `claro typecheck` reports `Class Player declares field score more than once. Give each field a different name.` Keep one `HAS` line for each field.
 
-Class names must also be unique. If a file declares `CLASS Player` twice, `claro typecheck` reports `Class Player is declared more than once. Give each class a different name.` Rename one class before creating its objects.
+Class names must also be unique. If a file declares `CLASS Player` twice, `claro typecheck` reports `Class Player is declared more than once. Give each class a different name.` Rename one class before creating its objects. Object names must also be unique within a script: creating `NEW Player player` twice reports `Object player is created more than once. Give each object a different name.` Use a different object name for the second instance.
 
 Simple functions and object methods can also declare a return type. `claro typecheck` checks each `RETURN` expression against it and reports a missing return when a declaration never returns a value:
 

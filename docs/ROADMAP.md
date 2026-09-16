@@ -56,6 +56,8 @@ Keep declared return types honest: `claro typecheck` now reports friendly diagno
 8i. Keep class declarations unambiguous: duplicate `HAS` field names now get a declaration-time diagnostic with a repair hint, preventing conflicting field types from being silently accepted. Broader object declaration validation remains planned.
 8j. Keep class names unambiguous: duplicate `CLASS Player` declarations now get a declaration-time diagnostic with a rename hint, preventing two class definitions from competing for one name.
 
+8k. Keep object names unambiguous: repeated `NEW Player player` statements now get a declaration-time diagnostic with a rename hint, preventing one object type environment from silently replacing another.
+
 ### 1. Strong static types
 
 Goal: make larger beginner programs safer without making first scripts harder.
