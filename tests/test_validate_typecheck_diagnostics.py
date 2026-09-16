@@ -280,6 +280,7 @@ class ValidateTypecheckDiagnosticsTests(unittest.TestCase):
             "tests/typecheck_method_compat_unknown_field_bad.claro",
             "tests/typecheck_method_unknown_field_typed_bad.claro",
             "tests/typecheck_method_compat_unknown_field_typed_bad.claro",
+            "tests/typecheck_duplicate_field_bad.claro",
         ):
             self.assertIn(f'"{fixture}"', source)
 

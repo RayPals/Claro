@@ -1,0 +1,7 @@
+CLASS Player
+    HAS score NUMBER
+    HAS score TEXT
+END
+
+NEW Player player
+SET player.score 10
