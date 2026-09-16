@@ -22,6 +22,9 @@ EXPECTED = {
     "tests/typecheck_method_duplicate_name_bad.claro": [
         "tests/typecheck_method_duplicate_name_bad.claro:6: Method Player.show is declared more than once. Give each method a different name.",
     ],
+    "tests/typecheck_method_compat_duplicate_name_bad.claro": [
+        "tests/typecheck_method_compat_duplicate_name_bad.claro:6: Method Player.show is declared more than once. Give each method a different name.",
+    ],
     "tests/typecheck_duplicate_field_bad.claro": [
         "tests/typecheck_duplicate_field_bad.claro:3: Class Player declares field score more than once. Give each field a different name.",
     ],
