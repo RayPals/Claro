@@ -281,6 +281,9 @@ EXPECTED = {
     "tests/typecheck_method_invalid_return_type_bad.claro": [
         "tests/typecheck_method_invalid_return_type_bad.claro:2: Method Player.score declares an unknown return type BANANA. Use a Claro type such as NUMBER, TEXT, YESNO, LIST, or MAP.",
     ],
+    "tests/typecheck_unknown_field_type_bad.claro": [
+        "tests/typecheck_unknown_field_type_bad.claro:2: Class Player field score uses an unknown type BANANA. Use a Claro type such as NUMBER, TEXT, YESNO, LIST, or MAP.",
+    ],
     "tests/typecheck_object_field_unknown_object_bad.claro": [
         "tests/typecheck_object_field_unknown_object_bad.claro:5: Object player is not known yet. Create it with NEW ClassName player before setting player.score.",
     ],

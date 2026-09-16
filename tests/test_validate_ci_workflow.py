@@ -26,6 +26,8 @@ class ValidateCiWorkflowTests(unittest.TestCase):
             run: python3 tools/validate_version_convention.py
           - name: Packages
             run: python3 tools/validate_package_security.py
+          - name: Compiler warnings
+            run: python3 tools/validate_compiler_warnings.py
           - name: CI workflow
             run: python3 tools/validate_ci_workflow.py
         """

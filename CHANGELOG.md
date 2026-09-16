@@ -1,5 +1,9 @@
 # Changelog
 
+### Diagnose unknown class field types
+
+- `claro typecheck` now rejects class fields such as `HAS score BANANA` with a beginner-facing diagnostic that names the class and field, lists supported type examples, and suggests using a Claro type.
+
 ### Validate compatibility duplicate-parameter diagnostics
 
 - Added focused coverage proving that compatibility `TAKES` / `LEARNED` functions reject repeated parameter names with the same repair-oriented diagnostic as modern functions.
