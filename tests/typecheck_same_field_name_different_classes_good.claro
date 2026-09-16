@@ -1,0 +1,12 @@
+CLASS Player
+    HAS name TEXT
+END
+
+CLASS Pet
+    HAS name TEXT
+END
+
+NEW Player player
+NEW Pet pet
+SET player.name "Ada"
+SET pet.name "Milo"
