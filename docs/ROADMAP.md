@@ -58,6 +58,8 @@ Keep declared return types honest: `claro typecheck` now reports friendly diagno
 
 8k. Keep object names unambiguous: repeated `NEW Player player` statements now get a declaration-time diagnostic with a rename hint, preventing one object type environment from silently replacing another.
 
+8l. Keep object creation understandable: when classes are declared in a script, an unknown `NEW` class name now gets a direct class-name diagnostic and repair hint; the older permissive `NEW` behavior remains when no class declarations are present.
+
 ### 1. Strong static types
 
 Goal: make larger beginner programs safer without making first scripts harder.

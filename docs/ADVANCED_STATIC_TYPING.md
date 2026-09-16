@@ -715,6 +715,14 @@ Output:
 Object Player has no method fly. Check the method name or add TEACH fly inside CLASS Player.
 ```
 
+When a script declares classes, `NEW` also checks that the requested class exists. A typo such as `NEW Plaeyr player` receives a repair hint:
+
+```text
+Class Plaeyr is not known yet. Check the class name or declare CLASS Plaeyr before creating player.
+```
+
+For backward compatibility, a script with no `CLASS` declarations keeps the older permissive `NEW` behavior.
+
 ## Object field assignment checks
 
 Claro also has a narrow static diagnostic for direct object-field assignments. If a class declares a typed field and a script creates a simple object with `NEW Class name`, `claro typecheck` remembers the field type:

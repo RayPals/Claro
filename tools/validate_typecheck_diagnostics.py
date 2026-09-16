@@ -34,6 +34,9 @@ EXPECTED = {
     "tests/typecheck_duplicate_object_bad.claro": [
         "tests/typecheck_duplicate_object_bad.claro:6: Object player is created more than once. Give each object a different name.",
     ],
+    "tests/typecheck_unknown_class_bad.claro": [
+        "tests/typecheck_unknown_class_bad.claro:4: Class Plaeyr is not known yet. Check the class name or declare CLASS Plaeyr before creating player.",
+    ],
     "tests/typecheck_bad.claro": [
         "tests/typecheck_bad.claro:2: Type mismatch for score: it was first set as NUMBER, but this value looks like TEXT.",
         "tests/typecheck_bad.claro:3: Type mismatch for name: expected TEXT, but this value looks like NUMBER.",
