@@ -60,7 +60,7 @@ Keep declared return types honest: `claro typecheck` now reports friendly diagno
 
 8l. Keep object creation understandable: when classes are declared in a script, an unknown `NEW` class name now gets a direct class-name diagnostic and repair hint; the older permissive `NEW` behavior remains when no class declarations are present.
 
-8m. Keep class field metadata understandable: an unknown type in a `HAS field TYPE` declaration now gets a class-and-field diagnostic with supported type examples before object-field checks use that metadata.
+8m. Keep class field metadata understandable: a missing or unknown type in a `HAS field TYPE` declaration now gets a class-and-field diagnostic with supported type examples before object-field checks use that metadata.
 
 ### 1. Strong static types
 

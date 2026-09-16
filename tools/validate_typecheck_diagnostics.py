@@ -284,6 +284,9 @@ EXPECTED = {
     "tests/typecheck_unknown_field_type_bad.claro": [
         "tests/typecheck_unknown_field_type_bad.claro:2: Class Player field score uses an unknown type BANANA. Use a Claro type such as NUMBER, TEXT, YESNO, LIST, or MAP.",
     ],
+    "tests/typecheck_missing_field_type_bad.claro": [
+        "tests/typecheck_missing_field_type_bad.claro:2: Class Player field score is missing a type. Add a type such as NUMBER, TEXT, YESNO, LIST, or MAP after the field name.",
+    ],
     "tests/typecheck_object_field_unknown_object_bad.claro": [
         "tests/typecheck_object_field_unknown_object_bad.claro:5: Object player is not known yet. Create it with NEW ClassName player before setting player.score.",
     ],

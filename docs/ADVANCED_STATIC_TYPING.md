@@ -2,6 +2,12 @@
 
 Claro v1.18.26 adds the first advanced static-typing foundation: typed containers checked by `claro typecheck`.
 
+Class fields need a type after the field name. If a learner writes `HAS score` instead of `HAS score NUMBER`, `claro typecheck` explains the missing piece:
+
+```text
+Class Player field score is missing a type. Add a type such as NUMBER, TEXT, YESNO, LIST, or MAP after the field name.
+```
+
 ## Typed lists
 
 ```claro

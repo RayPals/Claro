@@ -1,0 +1,5 @@
+CLASS Player
+    HAS score
+END
+
+NEW Player player
