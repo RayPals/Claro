@@ -65,6 +65,12 @@ class ValidateTypecheckDiagnosticsTests(unittest.TestCase):
             MODULE.EXPECTED_OK,
         )
 
+    def test_includes_missing_object_name_fixture(self):
+        self.assertIn(
+            "tests/typecheck_missing_object_name_bad.claro",
+            MODULE.EXPECTED,
+        )
+
     def test_includes_lowercase_compatibility_return_success_fixture(self):
         self.assertIn(
             "tests/typecheck_function_lowercase_return_good.claro",
