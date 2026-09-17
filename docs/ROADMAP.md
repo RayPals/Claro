@@ -73,7 +73,9 @@ Keep declared return types honest: `claro typecheck` now reports friendly diagno
 
 8q. Keep `CHECK TYPE` syntax understandable: a missing `IS` now gets a direct repair hint with a complete `CHECK TYPE score IS NUMBER` example.
 
-8q.1. Keep `CHECK TYPE` declarations unambiguous: extra words after a valid expected type now get a direct repair hint instead of being reported as an unknown type.
+8q.1. Keep `CHECK TYPE` declarations understandable: `CHECK TYPE score IS` now gets a direct repair hint naming the missing expected type and showing a complete example.
+
+8q.2. Keep `CHECK TYPE` declarations unambiguous: extra words after a valid expected type now get a direct repair hint instead of being reported as an unknown type.
 
 ### 1. Strong static types
 

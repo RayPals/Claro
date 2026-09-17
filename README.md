@@ -147,6 +147,12 @@ CHECK TYPE score IS NUMBER
 CHECK TYPE needs IS. Try: CHECK TYPE score IS NUMBER.
 ```
 
+If the learner writes `IS` but leaves out the expected type, Claro names the missing piece and shows a complete example:
+
+```text
+CHECK TYPE score needs a type after IS. Try: CHECK TYPE score IS NUMBER.
+```
+
 If extra words follow the expected type, `claro typecheck` explains that only one type belongs there:
 
 ```text

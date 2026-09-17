@@ -52,6 +52,7 @@ Ready now:
 - typed variables such as `SET score NUMBER 10`
 - `TYPE OF` and `CHECK TYPE`
 - `CHECK TYPE` gives a direct repair hint when the learner forgets the `IS` keyword, for example `CHECK TYPE score` reports `CHECK TYPE needs IS. Try: CHECK TYPE score IS NUMBER.`
+- `CHECK TYPE` gives a direct repair hint when `IS` has no expected type, for example `CHECK TYPE score IS` reports `CHECK TYPE score needs a type after IS. Try: CHECK TYPE score IS NUMBER.`
 - `CHECK TYPE` rejects extra words after a valid expected type with a direct repair hint, so `CHECK TYPE score IS NUMBER TEXT` explains that only one type belongs in the check
 - `CHECK TYPE` rejects unknown expected type names with a beginner-facing list of supported types
 - typed list/map checks through `claro typecheck`, including a nested `LIST OF MAP` insertion example
