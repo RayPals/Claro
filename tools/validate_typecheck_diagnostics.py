@@ -37,6 +37,9 @@ EXPECTED = {
     "tests/typecheck_missing_function_name_bad.claro": [
         "tests/typecheck_missing_function_name_bad.claro:1: TEACH needs a function name. Add a name after TEACH, such as TEACH greet.",
     ],
+    "tests/typecheck_missing_method_name_bad.claro": [
+        "tests/typecheck_missing_method_name_bad.claro:2: Method Player needs a method name. Add a name after TEACH, such as TEACH show.",
+    ],
     "tests/typecheck_missing_class_name_bad.claro": [
         "tests/typecheck_missing_class_name_bad.claro:1: CLASS needs a class name. Add a name after CLASS, such as CLASS Player.",
     ],
