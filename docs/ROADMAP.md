@@ -65,6 +65,8 @@ Keep declared return types honest: `claro typecheck` now reports friendly diagno
 8m. Keep class field metadata understandable: a missing or unknown type in a `HAS field TYPE` declaration, or extra text after a valid type, now gets a class-and-field diagnostic with supported type examples or a direct repair hint before object-field checks use that metadata.
 8n. Keep object creation unambiguous: extra words after `NEW ClassName object` now get a direct repair hint, so a malformed object declaration cannot silently discard part of the learner's input.
 
+8o. Keep class declarations understandable: a bare `CLASS` now gets a direct diagnostic explaining that a class name is required, with a small example repair.
+
 ### 1. Strong static types
 
 Goal: make larger beginner programs safer without making first scripts harder.

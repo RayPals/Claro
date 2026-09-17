@@ -37,6 +37,9 @@ EXPECTED = {
     "tests/typecheck_missing_function_name_bad.claro": [
         "tests/typecheck_missing_function_name_bad.claro:1: TEACH needs a function name. Add a name after TEACH, such as TEACH greet.",
     ],
+    "tests/typecheck_missing_class_name_bad.claro": [
+        "tests/typecheck_missing_class_name_bad.claro:1: CLASS needs a class name. Add a name after CLASS, such as CLASS Player.",
+    ],
     "tests/typecheck_duplicate_object_bad.claro": [
         "tests/typecheck_duplicate_object_bad.claro:6: Object player is created more than once. Give each object a different name.",
     ],

@@ -1,5 +1,10 @@
 # Changelog
 
+### Diagnose missing class names
+
+- `claro typecheck` now explains how to repair a bare `CLASS` declaration instead of silently accepting a class with no name.
+- Added focused coverage to the complete typecheck diagnostic validation matrix.
+
 ### Diagnose missing function names
 
 - `claro typecheck` now explains how to repair a bare `TEACH` declaration instead of silently accepting a function with no name.
