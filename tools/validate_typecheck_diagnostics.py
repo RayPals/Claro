@@ -290,6 +290,9 @@ EXPECTED = {
     "tests/typecheck_extra_class_tokens_bad.claro": [
         "tests/typecheck_extra_class_tokens_bad.claro:1: Class Player has extra text after its name. Keep only the class name after CLASS.",
     ],
+    "tests/typecheck_extra_new_tokens_bad.claro": [
+        "tests/typecheck_extra_new_tokens_bad.claro:5: NEW Player has extra text after object name player. Keep only the class and object names.",
+    ],
     "tests/typecheck_extra_field_tokens_bad.claro": [
         "tests/typecheck_extra_field_tokens_bad.claro:2: Class Player field score has extra text after type NUMBER. Keep only the field name and one type.",
     ],
