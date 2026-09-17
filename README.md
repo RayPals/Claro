@@ -141,6 +141,12 @@ SAY kind
 CHECK TYPE score IS NUMBER
 ```
 
+`CHECK TYPE` also gives a direct repair hint when `IS` is missing:
+
+```text
+CHECK TYPE needs IS. Try: CHECK TYPE score IS NUMBER.
+```
+
 `CHECK TYPE` names a real Claro type. If a type name is misspelled, the checker explains the allowed beginner types instead of reporting a confusing value mismatch:
 
 ```text

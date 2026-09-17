@@ -71,6 +71,8 @@ Keep declared return types honest: `claro typecheck` now reports friendly diagno
 
 8p. Keep object declarations understandable: a `NEW` statement with a class but no object name now gets a direct diagnostic with a complete `NEW Player player` repair example; a bare `NEW` now separately explains that both a class and object name are required.
 
+8q. Keep `CHECK TYPE` syntax understandable: a missing `IS` now gets a direct repair hint with a complete `CHECK TYPE score IS NUMBER` example.
+
 ### 1. Strong static types
 
 Goal: make larger beginner programs safer without making first scripts harder.

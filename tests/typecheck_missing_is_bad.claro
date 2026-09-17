@@ -1,0 +1,2 @@
+SET score NUMBER 10
+CHECK TYPE score

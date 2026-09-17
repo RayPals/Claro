@@ -290,6 +290,9 @@ EXPECTED = {
     "tests/typecheck_invalid_expected_type_bad.claro": [
         "tests/typecheck_invalid_expected_type_bad.claro:2: CHECK TYPE needs a known type such as NUMBER, TEXT, YESNO, LIST, or MAP, but BANANA is not a Claro type.",
     ],
+    "tests/typecheck_missing_is_bad.claro": [
+        "tests/typecheck_missing_is_bad.claro:2: CHECK TYPE needs IS. Try: CHECK TYPE score IS NUMBER.",
+    ],
     "tests/typecheck_invalid_return_type_bad.claro": [
         "tests/typecheck_invalid_return_type_bad.claro:1: Function square declares an unknown return type BANANA. Use a Claro type such as NUMBER, TEXT, YESNO, LIST, or MAP.",
     ],
