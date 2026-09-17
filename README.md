@@ -147,6 +147,13 @@ CHECK TYPE score IS NUMBER
 CHECK TYPE needs IS. Try: CHECK TYPE score IS NUMBER.
 ```
 
+If extra words follow the expected type, `claro typecheck` explains that only one type belongs there:
+
+```text
+CHECK TYPE score IS NUMBER TEXT
+CHECK TYPE score has extra text after type NUMBER. Keep only the expression, IS, and one type.
+```
+
 `CHECK TYPE` names a real Claro type. If a type name is misspelled, the checker explains the allowed beginner types instead of reporting a confusing value mismatch:
 
 ```text

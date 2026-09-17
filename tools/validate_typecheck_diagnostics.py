@@ -293,6 +293,9 @@ EXPECTED = {
     "tests/typecheck_missing_is_bad.claro": [
         "tests/typecheck_missing_is_bad.claro:2: CHECK TYPE needs IS. Try: CHECK TYPE score IS NUMBER.",
     ],
+    "tests/typecheck_extra_check_type_tokens_bad.claro": [
+        "tests/typecheck_extra_check_type_tokens_bad.claro:2: CHECK TYPE score has extra text after type NUMBER. Keep only the expression, IS, and one type.",
+    ],
     "tests/typecheck_invalid_return_type_bad.claro": [
         "tests/typecheck_invalid_return_type_bad.claro:1: Function square declares an unknown return type BANANA. Use a Claro type such as NUMBER, TEXT, YESNO, LIST, or MAP.",
     ],
