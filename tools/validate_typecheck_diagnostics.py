@@ -31,6 +31,9 @@ EXPECTED = {
     "tests/typecheck_duplicate_class_bad.claro": [
         "tests/typecheck_duplicate_class_bad.claro:5: Class Player is declared more than once. Give each class a different name.",
     ],
+    "tests/typecheck_duplicate_function_bad.claro": [
+        "tests/typecheck_duplicate_function_bad.claro:5: Function greet is declared more than once. Give each function a different name.",
+    ],
     "tests/typecheck_duplicate_object_bad.claro": [
         "tests/typecheck_duplicate_object_bad.claro:6: Object player is created more than once. Give each object a different name.",
     ],

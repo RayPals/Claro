@@ -183,6 +183,8 @@ If a function repeats a parameter name, `claro typecheck` reports the declaratio
 Function greet declares parameter name more than once. Give each parameter a different name.
 ```
 
+Top-level functions must also have unique names. If a script declares `TEACH greet` twice, `claro typecheck` reports `Function greet is declared more than once. Give each function a different name.` Rename one function before calling it.
+
 The same declaration check applies to object methods in both syntax styles. For example, `TEACH greet name, name` inside `CLASS Player` reports `Method Player.greet declares parameter name more than once. Give each parameter a different name.` Duplicate method names are also rejected in both modern `END` methods and compatibility `TAKES` / `LEARNED` methods, with a rename hint before a call can become ambiguous.
 
 Object methods must also have unique names within their class. If `CLASS Player` declares `TEACH show` twice, `claro typecheck` reports `Method Player.show is declared more than once. Give each method a different name.` Rename one method before calling it.
