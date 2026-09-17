@@ -1,5 +1,10 @@
 # Changelog
 
+### Diagnose missing function names
+
+- `claro typecheck` now explains how to repair a bare `TEACH` declaration instead of silently accepting a function with no name.
+- Added focused coverage to the complete typecheck diagnostic validation matrix.
+
 ### Diagnose unknown class field types
 
 - `claro typecheck` now rejects class fields such as `HAS score BANANA` with a beginner-facing diagnostic that names the class and field, lists supported type examples, and suggests using a Claro type.
