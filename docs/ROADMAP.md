@@ -64,6 +64,7 @@ Keep declared return types honest: `claro typecheck` now reports friendly diagno
 8l. Keep object creation understandable: when classes are declared in a script, an unknown `NEW` class name now gets a direct class-name diagnostic and repair hint; the older permissive `NEW` behavior remains when no class declarations are present.
 
 8m. Keep class field metadata understandable: a missing or unknown type in a `HAS field TYPE` declaration, or extra text after a valid type, now gets a class-and-field diagnostic with supported type examples or a direct repair hint before object-field checks use that metadata.
+8m.1. Keep class field declarations understandable: a bare `HAS` now gets a direct diagnostic explaining that both a field name and type are required, with a small `HAS score NUMBER` repair example.
 8n. Keep object creation unambiguous: extra words after `NEW ClassName object` now get a direct repair hint, so a malformed object declaration cannot silently discard part of the learner's input.
 
 8o. Keep class declarations understandable: a bare `CLASS` now gets a direct diagnostic explaining that a class name is required, with a small example repair.

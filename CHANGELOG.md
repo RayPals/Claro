@@ -1,5 +1,10 @@
 # Changelog
 
+### Diagnose missing class field names
+
+- `claro typecheck` now explains how to repair a bare `HAS` declaration instead of reporting a confusing missing type for an unnamed field.
+- Added focused coverage to the complete typecheck diagnostic validation matrix.
+
 ### Diagnose missing method names
 
 - `claro typecheck` now explains how to repair a bare `TEACH` declaration inside a class instead of describing it as a top-level function.
