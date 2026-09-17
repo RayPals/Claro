@@ -141,10 +141,16 @@ SAY kind
 CHECK TYPE score IS NUMBER
 ```
 
-`CHECK TYPE` also gives a direct repair hint when `IS` is missing:
+`CHECK TYPE` gives a direct repair hint when `IS` is missing:
 
 ```text
 CHECK TYPE needs IS. Try: CHECK TYPE score IS NUMBER.
+```
+
+If the learner leaves out the expression as well, the checker explains all three required parts:
+
+```text
+CHECK TYPE needs an expression, IS, and a type. Try: CHECK TYPE score IS NUMBER.
 ```
 
 If the learner writes `IS` but leaves out the expected type, Claro names the missing piece and shows a complete example:
