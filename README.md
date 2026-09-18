@@ -190,6 +190,8 @@ If `RETURNS` is present without a type, `claro typecheck` explains what is missi
 Function greet needs a return type after RETURNS. Add a type such as NUMBER.
 ```
 
+The same missing-type check covers the older `TEACH ... TAKES ... RETURNS` / `LEARNED` spelling, so compatibility lessons receive the same repair instead of silently accepting an incomplete return declaration.
+
 The same repair applies to object methods and older compatibility methods, and names the class so the learner can find the declaration:
 
 ```text

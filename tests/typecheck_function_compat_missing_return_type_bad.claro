@@ -1,0 +1,3 @@
+TEACH greet TAKES name RETURNS
+    RETURN name
+LEARNED
