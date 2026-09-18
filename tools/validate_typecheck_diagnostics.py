@@ -314,6 +314,12 @@ EXPECTED = {
     "tests/typecheck_missing_return_type_bad.claro": [
         "tests/typecheck_missing_return_type_bad.claro:1: Function greet needs a return type after RETURNS. Add a type such as NUMBER.",
     ],
+    "tests/typecheck_method_missing_return_type_bad.claro": [
+        "tests/typecheck_method_missing_return_type_bad.claro:2: Method Player.score needs a return type after RETURNS. Add a type such as NUMBER.",
+    ],
+    "tests/typecheck_method_compat_missing_return_type_bad.claro": [
+        "tests/typecheck_method_compat_missing_return_type_bad.claro:2: Method Player.score needs a return type after RETURNS. Add a type such as NUMBER.",
+    ],
     "tests/typecheck_extra_check_type_tokens_bad.claro": [
         "tests/typecheck_extra_check_type_tokens_bad.claro:2: CHECK TYPE score has extra text after type NUMBER. Keep only the expression, IS, and one type.",
     ],

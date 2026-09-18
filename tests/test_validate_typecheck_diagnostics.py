@@ -92,6 +92,10 @@ class ValidateTypecheckDiagnosticsTests(unittest.TestCase):
     def test_includes_missing_function_return_fixture(self):
         self.assertIn("tests/typecheck_function_missing_return_bad.claro", MODULE.EXPECTED)
 
+    def test_includes_missing_method_return_type_fixtures(self):
+        self.assertIn("tests/typecheck_method_missing_return_type_bad.claro", MODULE.EXPECTED)
+        self.assertIn("tests/typecheck_method_compat_missing_return_type_bad.claro", MODULE.EXPECTED)
+
     def test_includes_branch_missing_function_return_fixture(self):
         self.assertIn("tests/typecheck_function_branch_missing_return_bad.claro", MODULE.EXPECTED)
 

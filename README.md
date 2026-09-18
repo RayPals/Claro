@@ -190,6 +190,12 @@ If `RETURNS` is present without a type, `claro typecheck` explains what is missi
 Function greet needs a return type after RETURNS. Add a type such as NUMBER.
 ```
 
+The same repair applies to object methods and older compatibility methods, and names the class so the learner can find the declaration:
+
+```text
+Method Player.score needs a return type after RETURNS. Add a type such as NUMBER.
+```
+
 `CHECK TYPE` names a real Claro type. If a type name is misspelled, the checker explains the allowed beginner types instead of reporting a confusing value mismatch:
 
 ```text
