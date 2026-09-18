@@ -127,6 +127,9 @@ EXPECTED = {
     "tests/typecheck_method_return_bad.claro": [
         "tests/typecheck_method_return_bad.claro:3: Type mismatch for return from Player.score: expected NUMBER, but this value looks like TEXT.",
     ],
+    "tests/typecheck_method_compat_empty_return_bad.claro": [
+        "tests/typecheck_method_compat_empty_return_bad.claro:3: Method Player.score needs a NUMBER value after RETURN. Add a NUMBER expression.",
+    ],
     "tests/typecheck_method_compat_return_bad.claro": [
         "tests/typecheck_method_compat_return_bad.claro:4: Type mismatch for return from Player.score: expected NUMBER, but this value looks like TEXT.",
     ],

@@ -270,6 +270,8 @@ If a function or method declares `RETURNS TYPE` but uses `RETURN` without a valu
 Function square needs a NUMBER value after RETURN. Add a NUMBER expression.
 ```
 
+The same repair applies to compatibility methods written with `TAKES` / `LEARNED`, so older lessons also receive a method-specific hint instead of a generic type error.
+
 If a function or method declares `RETURNS TYPE` but contains no `RETURN`, the checker points out the missing statement:
 
 ```text
