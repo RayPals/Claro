@@ -302,6 +302,9 @@ EXPECTED = {
     "tests/typecheck_missing_expression_with_is_bad.claro": [
         "tests/typecheck_missing_expression_with_is_bad.claro:1: CHECK TYPE needs an expression before IS. Try: CHECK TYPE score IS NUMBER.",
     ],
+    "tests/typecheck_missing_type_of_as_bad.claro": [
+        "tests/typecheck_missing_type_of_as_bad.claro:2: TYPE OF needs AS. Try: TYPE OF score AS kind.",
+    ],
     "tests/typecheck_extra_check_type_tokens_bad.claro": [
         "tests/typecheck_extra_check_type_tokens_bad.claro:2: CHECK TYPE score has extra text after type NUMBER. Keep only the expression, IS, and one type.",
     ],

@@ -159,6 +159,12 @@ If `IS` is present but the expression is missing, Claro points out that the expr
 CHECK TYPE needs an expression before IS. Try: CHECK TYPE score IS NUMBER.
 ```
 
+`TYPE OF` also explains when the result variable is missing its `AS` keyword:
+
+```text
+TYPE OF needs AS. Try: TYPE OF score AS kind.
+```
+
 If the learner writes `IS` but leaves out the expected type, Claro names the missing piece and shows a complete example:
 
 ```text
