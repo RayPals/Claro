@@ -1,0 +1,3 @@
+TEACH greet RETURNS
+    RETURN 1
+END

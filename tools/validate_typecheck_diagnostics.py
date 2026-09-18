@@ -311,6 +311,9 @@ EXPECTED = {
     "tests/typecheck_extra_teach_tokens_bad.claro": [
         "tests/typecheck_extra_teach_tokens_bad.claro:1: Function greet has extra text after return type NUMBER. Keep only the function name, parameters, and one return type.",
     ],
+    "tests/typecheck_missing_return_type_bad.claro": [
+        "tests/typecheck_missing_return_type_bad.claro:1: Function greet needs a return type after RETURNS. Add a type such as NUMBER.",
+    ],
     "tests/typecheck_extra_check_type_tokens_bad.claro": [
         "tests/typecheck_extra_check_type_tokens_bad.claro:2: CHECK TYPE score has extra text after type NUMBER. Keep only the expression, IS, and one type.",
     ],

@@ -184,6 +184,12 @@ CHECK TYPE score IS NUMBER TEXT
 CHECK TYPE score has extra text after type NUMBER. Keep only the expression, IS, and one type.
 ```
 
+If `RETURNS` is present without a type, `claro typecheck` explains what is missing and shows a beginner-friendly repair:
+
+```text
+Function greet needs a return type after RETURNS. Add a type such as NUMBER.
+```
+
 `CHECK TYPE` names a real Claro type. If a type name is misspelled, the checker explains the allowed beginner types instead of reporting a confusing value mismatch:
 
 ```text
