@@ -70,6 +70,9 @@ EXPECTED = {
     "tests/typecheck_function_return_extra_tokens_bad.claro": [
         "tests/typecheck_function_return_extra_tokens_bad.claro:2: Function square has extra text after return value amount. Keep only one expression after RETURN.",
     ],
+    "tests/typecheck_function_compat_return_extra_tokens_bad.claro": [
+        "tests/typecheck_function_compat_return_extra_tokens_bad.claro:2: Function square has extra text after return value amount. Keep only one expression after RETURN.",
+    ],
     "tests/typecheck_method_return_extra_tokens_bad.claro": [
         "tests/typecheck_method_return_extra_tokens_bad.claro:4: Method Player.total has extra text after return value 1. Keep only one expression after RETURN.",
     ],
