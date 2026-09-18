@@ -198,6 +198,8 @@ The same repair applies to object methods and older compatibility methods, and n
 Method Player.score needs a return type after RETURNS. Add a type such as NUMBER.
 ```
 
+An empty typed `RETURN` is also rejected in both modern and compatibility functions and methods. Add an expression of the declared type, such as `RETURN amount` for a `NUMBER` return.
+
 `CHECK TYPE` names a real Claro type. If a type name is misspelled, the checker explains the allowed beginner types instead of reporting a confusing value mismatch:
 
 ```text
