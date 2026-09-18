@@ -1,0 +1,6 @@
+CLASS Player
+    HAS score NUMBER
+    TEACH total TAKES amount RETURNS NUMBER
+        RETURN amount extra
+    LEARNED
+END

@@ -284,6 +284,8 @@ END
 Function square has extra text after return value amount. Keep only one expression after RETURN.
 ```
 
+The same focused repair applies to modern and compatibility object methods, and names the complete method such as `Player.total`.
+
 If a function or method declares `RETURNS TYPE` but contains no `RETURN`, the checker points out the missing statement:
 
 ```text
