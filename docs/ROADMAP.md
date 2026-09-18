@@ -79,6 +79,7 @@ Keep declared return types honest: `claro typecheck` now reports friendly diagno
 8q.3. Keep `CHECK TYPE` declarations complete: a bare `CHECK TYPE` now explains that the expression, `IS`, and expected type are all required, with a complete repair example.
 8q.4. Keep `CHECK TYPE` declarations ordered: `CHECK TYPE IS NUMBER` now explains that an expression belongs before `IS`, with a complete repair example.
 8q.5. Keep `TYPE OF` declarations understandable: a missing `AS` now gets a direct repair hint with a complete `TYPE OF score AS kind` example.
+8q.6. Keep `TYPE OF` declarations unambiguous: extra words after the result name now get a direct repair hint instead of being silently included in the variable name.
 
 ### 1. Strong static types
 

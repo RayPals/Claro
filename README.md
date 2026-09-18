@@ -147,6 +147,12 @@ CHECK TYPE score IS NUMBER
 CHECK TYPE needs IS. Try: CHECK TYPE score IS NUMBER.
 ```
 
+If extra words follow the result name, `claro typecheck` explains that `TYPE OF` accepts one expression, `AS`, and one result name:
+
+```text
+TYPE OF score AS kind extra
+TYPE OF score has extra text after result name kind. Keep only the expression, AS, and one result name.
+```
 If the learner leaves out the expression as well, the checker explains all three required parts:
 
 ```text
