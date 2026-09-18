@@ -1,0 +1,3 @@
+TEACH greet RETURNS NUMBER extra
+    RETURN 1
+END
