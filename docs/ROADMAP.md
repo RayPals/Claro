@@ -83,6 +83,7 @@ Keep declared return types honest: `claro typecheck` now reports friendly diagno
 8q.7. Keep typed `TEACH` declarations unambiguous: extra words after a declared return type now get a direct repair hint instead of being treated as part of an unknown type.
 8q.8. Keep typed `TEACH` declarations complete: a bare `RETURNS` now gets a direct repair hint naming the missing type and showing a supported example such as `NUMBER`.
 8q.9. Keep missing return-type diagnostics aligned across functions and methods: modern and compatibility methods now name the complete `Class.method` identity when `RETURNS` has no type, with focused fixtures in the typecheck and release validation matrices.
+8q.10. Keep return statements beginner-readable: typed returns now identify simple extra tokens after a value and explain that `RETURN` accepts one expression, with focused release validation coverage.
 
 ### 1. Strong static types
 

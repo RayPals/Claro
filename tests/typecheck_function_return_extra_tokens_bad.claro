@@ -1,0 +1,3 @@
+TEACH square amount RETURNS NUMBER
+    RETURN amount extra
+END

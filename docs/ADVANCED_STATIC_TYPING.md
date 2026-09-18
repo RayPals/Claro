@@ -568,7 +568,11 @@ Function squre is not known yet. Check the function name or add TEACH squre befo
 
 ## Function and method return checks
 
-Simple functions and object methods can declare a return type with `RETURNS TYPE`. `claro typecheck` checks each simple `RETURN` expression before the program runs:
+Simple functions and object methods can declare a return type with `RETURNS TYPE`. `claro typecheck` checks each simple `RETURN` expression before the program runs. `RETURN` accepts one expression; if a simple value is followed by extra text, the checker gives a repair hint:
+
+```text
+Function square has extra text after return value amount. Keep only one expression after RETURN.
+```
 
 ```claro
 CLASS Player

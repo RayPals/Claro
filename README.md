@@ -272,6 +272,18 @@ Function square needs a NUMBER value after RETURN. Add a NUMBER expression.
 
 The same repair applies to compatibility methods written with `TAKES` / `LEARNED`, so older lessons also receive a method-specific hint instead of a generic type error.
 
+If a return value has extra space-separated text, `claro typecheck` identifies the first value and explains that `RETURN` accepts one expression:
+
+```claro
+TEACH square amount RETURNS NUMBER
+    RETURN amount extra
+END
+```
+
+```text
+Function square has extra text after return value amount. Keep only one expression after RETURN.
+```
+
 If a function or method declares `RETURNS TYPE` but contains no `RETURN`, the checker points out the missing statement:
 
 ```text

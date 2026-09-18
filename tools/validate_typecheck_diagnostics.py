@@ -67,6 +67,9 @@ EXPECTED = {
     "tests/typecheck_function_return_bad.claro": [
         "tests/typecheck_function_return_bad.claro:3: Type mismatch for return from square: expected NUMBER, but this value looks like TEXT.",
     ],
+    "tests/typecheck_function_return_extra_tokens_bad.claro": [
+        "tests/typecheck_function_return_extra_tokens_bad.claro:2: Function square has extra text after return value amount. Keep only one expression after RETURN.",
+    ],
     "tests/typecheck_function_lowercase_return_bad.claro": [
         "tests/typecheck_function_lowercase_return_bad.claro:2: Type mismatch for return from square: expected NUMBER, but this value looks like TEXT.",
     ],
