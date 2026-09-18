@@ -54,6 +54,7 @@ Ready now:
 - `CHECK TYPE` gives a direct repair hint when the learner forgets the `IS` keyword, for example `CHECK TYPE score` reports `CHECK TYPE needs IS. Try: CHECK TYPE score IS NUMBER.`
 - `CHECK TYPE` gives a direct repair hint when `IS` has no expected type, for example `CHECK TYPE score IS` reports `CHECK TYPE score needs a type after IS. Try: CHECK TYPE score IS NUMBER.`
 - `CHECK TYPE` explains when the learner leaves out the expression as well, for example bare `CHECK TYPE` reports `CHECK TYPE needs an expression, IS, and a type. Try: CHECK TYPE score IS NUMBER.`
+- `CHECK TYPE` explains when `IS` is present but the expression is missing, for example `CHECK TYPE IS NUMBER` reports `CHECK TYPE needs an expression before IS. Try: CHECK TYPE score IS NUMBER.`
 - `CHECK TYPE` rejects extra words after a valid expected type with a direct repair hint, so `CHECK TYPE score IS NUMBER TEXT` explains that only one type belongs in the check
 - `CHECK TYPE` rejects unknown expected type names with a beginner-facing list of supported types
 - typed list/map checks through `claro typecheck`, including a nested `LIST OF MAP` insertion example

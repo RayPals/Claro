@@ -153,6 +153,12 @@ If the learner leaves out the expression as well, the checker explains all three
 CHECK TYPE needs an expression, IS, and a type. Try: CHECK TYPE score IS NUMBER.
 ```
 
+If `IS` is present but the expression is missing, Claro points out that the expression belongs before `IS`:
+
+```text
+CHECK TYPE needs an expression before IS. Try: CHECK TYPE score IS NUMBER.
+```
+
 If the learner writes `IS` but leaves out the expected type, Claro names the missing piece and shows a complete example:
 
 ```text
