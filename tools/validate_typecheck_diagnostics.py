@@ -142,6 +142,9 @@ EXPECTED = {
     "tests/typecheck_function_branch_missing_return_bad.claro": [
         "tests/typecheck_function_branch_missing_return_bad.claro:5: Function choose declares RETURNS NUMBER but does not return a NUMBER value on every path. Add RETURN to each branch or after the conditional.",
     ],
+    "tests/typecheck_function_compat_branch_missing_return_bad.claro": [
+        "tests/typecheck_function_compat_branch_missing_return_bad.claro:5: Function choose declares RETURNS NUMBER but does not return a NUMBER value on every path. Add RETURN to each branch or after the conditional.",
+    ],
     "tests/typecheck_function_empty_return_bad.claro": [
         "tests/typecheck_function_empty_return_bad.claro:3: Function square needs a NUMBER value after RETURN. Add a NUMBER expression.",
     ],

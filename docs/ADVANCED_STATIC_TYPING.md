@@ -84,6 +84,24 @@ Object Player has no field level. Check the field name or add HAS level NUMBER t
 
 This narrow check covers direct method assignments with a known expression in both modern `TEACH ... END` and compatibility `TEACH ... TAKES ... LEARNED` methods. The focused validation matrix keeps matching positive NUMBER, TEXT, and YESNO assignments in both syntax generations, including `SET ready value` followed by `DO player.toggle YES`. Broader local-variable and control-flow analysis remains future work.
 
+## Compatibility conditional returns
+
+The same every-path return check applies to older `TAKES` / `LEARNED` functions. If one branch returns but the other branch does not, `claro typecheck` explains how to repair both paths:
+
+```claro
+TEACH choose TAKES flag RETURNS NUMBER
+    IF flag
+        RETURN 1
+    END
+LEARNED
+```
+
+```text
+Function choose declares RETURNS NUMBER but does not return a NUMBER value on every path. Add RETURN to each branch or after the conditional.
+```
+
+Use `ELSE` with a `RETURN` value, or add a return after the conditional. This compatibility example is part of the focused release validation matrix.
+
 ## Complete conditional returns
 
 ### Return expressions that need more information
