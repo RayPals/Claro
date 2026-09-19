@@ -58,6 +58,7 @@ Ready now:
 - `CHECK TYPE` explains when `IS` is present but the expression is missing, for example `CHECK TYPE IS NUMBER` reports `CHECK TYPE needs an expression before IS. Try: CHECK TYPE score IS NUMBER.`
 - `CHECK TYPE` rejects extra words after a valid expected type with a direct repair hint, so `CHECK TYPE score IS NUMBER TEXT` explains that only one type belongs in the check
 - `CHECK TYPE` rejects unknown expected type names with a beginner-facing list of supported types
+- typed function return diagnostics also identify an unknown return expression in compatibility `TAKES` / `LEARNED` functions, matching the modern function and object-method guidance
 - `TYPE OF` reports a direct repair hint when the learner forgets `AS`, for example `TYPE OF score` suggests `TYPE OF score AS kind`
 - `TYPE OF` rejects extra words after its result name with a direct repair hint, so `TYPE OF score AS kind extra` explains that only one result name belongs there; typed `TEACH ... RETURNS TYPE` declarations likewise reject extra words after the return type with a direct repair hint
 - typed `TEACH ... RETURNS` declarations reject a missing return type with a direct repair hint, such as `Function greet needs a return type after RETURNS. Add a type such as NUMBER.` The same diagnostic names the complete class and method, including compatibility `TAKES` / `LEARNED` methods: `Method Player.score needs a return type after RETURNS. Add a type such as NUMBER.`

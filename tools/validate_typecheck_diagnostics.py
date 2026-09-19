@@ -130,6 +130,9 @@ EXPECTED = {
     "tests/typecheck_function_unknown_return_expression_bad.claro": [
         "tests/typecheck_function_unknown_return_expression_bad.claro:2: Function square's return value could not be understood yet. Use a NUMBER expression after RETURN.",
     ],
+    "tests/typecheck_function_compat_unknown_return_expression_bad.claro": [
+        "tests/typecheck_function_compat_unknown_return_expression_bad.claro:3: Function square's return value could not be understood yet. Use a NUMBER expression after RETURN.",
+    ],
     "tests/typecheck_function_missing_return_bad.claro": [
         "tests/typecheck_function_missing_return_bad.claro:3: Function square declares RETURNS NUMBER but has no RETURN statement. Add RETURN with a NUMBER value.",
     ],

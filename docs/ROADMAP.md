@@ -86,6 +86,7 @@ Keep declared return types honest: `claro typecheck` now reports friendly diagno
 8q.10. Keep return statements beginner-readable: typed returns now identify simple extra tokens after a value and explain that `RETURN` accepts one expression, with focused release validation coverage.
 8q.11. Keep extra-token return diagnostics aligned across syntax generations: modern and compatibility functions and object methods now have focused fixtures for `RETURN value extra`, so errors keep the function or class-and-method name and the same repair hint.
 8q.12. Keep empty typed-return diagnostics aligned across syntax generations: modern and compatibility functions and object methods now have focused fixtures for bare `RETURN`, so each form explains that the declared type needs an expression.
+8q.13. Keep unknown typed-return diagnostics aligned across syntax generations: compatibility `TAKES` / `LEARNED` functions now have a focused fixture for an uninferable return expression, matching modern functions and methods.
 
 ### 1. Strong static types
 

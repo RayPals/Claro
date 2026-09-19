@@ -102,6 +102,8 @@ Function square's return value could not be understood yet. Use a NUMBER express
 
 Use a known typed value, such as a parameter checked with `CHECK TYPE`, while broader expression inference remains future work.
 
+The same learner-facing diagnostic applies to compatibility functions written with `TAKES` / `LEARNED`, so older lessons do not get a less-helpful error when a return expression is still unknown.
+
 Known NUMBER parameters can also be used in arithmetic return expressions. Numeric division is accepted when both operands are known numbers:
 
 ```claro
