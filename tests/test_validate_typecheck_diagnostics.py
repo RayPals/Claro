@@ -214,6 +214,12 @@ class ValidateTypecheckDiagnosticsTests(unittest.TestCase):
             MODULE.EXPECTED_OK,
         )
 
+    def test_includes_compatibility_function_division_return_success_fixture(self):
+        self.assertIn(
+            "tests/typecheck_function_compat_return_division_good.claro",
+            MODULE.EXPECTED_OK,
+        )
+
     def test_includes_lowercase_compatibility_method_return_success_fixture(self):
         self.assertIn(
             "tests/typecheck_method_compat_lowercase_return_good.claro",

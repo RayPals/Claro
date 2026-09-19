@@ -1,0 +1,6 @@
+TEACH total TAKES amount RETURNS NUMBER
+    CHECK TYPE amount IS NUMBER
+    RETURN amount / 2
+LEARNED
+
+CALL total WITH 4

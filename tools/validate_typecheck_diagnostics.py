@@ -469,6 +469,7 @@ EXPECTED_OK = [
     "tests/typecheck_function_compat_return_good.claro",
     "tests/typecheck_function_compat_return_addition_good.claro",
     "tests/typecheck_function_compat_return_subtraction_good.claro",
+    "tests/typecheck_function_compat_return_division_good.claro",
     "tests/typecheck_function_compat_lowercase_return_good.claro",
     "tests/typecheck_function_lowercase_return_good.claro",
     "tests/typecheck_function_return_expression_good.claro",
