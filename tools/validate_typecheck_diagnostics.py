@@ -7,6 +7,9 @@ ROOT = Path(__file__).resolve().parents[1]
 EXE = ROOT / ("claro.exe" if os.name == "nt" else "claro")
 
 EXPECTED = {
+    "tests/typecheck_missing_type_of_expression_bad.claro": [
+        "tests/typecheck_missing_type_of_expression_bad.claro:1: TYPE OF needs an expression before AS. Try: TYPE OF score AS kind.",
+    ],
     "tests/typecheck_function_duplicate_param_bad.claro": [
         "tests/typecheck_function_duplicate_param_bad.claro:1: Function greet declares parameter name more than once. Give each parameter a different name.",
     ],

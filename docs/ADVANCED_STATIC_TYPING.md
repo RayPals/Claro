@@ -2,6 +2,20 @@
 
 Claro v1.18.26 adds the first advanced static-typing foundation: typed containers checked by `claro typecheck`.
 
+## Complete `TYPE OF` statements
+
+`TYPE OF` needs an expression, `AS`, and a result name. If the expression is missing, `claro typecheck` gives a repair example instead of silently creating the result variable:
+
+```claro
+TYPE OF AS kind
+```
+
+```text
+TYPE OF needs an expression before AS. Try: TYPE OF score AS kind.
+```
+
+Add the value whose type should be stored, such as `TYPE OF score AS kind`.
+
 Class fields need a type after the field name. If a learner writes `HAS score` instead of `HAS score NUMBER`, `claro typecheck` explains the missing piece:
 
 ```text
