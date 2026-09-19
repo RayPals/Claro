@@ -226,6 +226,12 @@ class ValidateTypecheckDiagnosticsTests(unittest.TestCase):
             MODULE.EXPECTED_OK,
         )
 
+    def test_includes_compatibility_function_missing_return_fixture(self):
+        self.assertIn(
+            "tests/typecheck_function_compat_missing_return_bad.claro",
+            MODULE.EXPECTED,
+        )
+
     def test_includes_lowercase_compatibility_method_return_success_fixture(self):
         self.assertIn(
             "tests/typecheck_method_compat_lowercase_return_good.claro",
@@ -359,6 +365,13 @@ class ValidateTypecheckDiagnosticsTests(unittest.TestCase):
             "tests/typecheck_duplicate_field_bad.claro",
         ):
             self.assertIn(f'"{fixture}"', source)
+
+    def test_release_validation_runs_compatibility_function_missing_return_fixture(self):
+        source = (ROOT / "src" / "claro.c").read_text()
+        self.assertIn(
+            '"tests/typecheck_function_compat_missing_return_bad.claro"',
+            source,
+        )
 
     def test_release_validation_runs_method_call_fixture(self):
         result = subprocess.run(
