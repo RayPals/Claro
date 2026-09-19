@@ -117,6 +117,12 @@ class ValidateTypecheckDiagnosticsTests(unittest.TestCase):
             MODULE.EXPECTED,
         )
 
+    def test_includes_compatibility_branch_complete_function_return_fixture(self):
+        self.assertIn(
+            "tests/typecheck_function_compat_branch_complete_good.claro",
+            MODULE.EXPECTED_OK,
+        )
+
     def test_includes_empty_function_return_fixture(self):
         self.assertIn("tests/typecheck_function_empty_return_bad.claro", MODULE.EXPECTED)
 

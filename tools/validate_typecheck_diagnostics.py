@@ -486,6 +486,7 @@ EXPECTED_OK = [
     "tests/typecheck_function_unknown_return_expression_good.claro",
     "tests/typecheck_function_branch_complete_good.claro",
     "tests/typecheck_function_nested_branch_complete_good.claro",
+    "tests/typecheck_function_compat_branch_complete_good.claro",
     "tests/typecheck_method_return_good.claro",
     "tests/typecheck_method_field_return_good.claro",
     "tests/typecheck_method_compat_field_return_good.claro",

@@ -102,6 +102,20 @@ Function choose declares RETURNS NUMBER but does not return a NUMBER value on ev
 
 Use `ELSE` with a `RETURN` value, or add a return after the conditional. This compatibility example is part of the focused release validation matrix.
 
+A complete compatibility conditional is accepted when both branches return the declared type:
+
+```claro
+TEACH choose TAKES flag RETURNS NUMBER
+    IF flag
+        RETURN 1
+    ELSE
+        RETURN 2
+    END
+LEARNED
+```
+
+This positive `TAKES` / `LEARNED` example is checked by both the focused typecheck validator and `claro validate`.
+
 ## Complete conditional returns
 
 ### Return expressions that need more information
