@@ -476,6 +476,7 @@ EXPECTED = {
 }
 
 EXPECTED_OK = [
+    "tests/typecheck_type_of_good.claro",
     "tests/typecheck_function_good.claro",
     "tests/typecheck_function_return_good.claro",
     "tests/typecheck_function_compat_return_good.claro",
