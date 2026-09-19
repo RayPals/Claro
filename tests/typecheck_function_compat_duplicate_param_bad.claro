@@ -1,0 +1,4 @@
+TEACH greet TAKES name, name
+    SAY name
+LEARNED
+CALL greet WITH "Ada", "Grace"

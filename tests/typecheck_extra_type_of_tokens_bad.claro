@@ -1,0 +1,2 @@
+SET score NUMBER 10
+TYPE OF score AS kind extra

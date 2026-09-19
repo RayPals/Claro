@@ -1,0 +1,4 @@
+TEACH total amount RETURNS NUMBER
+    CHECK TYPE amount IS NUMBER
+    RETURN amount * "oops"
+END

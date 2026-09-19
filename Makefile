@@ -2,10 +2,13 @@ CC = gcc
 CFLAGS = -std=c99 -O0
 LDFLAGS = -lm
 
-all: claro
+all: claro claro.exe
 
 claro: src/claro.c
 	$(CC) $(CFLAGS) -o claro src/claro.c $(LDFLAGS)
+
+claro.exe: src/claro.c
+	$(CC) $(CFLAGS) -o claro.exe src/claro.c $(LDFLAGS)
 
 test: claro
 	./claro test

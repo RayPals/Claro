@@ -1,0 +1,7 @@
+CLASS Player
+    HAS score NUMBER
+
+    TEACH score_value RETURNS NUMBER
+        RETURN score
+    END
+END

@@ -1,0 +1,10 @@
+CLASS Player
+    HAS score NUMBER
+
+    TEACH set_score
+        SET score NUMBER 10
+    END
+END
+
+NEW Player player
+DO player.set_score

@@ -1,0 +1,5 @@
+CLASS Player
+    TEACH score RETURNS
+        RETURN 1
+    END
+END

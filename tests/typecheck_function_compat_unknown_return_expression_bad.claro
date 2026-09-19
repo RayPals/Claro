@@ -1,0 +1,4 @@
+TEACH square TAKES amount RETURNS NUMBER
+    CHECK TYPE amount IS NUMBER
+    RETURN missing
+LEARNED

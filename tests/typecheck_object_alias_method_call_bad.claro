@@ -1,0 +1,12 @@
+CLASS Player
+    HAS score NUMBER
+
+    TEACH add points
+        CHECK TYPE points IS NUMBER
+    END
+END
+
+NEW Player player
+SET alias player
+SET second alias
+CALL second.add WITH "five"

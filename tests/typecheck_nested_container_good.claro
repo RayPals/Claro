@@ -1,0 +1,4 @@
+SET people AS LIST OF MAP TO LIST
+SET person AS MAP OF TEXT TO MAP
+PUT person KEY "name" VALUE "Ada"
+ADD person TO people

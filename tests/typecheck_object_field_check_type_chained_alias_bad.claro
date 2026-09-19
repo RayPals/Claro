@@ -1,0 +1,8 @@
+CLASS Player
+    HAS score NUMBER
+END
+
+NEW Player player
+SET alias player
+SET backup alias
+CHECK TYPE backup.score IS TEXT

@@ -1,0 +1,9 @@
+CLASS Player
+    TEACH square TAKES amount RETURNS NUMBER
+        CHECK TYPE amount IS NUMBER
+        RETURN missing
+    LEARNED
+ENDCLASS
+
+NEW Player player
+CALL player.square WITH 4

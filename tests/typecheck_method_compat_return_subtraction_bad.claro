@@ -1,0 +1,6 @@
+CLASS Player
+    TEACH total TAKES amount RETURNS NUMBER
+        CHECK TYPE amount IS NUMBER
+        RETURN amount - "oops"
+    LEARNED
+ENDCLASS

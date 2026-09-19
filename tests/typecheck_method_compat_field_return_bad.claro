@@ -1,0 +1,7 @@
+CLASS Player
+    HAS score NUMBER
+
+    TEACH label TAKES amount RETURNS TEXT
+        RETURN score
+    LEARNED
+ENDCLASS

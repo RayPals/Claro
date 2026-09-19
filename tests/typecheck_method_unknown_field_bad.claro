@@ -1,0 +1,10 @@
+CLASS Player
+    HAS score NUMBER
+
+    TEACH train
+        SET level 3
+    END
+END
+
+NEW Player player
+DO player.train

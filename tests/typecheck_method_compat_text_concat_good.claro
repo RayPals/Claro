@@ -1,0 +1,12 @@
+CLASS Player
+    HAS first TEXT
+    HAS last TEXT
+
+    TEACH full_name TAKES suffix
+        SET first first + suffix
+        SET last "Dr. " + last
+    LEARNED
+ENDCLASS
+
+NEW Player player
+CALL player.full_name WITH "!"

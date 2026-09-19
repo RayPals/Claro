@@ -15,6 +15,18 @@ jobs:
         run: make
       - name: Run tests
         run: ./claro test
+      - name: Run current release validation
+        run: ./claro validate
+      - name: Validate typecheck diagnostics
+        run: python3 tools/validate_typecheck_diagnostics.py
+      - name: Validate version convention
+        run: python3 tools/validate_version_convention.py
+      - name: Validate package security
+        run: python3 tools/validate_package_security.py
+      - name: Validate compiler warnings
+        run: python3 tools/validate_compiler_warnings.py
+      - name: Validate CI workflow coverage
+        run: python3 tools/validate_ci_workflow.py
       - name: Check lessons
         run: |
           ./claro check lessons/01_hello.claro

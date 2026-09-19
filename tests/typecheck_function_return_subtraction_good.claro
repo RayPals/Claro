@@ -1,0 +1,6 @@
+TEACH difference amount RETURNS NUMBER
+    CHECK TYPE amount IS NUMBER
+    RETURN amount - 2
+END
+
+DO difference 5

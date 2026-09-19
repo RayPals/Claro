@@ -1,0 +1,6 @@
+TEACH halve amount RETURNS NUMBER
+    CHECK TYPE amount IS NUMBER
+    RETURN amount / 2
+END
+
+DO halve 8

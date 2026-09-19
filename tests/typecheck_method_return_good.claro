@@ -1,0 +1,8 @@
+CLASS Player
+    TEACH score amount RETURNS NUMBER
+        RETURN amount
+    END
+END
+
+NEW Player player
+DO player.score 4

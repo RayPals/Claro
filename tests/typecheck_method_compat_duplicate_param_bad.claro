@@ -1,0 +1,8 @@
+CLASS Player
+    TEACH greet TAKES name, name
+        SAY name
+    LEARNED
+ENDCLASS
+
+NEW Player player
+CALL player.greet WITH "Ada", "Grace"

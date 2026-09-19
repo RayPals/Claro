@@ -1,0 +1,9 @@
+CLASS Player
+    HAS ready YESNO
+    TEACH toggle TAKES value
+        SET ready "yes"
+    LEARNED
+ENDCLASS
+
+NEW Player player
+CALL player.toggle WITH YES

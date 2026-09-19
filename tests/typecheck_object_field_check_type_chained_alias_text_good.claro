@@ -1,0 +1,9 @@
+CLASS Player
+    HAS name TEXT
+END
+
+NEW Player player
+SET alias player
+SET backup alias
+SET player.name "Ada"
+CHECK TYPE backup.name IS TEXT

@@ -1,0 +1,6 @@
+CLASS Player
+    TEACH square amount RETURNS NUMBER
+        CHECK TYPE amount IS NUMBER
+        RETURN missing
+    END
+END

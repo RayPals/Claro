@@ -1,0 +1,9 @@
+CLASS Player
+    HAS name TEXT
+    HAS score NUMBER
+END
+
+NEW Player player
+SET player.name "Ada"
+SET player.score 10
+SET player.score player.score + 1

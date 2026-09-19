@@ -1,0 +1,12 @@
+CLASS Player
+    TEACH show TAKES
+        SAY "first"
+    LEARNED
+
+    TEACH show TAKES
+        SAY "second"
+    LEARNED
+END
+
+NEW Player player
+CALL player.show WITH

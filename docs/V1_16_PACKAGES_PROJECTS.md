@@ -63,9 +63,35 @@ source: local
 checksum: 1234abcd
 ```
 
-`claro.lock` records the release version, lock format, packages, and checksums so future registry work has a stable safety foundation.
+`claro.lock` records the release version, lock format, packages, and checksums so future registry work has a stable safety foundation. `claro package doctor` checks those lockfile checksums for listed packages and reports `BAD lock checksum: name` if the lockfile is stale or edited incorrectly. It rejects duplicate `package:` entries with `DUPLICATE lock package: name`, so one package cannot have ambiguous lock data. It also reports `BAD lock package not in claro.project: name` when the lockfile contains a package entry that is not listed in `claro.project`, so learners know to refresh the lockfile instead of trusting stale package data. The project file must declare the complete supported `manifest-version: 1` value; a prefix such as `manifest-version: 10` is rejected as `BAD project manifest version: expected 1`. Package manifests must declare exactly one complete supported `manifest-version: 1` value. Missing, blank, unsupported (such as `10`), or duplicate format fields report `BAD package manifest version` with the package name, the manifest path, and a hint to keep exactly one `manifest-version: 1` line. The doctor leaves the file unchanged for you to repair; an absent manifest file still reports `MISSING package manifest`. They must also declare exactly one expected `name:` value; duplicate or prefix-matching names are rejected as `BAD package manifest name: name`. The manifest must contain exactly one checksum field with the expected complete value; duplicate, trailing, or extra checksum text is rejected as `BAD package checksum: name`. Package manifests must also declare exactly one `version: 1` field; duplicate or prefix-matching versions such as `version: 10` are rejected as `BAD package version: name`. Package manifests must also declare the complete supported local `source: local` value. Prefixes such as `source: local-extra` are rejected as `BAD package source: name` rather than being accepted as valid local manifests.
 
-## Safety rules
+If `package doctor` reports `BAD package source: math-tools`, open `packages/math-tools/claro.package` and keep exactly one `source: local` line. Duplicate `source:` lines are rejected even when both say `local`, or when a valid line appears before or after an unsupported source. The doctor leaves the file unchanged so you can review and repair it yourself.
+
+If `package doctor` reports `BAD lock checksum: math-tools`, check the `math-tools` entry in `claro.lock`. Each package must have exactly one matching `checksum:` line. Duplicate checksums are rejected even when they agree, or when a correct checksum appears before or after an incorrect one. The doctor leaves the file unchanged. After reviewing your project and package manifests, run `claro package lock` to regenerate the lockfile, then run `claro package doctor` again.
+
+## Lock format safety
+
+`claro package doctor` requires exactly one `lock-version: 1` line in `claro.lock`. Missing, empty, unsupported (such as `10`), or duplicate format versions now fail with:
+
+```text
+BAD lock version: expected exactly one lock-version: 1 line
+```
+
+The lockfile must also contain exactly one current release line, `version: v1.18.26`. A missing, stale, blank, or duplicate release line fails with:
+
+```text
+BAD lock release version: expected exactly one version: v1.18.26 line
+```
+
+The doctor leaves your files unchanged. After reviewing your project and package manifests, run `claro package lock` to regenerate the lockfile, then run `claro package doctor` again. Spaces around values and capitalization of the lock-format field name are accepted, as with other lockfile fields. Valid generated lockfiles continue to work unchanged; this check does not add registry downloads or verify package content hashes.
+
+## Project-name safety
+
+`claro new NAME` checks the project name before creating folders. Project names may use only letters, numbers, dash, and underscore, and they must be 64 characters or fewer.
+
+This keeps mistakes like `../bad` from creating a project outside the folder where the learner is working.
+
+## Package-name safety
 
 Package names may use only:
 
@@ -75,6 +101,8 @@ numbers
 dash
 underscore
 ```
+
+Package names must be 64 characters or fewer so Claro can create predictable local package folders and metadata paths.
 
 This means simple names like these are allowed:
 
@@ -92,6 +120,8 @@ Unsafe names are rejected:
 folder/name
 bad name
 ```
+
+If an unsafe package name somehow gets into `claro.project`, package maintenance commands should not quietly continue. `claro package doctor` points out the bad name, `claro package lock` refuses to write lockfile data for it, `claro package list` refuses to display it as a normal package, `claro package init` refuses to report the project ready while the unsafe entry remains, and `claro package remove NAME` exits with an error if the lockfile refresh still sees an unsafe package name after the removal. Learners can still recover by removing the exact unsafe entry, such as `claro package remove ../bad`; Claro rewrites the project file and lockfile without using that unsafe name as a folder path.
 
 ## Why this matters
 

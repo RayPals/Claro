@@ -1,5 +1,254 @@
 # Changelog
 
+### Diagnose missing class field names
+
+- `claro typecheck` now explains how to repair a bare `HAS` declaration instead of reporting a confusing missing type for an unnamed field.
+- Added focused coverage to the complete typecheck diagnostic validation matrix.
+
+### Diagnose missing method names
+
+- `claro typecheck` now explains how to repair a bare `TEACH` declaration inside a class instead of describing it as a top-level function.
+- Added focused coverage to the complete typecheck diagnostic validation matrix.
+
+### Diagnose missing class names
+
+- `claro typecheck` now explains how to repair a bare `CLASS` declaration instead of silently accepting a class with no name.
+- Added focused coverage to the complete typecheck diagnostic validation matrix.
+
+### Diagnose missing function names
+
+- `claro typecheck` now explains how to repair a bare `TEACH` declaration instead of silently accepting a function with no name.
+- Added focused coverage to the complete typecheck diagnostic validation matrix.
+
+### Diagnose unknown class field types
+
+- `claro typecheck` now rejects class fields such as `HAS score BANANA` with a beginner-facing diagnostic that names the class and field, lists supported type examples, and suggests using a Claro type.
+
+### Validate compatibility duplicate-parameter diagnostics
+
+- Added focused coverage proving that compatibility `TAKES` / `LEARNED` functions reject repeated parameter names with the same repair-oriented diagnostic as modern functions.
+- Added the fixture to the complete typecheck diagnostic validation matrix.
+
+### Validate compatibility unknown inline method-field annotations
+
+- Added focused coverage proving that compatibility `TAKES` / `LEARNED` methods reject unknown inline field annotations with the same repair-oriented diagnostic as modern methods.
+
+### Diagnose unknown inline method-field annotations
+
+- `claro typecheck` now rejects unknown inline field annotations such as `BANANA` and suggests the class-declared `HAS` type.
+- Added focused negative coverage to the complete typecheck validation matrix.
+
+### Align inline method-field annotations with class fields
+
+- `claro typecheck` now compares an inline method assignment annotation with the class field declared by `HAS`.
+- A mismatch such as `SET score TEXT 10` inside a method for `HAS score NUMBER` explains both types and suggests the class-declared type.
+- Added positive and negative fixtures to the complete typecheck validation matrix.
+
+### Validate compatibility inline method-field annotations
+
+- Added matching positive and negative coverage for `TEACH ... TAKES ...` / `LEARNED` methods.
+- Release validation now protects the same class-declared-type diagnostic for older compatibility lessons.
+
+- Added focused modern-method coverage for the learner-facing diagnostic produced when an undeclared field is assigned from an expression whose type is not inferable yet.
+
+## Unreleased
+
+- Method-body `CHECK TYPE` diagnostics now name the current class method when a declared field is checked against the wrong type, with focused positive and negative validation coverage.
+
+- Typecheck diagnostics for typed method-body field assignments now name the class method and arithmetic operation when a known TEXT operand is used in a NUMBER field update.
+
+### Compatibility method field-assignment diagnostics
+
+- Added focused positive and negative typecheck fixtures for older `TEACH ... TAKES ...` / `LEARNED` methods that assign to typed class fields.
+- Release validation now preserves the learner-facing `Class.method` name in these compatibility diagnostics.
+
+### Validate compatibility method multiplication diagnostics
+
+- Added focused negative typecheck coverage proving that the older `TAKES` / `LEARNED` method syntax identifies a TEXT operand in a NUMBER multiplication return and explains the required operand type.
+- Wired the fixture into the standalone typecheck validator and `claro validate`.
+
+### Validate compatibility method division diagnostics
+
+- Added focused negative typecheck coverage proving that the older `TAKES` / `LEARNED` method syntax identifies a TEXT operand in a NUMBER division return and explains the required operand type.
+- Wired the fixture into the standalone typecheck validator and `claro validate`.
+
+### Validate compatibility method subtraction diagnostics
+
+- Added focused negative typecheck coverage proving that the older `TAKES` / `LEARNED` method syntax identifies a TEXT operand in a NUMBER subtraction return and explains the required operand type.
+- Wired the fixture into the standalone typecheck validator and `claro validate`.
+
+### Validate compatibility method addition diagnostics
+
+- Added focused negative typecheck coverage proving that the older `TAKES` / `LEARNED` method syntax identifies a TEXT operand in a NUMBER addition return and explains the required operand type.
+- Wired the fixture into the standalone typecheck validator and `claro validate`.
+
+### Validate compatibility method addition returns
+
+- Added focused positive typecheck coverage proving that the older `TEACH ... TAKES ... RETURNS NUMBER` / `LEARNED` method syntax accepts a numeric addition return after `CHECK TYPE` establishes the parameter type.
+- Wired the fixture into the standalone typecheck validator and `claro validate`.
+
+### Validate compatibility method multiplication returns
+
+- Added focused release validation for compatibility (`TAKES` / `LEARNED`) methods returning numeric multiplication results.
+
+### Validate compatibility method subtraction returns
+
+- Added focused positive typecheck coverage proving that the older `TEACH ... TAKES ... RETURNS NUMBER` / `LEARNED` method syntax accepts a numeric subtraction return after `CHECK TYPE` establishes the parameter type.
+- Wired the fixture into the standalone typecheck validator and `claro validate`.
+
+### Validate numeric function subtraction returns
+
+- Added focused positive typecheck coverage proving that a typed function can return a numeric subtraction expression after `CHECK TYPE` establishes its parameter type.
+- Wired the fixture into the standalone typecheck validator and `claro validate`.
+
+### Validate division return diagnostics
+
+- Added focused `claro typecheck` coverage proving that a typed function returning `amount / "oops"` identifies division, the required `NUMBER` operands, and the offending `TEXT` value.
+- Wired the negative fixture into the complete typecheck validator and `claro validate` coverage.
+
+### Validate numeric function return expressions
+
+- Added a focused positive typecheck fixture proving that a typed function can return a numeric multiplication expression after `CHECK TYPE` establishes its parameter type.
+- Wired the fixture into the standalone typecheck validator and `claro validate`.
+
+### Advertise typed-language keywords to IDE helpers
+
+- Added `RETURNS`, `CHECK`, and `TYPE` to `claro ide` keyword metadata so editor integrations can recognize the current typed function and type-checking syntax.
+- Extended the IDE metadata validator and documented the updated completion surface.
+
+### Validate the complete typecheck matrix
+
+- `claro validate` now runs the complete focused typecheck fixture matrix, including method-call, alias, return, and expression fixtures that were previously covered only by the standalone diagnostic validator.
+
+### Validate compatibility method return types
+
+- Added focused coverage proving that the older `TEACH ... TAKES ... RETURNS TYPE` / `LEARNED` method syntax receives the same learner-facing return-type diagnostic as modern methods.
+- Added the compatibility method fixture to the complete typecheck diagnostics validator.
+
+### Validate incomplete method return paths
+
+- Added focused typecheck coverage proving that a typed method with an incomplete conditional return reports the same learner-facing missing-path diagnostic as a typed function.
+- Added the method fixture to both `claro validate` and the complete typecheck diagnostics validator.
+
+### Validate compatibility function return types
+
+- Added focused coverage proving that the older `TEACH ... TAKES ... RETURNS TYPE` / `LEARNED` syntax receives the same learner-facing return-type diagnostic as modern functions.
+- Added the compatibility fixture to both `claro validate` and the complete typecheck diagnostics validator.
+
+### Validate unknown method return types
+
+- Added focused `claro typecheck` regression coverage for an object method declaring an unsupported `RETURNS` type such as `BANANA`.
+- The release validator now checks function and method unknown-return-type diagnostics separately.
+
+### Diagnose unknown declared return types
+
+- `claro typecheck` now reports a learner-facing error when a function or object method declares an unsupported `RETURNS` type such as `BANANA`.
+- Added focused negative-fixture coverage and release-validator coverage for the invalid declaration.
+
+### Diagnose empty typed returns
+
+- `claro typecheck` now reports a beginner-facing error when a function or method declares `RETURNS TYPE` but uses `RETURN` without a value.
+- Added a focused negative fixture and release-validation coverage for the missing return expression.
+
+### Check typed parameter expressions in returns
+
+- `claro typecheck` now carries a function or method parameter's `CHECK TYPE` metadata into later return-expression inference.
+- Added positive and negative arithmetic return fixtures for functions and object methods so a declared return type cannot silently accept an expression whose parameter type is already known.
+
+### Check simple function return types
+
+- Added `TEACH name ... RETURNS TYPE` syntax for a focused static return check.
+- `claro typecheck` now reports the expected and inferred types when a `RETURN` expression does not match.
+- Added positive and negative fixtures and wired both into `claro validate` and the complete typecheck diagnostics validator.
+
+### Diagnose explicitly typed unknown object fields
+
+- Added focused typecheck coverage for `SET player.level NUMBER 3` when `Player` declares no `level` field.
+- `claro typecheck` now gives the same beginner-facing missing-`HAS` hint for explicitly typed unknown fields as it does for untyped field assignments.
+
+### Reject unlisted typecheck fixtures
+
+- `tools/validate_typecheck_diagnostics.py` now discovers `tests/typecheck_*.claro` files and fails when a fixture is missing from the validator's positive or negative lists.
+- This keeps new learner-facing typecheck examples from silently escaping release validation.
+
+### Explain text operands in object-field addition
+
+- Added focused typecheck coverage for `SET player.score player.name + 1`.
+- `claro typecheck` now names the `TEXT` operand and explains that addition into a `NUMBER` field needs numeric values, matching the existing subtraction, multiplication, and division diagnostics.
+
+### Complete numeric object-field arithmetic coverage
+
+- Added a focused positive typecheck fixture for numeric subtraction in an object field.
+- Added the fixture to both the complete typecheck diagnostics validator and `claro validate`, keeping valid subtraction beside the existing division/multiplication positives and text-operand diagnostics.
+
+### Complete typecheck fixture validation
+
+- Added regression coverage requiring the focused typecheck validator to list every `typecheck_*.claro` fixture, plus the existing object-field validation script.
+- Added the two previously omitted positive fixtures so `tools/validate_typecheck_diagnostics.py` now exercises the complete typecheck fixture set.
+
+### CI release-gate validator hardening
+
+- Added focused regression coverage for the workflow validator.
+- `tools/validate_ci_workflow.py` now checks release commands inside actual `run` steps, so commented-out commands cannot make CI coverage appear complete.
+- The validator now requires its own executable CI command, protecting the workflow coverage check from being removed silently.
+
+### Object-alias field CHECK TYPE diagnostics
+
+- Added focused typecheck coverage for `CHECK TYPE alias.field IS TYPE` after a simple object alias.
+- `claro typecheck` now compares an aliased object's declared field type with the requested `CHECK TYPE` type.
+
+### Nested container type validation
+
+- Added a focused nested-container typecheck example for adding a typed map to a typed list.
+- Updated container matching so `LIST OF MAP` accepts map values with their own type metadata while preserving existing list/map mismatch diagnostics.
+
+### Object-field expression validation
+
+- Added positive and negative typecheck fixtures for assigning object fields from another field and from an arithmetic field expression.
+- Added both fixtures to `claro validate` and the focused typecheck diagnostics validator.
+- Added a focused negative fixture for the reverse expression mismatch: storing a numeric expression in a `TEXT` object field now remains covered by the release validation matrix.
+
+- `claro package doctor` now rejects duplicate `manifest-version:` fields in `claro.project` instead of accepting the first value and overlooking ambiguous project metadata.
+
+- `claro package doctor` now rejects duplicate package entries in `claro.lock` instead of allowing ambiguous lockfile data.
+- `claro package doctor` now rejects duplicate `name:` entries in a package manifest instead of accepting ambiguous package identity data.
+- `claro package doctor` now rejects duplicate `checksum:` entries in a package manifest instead of accepting ambiguous integrity data.
+- `claro package doctor` now rejects listed package manifests whose `version:` only starts with the supported local package version, such as `version: 10`.
+- `claro package doctor` now rejects listed package manifests whose `source:` only starts with the supported local source, such as `source: local-extra`.
+- `claro package doctor` now rejects project files whose `manifest-version:` only starts with the supported value, such as `manifest-version: 10`.
+
+## v1.18.26-dev exact package manifest-version validation
+
+- Added package-security coverage for a manifest version that only starts with the supported version, such as `manifest-version: 10` for the current `manifest-version: 1` format.
+- Changed `claro package doctor` to compare the complete `manifest-version:` value instead of accepting a version as a substring.
+
+## v1.18.26-dev exact package checksum validation
+
+- Added package-security coverage for a manifest checksum with valid digest text followed by extra data.
+- Changed `claro package doctor` to compare the complete `checksum:` field instead of accepting a checksum as a substring.
+
+## v1.18.26-dev exact package manifest-name validation
+
+- Added package-security coverage for a manifest name that only starts with the expected package name, such as `name: math-tools-extra` for package `math-tools`.
+- Changed `claro package doctor` to compare the complete `name:` value, preventing prefix matches from being accepted as valid manifests.
+
+## v1.18.26-dev package list unsafe-name diagnostic
+
+- Added focused package-security validation for `claro package list` when `claro.project` already contains an unsafe package name such as `../bad`.
+- Changed `claro package list` to fail with the existing beginner-facing `BAD package name: ...` diagnostic instead of displaying unsafe entries as normal package names.
+
+## v1.18.26-dev missing unchecked function argument diagnostic
+
+- Added a focused negative `claro typecheck` fixture for calling a simple function without its declared argument, such as `TEACH greet name` followed by `DO greet`.
+- Improved the static arity check so simple functions without `CHECK TYPE` hints still report a beginner-facing missing-argument diagnostic.
+- Wired the fixture into the typecheck diagnostics validator and `claro validate`.
+
+## v1.18.26-dev CI release validation coverage
+
+- Added `tools/validate_ci_workflow.py` to assert that Forgejo/Gitea CI keeps running Claro's current release gates.
+- Updated `.forgejo/workflows/ci.yml` to run `claro validate`, typecheck diagnostics validation, version convention validation, and the CI workflow coverage check in addition to the existing smoke tests.
+- Documented the CI coverage validator in the testing docs and current status/roadmap notes.
+
 ## v1.18.26-dev unknown object-field expression diagnostic
 
 - Added a focused negative `claro typecheck` fixture for assigning an expression with no inferable static type to an undeclared object field, such as `SET player.level score + 1` after `NEW Player player`.

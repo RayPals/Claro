@@ -1,0 +1,3 @@
+TEACH square TAKES amount RETURNS NUMBER
+    RETURN amount extra
+LEARNED

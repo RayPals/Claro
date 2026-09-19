@@ -1,0 +1,5 @@
+TEACH square amount returns NUMBER
+    RETURN "oops"
+END
+
+DO square 4

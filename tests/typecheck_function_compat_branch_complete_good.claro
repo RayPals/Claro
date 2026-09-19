@@ -1,0 +1,9 @@
+TEACH choose TAKES flag RETURNS NUMBER
+    IF flag
+        RETURN 1
+    ELSE
+        RETURN 2
+    END
+LEARNED
+
+CALL choose WITH YES

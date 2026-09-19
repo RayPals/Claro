@@ -1,0 +1,9 @@
+CLASS Player
+    HAS name TEXT
+    TEACH rename TAKES replacement
+        SET name 123
+    LEARNED
+ENDCLASS
+
+NEW Player player
+CALL player.rename WITH "Ada"

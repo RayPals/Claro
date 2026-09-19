@@ -1,0 +1,9 @@
+CLASS Player
+    HAS score NUMBER
+    TEACH add TAKES amount
+        SET score amount + 1
+    LEARNED
+ENDCLASS
+
+NEW Player player
+CALL player.add WITH 4

@@ -1,0 +1,11 @@
+CLASS Player
+    HAS score NUMBER
+
+    TEACH total amount RETURNS NUMBER
+        CHECK TYPE amount IS NUMBER
+        RETURN amount + 2
+    END
+END
+
+NEW Player player
+DO player.total 3

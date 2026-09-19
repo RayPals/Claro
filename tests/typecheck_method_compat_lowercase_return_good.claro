@@ -1,0 +1,9 @@
+CLASS Player
+    TEACH score TAKES amount returns NUMBER
+        CHECK TYPE amount IS NUMBER
+        RETURN amount
+    LEARNED
+END
+
+NEW Player player
+CALL player.score WITH 4
