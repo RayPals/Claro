@@ -16,6 +16,18 @@ TYPE OF needs an expression before AS. Try: TYPE OF score AS kind.
 
 Add the value whose type should be stored, such as `TYPE OF score AS kind`.
 
+If the result name is missing after `AS`, `claro typecheck` names the missing piece and shows the complete beginner form:
+
+```claro
+TYPE OF score AS
+```
+
+```text
+TYPE OF needs a result name after AS. Try: TYPE OF score AS kind.
+```
+
+Add a result name after `AS`, such as `kind`.
+
 Class fields need a type after the field name. If a learner writes `HAS score` instead of `HAS score NUMBER`, `claro typecheck` explains the missing piece:
 
 ```text
