@@ -45,6 +45,12 @@ class ValidateTypecheckDiagnosticsTests(unittest.TestCase):
             MODULE.EXPECTED_OK,
         )
 
+    def test_includes_explicitly_typed_yesno_field_success_fixture(self):
+        self.assertIn(
+            "tests/typecheck_object_field_typed_yesno_good.claro",
+            MODULE.EXPECTED_OK,
+        )
+
     def test_includes_reverse_text_concatenation_success_fixture(self):
         self.assertIn(
             "tests/typecheck_object_field_text_concat_reverse_good.claro",

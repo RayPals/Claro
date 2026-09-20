@@ -1,5 +1,10 @@
 # Changelog
 
+### Validate explicitly typed YESNO object-field assignments
+
+- Added positive typecheck coverage for `SET player.ready YESNO YES` when the class declares `HAS ready YESNO`.
+- Added the fixture to the complete typecheck validation matrix and documented the explicit annotation form.
+
 ### Validate explicitly typed TEXT object-field assignments
 
 - Added positive typecheck coverage for `SET player.name TEXT "Ada"` when the class declares `HAS name TEXT`.
