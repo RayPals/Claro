@@ -338,6 +338,9 @@ EXPECTED = {
     "tests/typecheck_missing_type_of_as_bad.claro": [
         "tests/typecheck_missing_type_of_as_bad.claro:2: TYPE OF needs AS. Try: TYPE OF score AS kind.",
     ],
+    "tests/typecheck_missing_type_of_parts_bad.claro": [
+        "tests/typecheck_missing_type_of_parts_bad.claro:1: TYPE OF needs an expression, AS, and a result name. Try: TYPE OF score AS kind.",
+    ],
     "tests/typecheck_extra_type_of_tokens_bad.claro": [
         "tests/typecheck_extra_type_of_tokens_bad.claro:2: TYPE OF score has extra text after result name kind. Keep only the expression, AS, and one result name.",
     ],

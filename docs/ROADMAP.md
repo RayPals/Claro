@@ -82,6 +82,7 @@ Keep declared return types honest: `claro typecheck` now reports friendly diagno
 8q.5.1. Keep `TYPE OF` declarations complete: a missing expression before `AS` now gets a direct repair hint with a complete `TYPE OF score AS kind` example.
 8q.5.2. Keep `TYPE OF` declarations named: a missing result name after `AS` now gets a direct repair hint with a complete `TYPE OF score AS kind` example.
 8q.5.3. Keep complete `TYPE OF` examples protected: the valid `TYPE OF score AS kind` form now has a positive fixture in the focused typecheck validation matrix.
+8q.5.4. Keep bare `TYPE OF` declarations understandable: report that the expression, `AS`, and result name are all required, with a complete repair example.
 8q.6. Keep `TYPE OF` declarations unambiguous: extra words after the result name now get a direct repair hint instead of being silently included in the variable name.
 8q.7. Keep typed `TEACH` declarations unambiguous: extra words after a declared return type now get a direct repair hint instead of being treated as part of an unknown type.
 8q.8. Keep typed `TEACH` declarations complete: a bare `RETURNS` now gets a direct repair hint naming the missing type and showing a supported example such as `NUMBER`.

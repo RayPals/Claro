@@ -60,6 +60,7 @@ Ready now:
 - `CHECK TYPE` rejects unknown expected type names with a beginner-facing list of supported types
 - typed function return diagnostics also identify an unknown return expression in compatibility `TAKES` / `LEARNED` functions, matching the modern function and object-method guidance
 - `TYPE OF` reports a direct repair hint when the learner forgets `AS`, for example `TYPE OF score` suggests `TYPE OF score AS kind`
+- bare `TYPE OF` reports that the expression, `AS`, and result name are all required, with a complete repair example
 - `TYPE OF` reports a direct repair hint when the learner forgets the expression before `AS`, for example `TYPE OF AS kind` reports `TYPE OF needs an expression before AS. Try: TYPE OF score AS kind.`
 - `TYPE OF` reports a direct repair hint when the learner forgets the result name after `AS`, for example `TYPE OF score AS` reports `TYPE OF needs a result name after AS. Try: TYPE OF score AS kind.`
 - A valid `TYPE OF score AS kind` statement has a focused positive typecheck fixture, so the complete form is protected from diagnostic-only regression coverage.
