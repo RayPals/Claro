@@ -255,10 +255,13 @@ EXPECTED = {
         "tests/typecheck_object_field_bad.claro:6: Type mismatch for field player.score: expected NUMBER, but this value looks like TEXT.",
     ],
     "tests/typecheck_object_field_typed_bad.claro": [
-        "tests/typecheck_object_field_typed_bad.claro:6: Type mismatch for field player.score: expected NUMBER, but this value looks like TEXT.",
+        "tests/typecheck_object_field_typed_bad.claro:6: Type mismatch for field player.score: class declares NUMBER, but this assignment says TEXT. Use NUMBER for score.",
+    ],
+    "tests/typecheck_object_field_typed_conflict_bad.claro": [
+        "tests/typecheck_object_field_typed_conflict_bad.claro:6: Type mismatch for field player.score: class declares NUMBER, but this assignment says TEXT. Use NUMBER for score.",
     ],
     "tests/typecheck_object_field_typed_text_bad.claro": [
-        "tests/typecheck_object_field_typed_text_bad.claro:6: Type mismatch for field player.name: expected TEXT, but this value looks like NUMBER.",
+        "tests/typecheck_object_field_typed_text_bad.claro:6: Type mismatch for field player.name: class declares TEXT, but this assignment says NUMBER. Use TEXT for name.",
     ],
     "tests/typecheck_object_field_after_method_bad.claro": [
         "tests/typecheck_object_field_after_method_bad.claro:10: Type mismatch for field player.score: expected NUMBER, but this value looks like TEXT.",
