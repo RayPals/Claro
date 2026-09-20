@@ -806,6 +806,21 @@ NEW Player player
 SET player.score 10
 ```
 
+An assignment may repeat the field type when the explicit form is easier to read:
+
+```claro
+CLASS Player
+    HAS name TEXT
+END
+
+NEW Player player
+SET player.name TEXT "Ada"
+```
+
+The explicit `TEXT` annotation must agree with the class field declaration. This
+keeps typed field examples consistent with typed variable assignments while
+still allowing the shorter `SET player.name "Ada"` form.
+
 If a learner assigns the wrong value type directly to that known field:
 
 ```claro
@@ -930,7 +945,7 @@ Output:
 Object player is not known yet. Create it with NEW ClassName player before setting player.score.
 ```
 
-Both sides of this narrow field foundation are covered by validation: `tests/typecheck_object_field_good.claro` checks that `SET player.score 10` is accepted for a `HAS score NUMBER` field, `tests/typecheck_object_field_text_good.claro` checks that `SET player.name "Ada"` is accepted for a `HAS name TEXT` field, `tests/typecheck_object_field_yesno_good.claro` checks that `SET player.ready YES` is accepted for a `HAS ready YESNO` field, `tests/typecheck_object_field_unknown_object_bad.claro` checks that `SET player.score 10` before `NEW Player player` reports the missing-object assignment diagnostic, `tests/typecheck_object_field_check_type_unknown_object_bad.claro` checks the matching missing-object `CHECK TYPE` diagnostic, and the remaining object-field fixtures cover known-field mismatches, unknown NUMBER/TEXT/YESNO fields, and unknown-field assignments whose value type is not inferable yet.
+Both sides of this narrow field foundation are covered by validation: `tests/typecheck_object_field_good.claro` checks that `SET player.score 10` is accepted for a `HAS score NUMBER` field, `tests/typecheck_object_field_typed_good.claro` checks the explicit `NUMBER` annotation, `tests/typecheck_object_field_text_good.claro` checks that `SET player.name "Ada"` is accepted for a `HAS name TEXT` field, `tests/typecheck_object_field_typed_text_good.claro` checks the explicit `TEXT` annotation, `tests/typecheck_object_field_yesno_good.claro` checks that `SET player.ready YES` is accepted for a `HAS ready YESNO` field, `tests/typecheck_object_field_unknown_object_bad.claro` checks that `SET player.score 10` before `NEW Player player` reports the missing-object assignment diagnostic, `tests/typecheck_object_field_check_type_unknown_object_bad.claro` checks the matching missing-object `CHECK TYPE` diagnostic, and the remaining object-field fixtures cover known-field mismatches, unknown NUMBER/TEXT/YESNO fields, and unknown-field assignments whose value type is not inferable yet.
 
 This slice is intentionally small: it covers direct `NEW Class object` plus `SET object.field value` cases in one file. Field declarations are collected even when a learner writes a simple method before a later `HAS` field, so the type checker can still report the field's declared type. Broader object flows, aliases, method return checks, and richer object signatures remain future work.
 

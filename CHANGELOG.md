@@ -1,5 +1,10 @@
 # Changelog
 
+### Validate explicitly typed TEXT object-field assignments
+
+- Added positive typecheck coverage for `SET player.name TEXT "Ada"` when the class declares `HAS name TEXT`.
+- Added the fixture to the complete typecheck validation matrix and documented the explicit annotation form.
+
 ### Diagnose missing class field names
 
 - `claro typecheck` now explains how to repair a bare `HAS` declaration instead of reporting a confusing missing type for an unnamed field.
