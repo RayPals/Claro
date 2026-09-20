@@ -1,0 +1,6 @@
+CLASS Player
+    HAS score NUMBER
+
+NEW Player player
+SET player.score NUMBER 10
+CHECK TYPE player.score IS NUMBER
