@@ -1,0 +1,2 @@
+set score number 10
+check type score is number

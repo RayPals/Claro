@@ -107,6 +107,12 @@ class ValidateTypecheckDiagnosticsTests(unittest.TestCase):
             MODULE.EXPECTED_OK,
         )
 
+    def test_includes_lowercase_check_type_success_fixture(self):
+        self.assertIn(
+            "tests/typecheck_lowercase_check_type_good.claro",
+            MODULE.EXPECTED_OK,
+        )
+
     def test_includes_lowercase_compatibility_return_success_fixture(self):
         self.assertIn(
             "tests/typecheck_function_lowercase_return_good.claro",

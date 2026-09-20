@@ -66,6 +66,7 @@ Ready now:
 - `TYPE OF` reports a direct repair hint when the learner forgets the result name after `AS`, for example `TYPE OF score AS` reports `TYPE OF needs a result name after AS. Try: TYPE OF score AS kind.`
 - A valid `TYPE OF score AS kind` statement has a focused positive typecheck fixture, so the complete form is protected from diagnostic-only regression coverage.
 - `TYPE OF` remains case-insensitive like other Claro keywords, with focused positive coverage for lowercase `type of score as kind` syntax.
+- `CHECK TYPE` remains case-insensitive like other Claro keywords, with focused positive coverage for lowercase `check type score is number` syntax.
 - `TYPE OF` rejects extra words after its result name with a direct repair hint, so `TYPE OF score AS kind extra` explains that only one result name belongs there; typed `TEACH ... RETURNS TYPE` declarations likewise reject extra words after the return type with a direct repair hint
 - typed `TEACH ... RETURNS` declarations reject a missing return type with a direct repair hint, such as `Function greet needs a return type after RETURNS. Add a type such as NUMBER.` The same diagnostic names the complete class and method, including compatibility `TAKES` / `LEARNED` methods: `Method Player.score needs a return type after RETURNS. Add a type such as NUMBER.`
 - typed list/map checks through `claro typecheck`, including a nested `LIST OF MAP` insertion example
