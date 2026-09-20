@@ -62,6 +62,7 @@ Ready now:
 - `TYPE OF` reports a direct repair hint when the learner forgets `AS`, for example `TYPE OF score` suggests `TYPE OF score AS kind`
 - bare `TYPE OF` reports that the expression, `AS`, and result name are all required, with a complete repair example
 - `TYPE OF` reports a direct repair hint when the learner forgets the expression before `AS`, for example `TYPE OF AS kind` reports `TYPE OF needs an expression before AS. Try: TYPE OF score AS kind.`
+- `TYPE OF` prioritizes the missing expression diagnostic even when extra words follow the incomplete form, so `TYPE OF AS kind extra` still points the learner to the missing expression first.
 - `TYPE OF` reports a direct repair hint when the learner forgets the result name after `AS`, for example `TYPE OF score AS` reports `TYPE OF needs a result name after AS. Try: TYPE OF score AS kind.`
 - A valid `TYPE OF score AS kind` statement has a focused positive typecheck fixture, so the complete form is protected from diagnostic-only regression coverage.
 - `TYPE OF` rejects extra words after its result name with a direct repair hint, so `TYPE OF score AS kind extra` explains that only one result name belongs there; typed `TEACH ... RETURNS TYPE` declarations likewise reject extra words after the return type with a direct repair hint

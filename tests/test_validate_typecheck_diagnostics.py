@@ -95,6 +95,12 @@ class ValidateTypecheckDiagnosticsTests(unittest.TestCase):
             MODULE.EXPECTED,
         )
 
+    def test_includes_missing_type_of_expression_before_extra_tokens_fixture(self):
+        self.assertIn(
+            "tests/typecheck_missing_type_of_expression_extra_tokens_bad.claro",
+            MODULE.EXPECTED,
+        )
+
     def test_includes_lowercase_compatibility_return_success_fixture(self):
         self.assertIn(
             "tests/typecheck_function_lowercase_return_good.claro",

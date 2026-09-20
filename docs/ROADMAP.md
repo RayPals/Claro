@@ -80,6 +80,7 @@ Keep declared return types honest: `claro typecheck` now reports friendly diagno
 8q.4. Keep `CHECK TYPE` declarations ordered: `CHECK TYPE IS NUMBER` now explains that an expression belongs before `IS`, with a complete repair example.
 8q.5. Keep `TYPE OF` declarations understandable: a missing `AS` now gets a direct repair hint with a complete `TYPE OF score AS kind` example.
 8q.5.1. Keep `TYPE OF` declarations complete: a missing expression before `AS` now gets a direct repair hint with a complete `TYPE OF score AS kind` example.
+8q.5.1a. Keep incomplete `TYPE OF` diagnostics focused: when the expression is missing, report that repair before secondary trailing-token errors.
 8q.5.2. Keep `TYPE OF` declarations named: a missing result name after `AS` now gets a direct repair hint with a complete `TYPE OF score AS kind` example.
 8q.5.3. Keep complete `TYPE OF` examples protected: the valid `TYPE OF score AS kind` form now has a positive fixture in the focused typecheck validation matrix.
 8q.5.4. Keep bare `TYPE OF` declarations understandable: report that the expression, `AS`, and result name are all required, with a complete repair example.

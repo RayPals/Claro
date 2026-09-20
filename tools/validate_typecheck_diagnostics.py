@@ -7,6 +7,9 @@ ROOT = Path(__file__).resolve().parents[1]
 EXE = ROOT / ("claro.exe" if os.name == "nt" else "claro")
 
 EXPECTED = {
+    "tests/typecheck_missing_type_of_expression_extra_tokens_bad.claro": [
+        "tests/typecheck_missing_type_of_expression_extra_tokens_bad.claro:1: TYPE OF needs an expression before AS. Try: TYPE OF score AS kind.",
+    ],
     "tests/typecheck_missing_type_of_expression_bad.claro": [
         "tests/typecheck_missing_type_of_expression_bad.claro:1: TYPE OF needs an expression before AS. Try: TYPE OF score AS kind.",
     ],
