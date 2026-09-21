@@ -825,6 +825,20 @@ SET player.score AS NUMBER TO 10
 
 Both explicit forms must agree with the class field declaration.
 
+The `AS ... TO` spelling also works inside modern and compatibility object methods:
+
+```claro
+CLASS Player
+    HAS score NUMBER
+
+    TEACH set_score
+        SET score AS NUMBER TO 10
+    END
+END
+```
+
+The older `TAKES` / `LEARNED` method form accepts the same field annotation. Both forms are covered by focused typecheck validation, so method examples can use either the short annotation or the separated `AS ... TO` spelling.
+
 The explicit `TEXT` annotation must agree with the class field declaration. This
 keeps typed field examples consistent with typed variable assignments while
 still allowing the shorter `SET player.name "Ada"` form.

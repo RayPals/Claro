@@ -57,6 +57,16 @@ class ValidateTypecheckDiagnosticsTests(unittest.TestCase):
             MODULE.EXPECTED_OK,
         )
 
+    def test_includes_as_to_method_field_success_fixtures(self):
+        self.assertIn(
+            "tests/typecheck_method_inline_field_annotation_as_to_good.claro",
+            MODULE.EXPECTED_OK,
+        )
+        self.assertIn(
+            "tests/typecheck_method_compat_inline_field_annotation_as_to_good.claro",
+            MODULE.EXPECTED_OK,
+        )
+
     def test_includes_reverse_text_concatenation_success_fixture(self):
         self.assertIn(
             "tests/typecheck_object_field_text_concat_reverse_good.claro",
