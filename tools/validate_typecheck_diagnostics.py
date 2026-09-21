@@ -260,6 +260,9 @@ EXPECTED = {
     "tests/typecheck_object_field_typed_conflict_bad.claro": [
         "tests/typecheck_object_field_typed_conflict_bad.claro:6: Type mismatch for field player.score: class declares NUMBER, but this assignment says TEXT. Use NUMBER for score.",
     ],
+    "tests/typecheck_object_field_typed_as_to_extra_tokens_bad.claro": [
+        "tests/typecheck_object_field_typed_as_to_extra_tokens_bad.claro:6: SET player.score has extra text after value 10. Keep only the field name, type, TO, and one expression.",
+    ],
     "tests/typecheck_object_field_typed_unknown_type_bad.claro": [
         "tests/typecheck_object_field_typed_unknown_type_bad.claro:6: Field player.score needs a known type such as NUMBER, TEXT, or YESNO, but BANANA is not a Claro type. Use NUMBER for score.",
     ],

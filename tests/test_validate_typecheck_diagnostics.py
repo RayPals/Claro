@@ -57,6 +57,12 @@ class ValidateTypecheckDiagnosticsTests(unittest.TestCase):
             MODULE.EXPECTED_OK,
         )
 
+    def test_includes_as_to_typed_field_extra_tokens_fixture(self):
+        self.assertIn(
+            "tests/typecheck_object_field_typed_as_to_extra_tokens_bad.claro",
+            MODULE.EXPECTED,
+        )
+
     def test_includes_as_to_method_field_success_fixtures(self):
         self.assertIn(
             "tests/typecheck_method_inline_field_annotation_as_to_good.claro",
