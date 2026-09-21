@@ -263,6 +263,9 @@ EXPECTED = {
     "tests/typecheck_object_field_typed_as_to_extra_tokens_bad.claro": [
         "tests/typecheck_object_field_typed_as_to_extra_tokens_bad.claro:6: SET player.score has extra text after value 10. Keep only the field name, type, TO, and one expression.",
     ],
+    "tests/typecheck_object_field_typed_as_to_missing_value_bad.claro": [
+        "tests/typecheck_object_field_typed_as_to_missing_value_bad.claro:6: SET player.score needs a value after type NUMBER and TO. Add one expression.",
+    ],
     "tests/typecheck_object_field_short_extra_tokens_bad.claro": [
         "tests/typecheck_object_field_short_extra_tokens_bad.claro:6: SET player.score has extra text after value 10. Keep only the field name, type, and one expression.",
     ],

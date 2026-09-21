@@ -832,6 +832,16 @@ with a repair hint instead of being silently ignored:
 SET player.score AS NUMBER TO 10 extra
 ```
 
+The separated form also needs a value after `TO`:
+
+```claro
+SET player.score AS NUMBER TO
+```
+
+```text
+SET player.score needs a value after type NUMBER and TO. Add one expression.
+```
+
 ```text
 SET player.score has extra text after value 10. Keep only the field name, type, TO, and one expression.
 ```

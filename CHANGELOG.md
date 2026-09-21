@@ -1,5 +1,10 @@
 # Changelog
 
+### Diagnose missing values after `AS ... TO` field annotations
+
+- `claro typecheck` now explains how to repair an explicitly typed object-field assignment that ends after `TO`, such as `SET player.score AS NUMBER TO`.
+- Added focused negative coverage to the complete typecheck validation matrix.
+
 ### Diagnose extra words after short typed field assignments
 
 - `claro typecheck` now rejects trailing words after the value in short explicit object-field assignments such as `SET player.score NUMBER 10 extra`.
