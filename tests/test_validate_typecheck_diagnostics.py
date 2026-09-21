@@ -417,6 +417,8 @@ class ValidateTypecheckDiagnosticsTests(unittest.TestCase):
     def test_release_validation_runs_method_field_diagnostic_fixtures(self):
         source = (ROOT / "src" / "claro.c").read_text()
         for fixture in (
+            "tests/typecheck_method_inline_field_annotation_as_to_good.claro",
+            "tests/typecheck_method_compat_inline_field_annotation_as_to_good.claro",
             "tests/typecheck_method_field_assignment_bad.claro",
             "tests/typecheck_method_text_field_assignment_bad.claro",
             "tests/typecheck_method_compat_text_field_assignment_bad.claro",
