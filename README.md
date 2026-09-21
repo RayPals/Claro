@@ -151,7 +151,7 @@ Run static checks with:
 ./claro typecheck examples/type_hardening.claro
 ```
 
-Claro provides learner-facing diagnostics for many incorrect variable, function, method, and object-field types. Type checking is still a focused foundation rather than a complete static type system.
+Claro provides learner-facing diagnostics for many incorrect variable, function, method, and object-field types. For an explicitly typed object field, the separated form needs both `AS TYPE TO value`, so `SET player.score AS NUMBER` explains how to add `TO` and a value. Type checking is still a focused foundation rather than a complete static type system.
 
 ## Files, JSON, and standard helpers
 

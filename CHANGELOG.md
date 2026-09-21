@@ -1,5 +1,10 @@
 # Changelog
 
+### Diagnose missing `TO` in separated field annotations
+
+- `claro typecheck` now explains how to repair `SET player.score AS NUMBER` by adding `TO` and a value.
+- Added focused negative coverage to the complete typecheck validation matrix.
+
 ### Diagnose missing values after short field annotations
 
 - `claro typecheck` now explains how to repair a short explicitly typed object-field assignment that stops after the type, such as `SET player.score NUMBER`.

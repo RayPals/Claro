@@ -829,7 +829,7 @@ The compatibility-shaped `AS ... TO` form is also accepted when it is clearer to
 SET player.score AS NUMBER TO 10
 ```
 
-Both explicit forms must agree with the class field declaration.
+Both explicit forms must agree with the class field declaration. The separated form also needs `TO` before its value; `SET player.score AS NUMBER` reports `SET player.score needs TO after type NUMBER. Try: SET player.score AS NUMBER TO 10.`
 
 Each explicit field annotation accepts one value expression only. Extra words are rejected
 with a repair hint instead of being silently ignored:
