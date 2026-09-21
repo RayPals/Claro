@@ -1,5 +1,10 @@
 # Changelog
 
+### Validate missing short method-field values
+
+- Added focused coverage for `SET score NUMBER` inside a method, preserving the learner-facing repair hint that one value expression is required after the type.
+- Wired the fixture into both typecheck validation gates.
+
 ### Diagnose missing `TO` in separated field annotations
 
 - `claro typecheck` now explains how to repair `SET player.score AS NUMBER` by adding `TO` and a value.
