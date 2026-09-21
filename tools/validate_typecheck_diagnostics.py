@@ -269,6 +269,9 @@ EXPECTED = {
     "tests/typecheck_object_field_short_extra_tokens_bad.claro": [
         "tests/typecheck_object_field_short_extra_tokens_bad.claro:6: SET player.score has extra text after value 10. Keep only the field name, type, and one expression.",
     ],
+    "tests/typecheck_object_field_short_missing_value_bad.claro": [
+        "tests/typecheck_object_field_short_missing_value_bad.claro:6: SET player.score needs a value after type NUMBER. Add one expression.",
+    ],
     "tests/typecheck_object_field_typed_unknown_type_bad.claro": [
         "tests/typecheck_object_field_typed_unknown_type_bad.claro:6: Field player.score needs a known type such as NUMBER, TEXT, or YESNO, but BANANA is not a Claro type. Use NUMBER for score.",
     ],

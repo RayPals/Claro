@@ -28,6 +28,12 @@ TYPE OF needs a result name after AS. Try: TYPE OF score AS kind.
 
 Add a result name after `AS`, such as `kind`.
 
+Explicit short field annotations also need a value after the type. If a learner writes `SET player.score NUMBER` instead of `SET player.score NUMBER 10`, `claro typecheck` gives a repair hint:
+
+```text
+SET player.score needs a value after type NUMBER. Add one expression.
+```
+
 Class fields need a type after the field name. If a learner writes `HAS score` instead of `HAS score NUMBER`, `claro typecheck` explains the missing piece:
 
 ```text
