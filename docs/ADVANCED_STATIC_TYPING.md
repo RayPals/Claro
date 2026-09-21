@@ -825,7 +825,7 @@ SET player.score AS NUMBER TO 10
 
 Both explicit forms must agree with the class field declaration.
 
-The separated form accepts one value expression only. Extra words are rejected
+Each explicit field annotation accepts one value expression only. Extra words are rejected
 with a repair hint instead of being silently ignored:
 
 ```claro
@@ -834,6 +834,16 @@ SET player.score AS NUMBER TO 10 extra
 
 ```text
 SET player.score has extra text after value 10. Keep only the field name, type, TO, and one expression.
+```
+
+The short explicit form is checked too:
+
+```claro
+SET player.score NUMBER 10 extra
+```
+
+```text
+SET player.score has extra text after value 10. Keep only the field name, type, and one expression.
 ```
 
 The `AS ... TO` spelling also works inside modern and compatibility object methods:

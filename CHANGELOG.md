@@ -1,5 +1,10 @@
 # Changelog
 
+### Diagnose extra words after short typed field assignments
+
+- `claro typecheck` now rejects trailing words after the value in short explicit object-field assignments such as `SET player.score NUMBER 10 extra`.
+- Added focused negative coverage to the complete typecheck validation matrix and documented the repair hint.
+
 ### Validate explicitly typed YESNO object-field assignments
 
 - Added positive typecheck coverage for `SET player.ready YESNO YES` when the class declares `HAS ready YESNO`.
