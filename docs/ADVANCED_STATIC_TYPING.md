@@ -803,6 +803,20 @@ For backward compatibility, a script with no `CLASS` declarations keeps the olde
 
 Claro also has a narrow static diagnostic for direct object-field assignments. If a class declares a typed field and a script creates a simple object with `NEW Class name`, `claro typecheck` remembers the field type:
 
+Keywords are case-insensitive, including object-field declarations and checks. This equivalent beginner example is accepted too:
+
+```claro
+class Player
+    has score number
+end
+
+new Player player
+set player.score number 10
+check type player.score is number
+```
+
+The focused validation fixture `tests/typecheck_object_field_lowercase_good.claro` protects this lowercased spelling.
+
 ```claro
 CLASS Player
     HAS score NUMBER

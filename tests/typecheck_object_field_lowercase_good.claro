@@ -1,0 +1,7 @@
+class Player
+    has score number
+end
+
+new Player player
+set player.score number 10
+check type player.score is number

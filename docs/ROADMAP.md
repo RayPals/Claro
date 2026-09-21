@@ -93,6 +93,7 @@ Keep declared return types honest: `claro typecheck` now reports friendly diagno
 8q.5.3. Keep complete `TYPE OF` examples protected: the valid `TYPE OF score AS kind` form now has a positive fixture in the focused typecheck validation matrix.
 8q.5.3a. Keep `TYPE OF` keyword handling consistent: lowercase `type of score as kind` now has positive fixture coverage alongside the uppercase form.
 8q.5.3b. Keep `CHECK TYPE` keyword handling consistent: lowercase `check type score is number` now has positive fixture coverage alongside the uppercase form.
+8q.5.3c. Keep object-field examples consistent with keyword rules: lowercase `class`, `has`, `new`, `set`, and `check type` now have one focused positive typed-field fixture.
 8q.5.4. Keep bare `TYPE OF` declarations understandable: report that the expression, `AS`, and result name are all required, with a complete repair example.
 8q.6. Keep `TYPE OF` declarations unambiguous: extra words after the result name now get a direct repair hint instead of being silently included in the variable name.
 8q.7. Keep typed `TEACH` declarations unambiguous: extra words after a declared return type now get a direct repair hint instead of being treated as part of an unknown type.
