@@ -817,6 +817,14 @@ NEW Player player
 SET player.name TEXT "Ada"
 ```
 
+The compatibility-shaped `AS ... TO` form is also accepted when it is clearer to separate the annotation from the value:
+
+```claro
+SET player.score AS NUMBER TO 10
+```
+
+Both explicit forms must agree with the class field declaration.
+
 The explicit `TEXT` annotation must agree with the class field declaration. This
 keeps typed field examples consistent with typed variable assignments while
 still allowing the shorter `SET player.name "Ada"` form.
