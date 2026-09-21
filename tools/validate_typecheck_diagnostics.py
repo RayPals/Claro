@@ -449,6 +449,9 @@ EXPECTED = {
     "tests/typecheck_method_short_field_missing_value_bad.claro": [
         "tests/typecheck_method_short_field_missing_value_bad.claro:5: SET score needs a value after type NUMBER. Add one expression.",
     ],
+    "tests/typecheck_method_compat_short_field_missing_value_bad.claro": [
+        "tests/typecheck_method_compat_short_field_missing_value_bad.claro:5: SET score needs a value after type NUMBER. Add one expression.",
+    ],
     "tests/typecheck_method_unknown_field_bad.claro": [
         "tests/typecheck_method_unknown_field_bad.claro:5: Object Player has no field level. Check the field name or add HAS level NUMBER to the class.",
     ],

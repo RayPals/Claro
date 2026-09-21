@@ -4,6 +4,7 @@
 
 - Added focused coverage for `SET score NUMBER` inside a method, preserving the learner-facing repair hint that one value expression is required after the type.
 - Wired the fixture into both typecheck validation gates.
+- Added the matching compatibility `TAKES` / `LEARNED` fixture so older method syntax receives the same coverage.
 
 ### Diagnose missing `TO` in separated field annotations
 

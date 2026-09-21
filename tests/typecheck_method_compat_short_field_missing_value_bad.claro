@@ -1,0 +1,10 @@
+CLASS Player
+    HAS score NUMBER
+
+    TEACH set_score TAKES value
+        SET score NUMBER
+    LEARNED
+END
+
+NEW Player player
+CALL player.set_score WITH 10
