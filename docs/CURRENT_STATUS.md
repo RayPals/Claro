@@ -27,7 +27,7 @@ Verified in this checkout on 2026-09-22:
 - `./claro doctor`: all checks `OK`.
 - `./claro validate`: validation passed.
 
-This slice does not yet fix memory cleanup, `LASTEXIT`, HTTP buffering/status handling, or other review findings. Claro remains a trusted-script interpreter, not a sandbox.
+The `RUN COMMAND` path now decodes POSIX `pclose()` wait status before storing `LASTEXIT`, so a child that exits with code 3 exposes `3` rather than the encoded status `768`. Focused coverage is `tests/42_last_exit_code.claro`. This slice does not yet fix memory cleanup, HTTP buffering/status handling, or other review findings. Claro remains a trusted-script interpreter, not a sandbox.
 
 ## Feature matrix
 

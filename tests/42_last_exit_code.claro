@@ -1,0 +1,2 @@
+RUN COMMAND "exit 3" AS output
+SAY LASTEXIT

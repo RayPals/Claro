@@ -32,6 +32,7 @@ int pclose(FILE *stream);
 #ifndef _WIN32
 #include <dirent.h>
 #include <unistd.h>
+#include <sys/wait.h>
 #else
 #include <direct.h>
 #include <io.h>
@@ -205,7 +206,7 @@ static char *capture_command_output(const char *cmd,int *exit_code){
 #ifdef _WIN32
  if(exit_code) *exit_code=_pclose(fp);
 #else
- if(exit_code) *exit_code=pclose(fp);
+ if(exit_code){ int status=pclose(fp); if(WIFEXITED(status)) *exit_code=WEXITSTATUS(status); else if(WIFSIGNALED(status)) *exit_code=128+WTERMSIG(status); else *exit_code=-1; }
 #endif
  return str_take(&out);
 }
