@@ -1,0 +1,4 @@
+math.abs needs 1 argument, but got 0. Try: CALL math.abs WITH value.
+math.clamp needs 3 arguments, but got 2. Try: CALL math.clamp WITH value, lower, upper.
+random.seed needs 1 argument, but got 0. Try: CALL random.seed WITH value.
+random.int needs 2 arguments, but got 1. Try: CALL random.int WITH lower, upper.

@@ -290,7 +290,36 @@ static void json_write(Str *b,Value v,int pretty,int indent){ int i; char *s; if
 static char *make_json(Value v,int pretty){ Str b; str_init(&b); json_write(&b,v,pretty,0); return str_take(&b); }
 
 /* ---------- stdlib built-ins ---------- */
-static Value builtin_call(Runtime *rt,const char *name,Value *args,int argc,int *handled){ char ns[128], fn[128]; const char *dot=strrchr(name,'.'); const char *kind=NULL; *handled=0; if(!dot) return v_none(); snprintf(ns,sizeof(ns),"%.*s",(int)(dot-name),name); snprintf(fn,sizeof(fn),"%s",dot+1); kind=module_kind(rt,ns); if(!kind) return v_none(); *handled=1;
+static int builtin_required_args(const char *kind,const char *fn,const char **shape){
+ if(strcmp(kind,"text")==0){
+  if(strcmp(fn,"upper")==0||strcmp(fn,"lower")==0){ if(shape) *shape="value"; return 1; }
+  if(strcmp(fn,"contains")==0||strcmp(fn,"endswith")==0||strcmp(fn,"split2")==0){ if(shape) *shape="text, part"; return 2; }
+ }
+ if(strcmp(kind,"math")==0){
+  if(strcmp(fn,"abs")==0){ if(shape) *shape="value"; return 1; }
+  if(strcmp(fn,"clamp")==0){ if(shape) *shape="value, lower, upper"; return 3; }
+ }
+ if(strcmp(kind,"random")==0){
+  if(strcmp(fn,"seed")==0){ if(shape) *shape="value"; return 1; }
+  if(strcmp(fn,"int")==0){ if(shape) *shape="lower, upper"; return 2; }
+ }
+ if(strcmp(kind,"csv")==0){
+  if(strcmp(fn,"read")==0){ if(shape) *shape="text"; return 1; }
+  if(strcmp(fn,"write")==0){ if(shape) *shape="rows"; return 1; }
+ }
+ if(strcmp(kind,"path")==0){
+  if(strcmp(fn,"join")==0){ if(shape) *shape="folder, name"; return 2; }
+  if(strcmp(fn,"basename")==0||strcmp(fn,"dirname")==0||strcmp(fn,"ext")==0||strcmp(fn,"stem")==0||strcmp(fn,"absolute")==0){ if(shape) *shape="path"; return 1; }
+ }
+ if(strcmp(kind,"collections")==0){
+  if(strcmp(fn,"length")==0||strcmp(fn,"reversed")==0||strcmp(fn,"keys")==0||strcmp(fn,"values")==0){ if(shape) *shape="collection"; return 1; }
+  if(strcmp(fn,"contains")==0||strcmp(fn,"index")==0||strcmp(fn,"has_key")==0){ if(shape) *shape="collection, value"; return 2; }
+  if(strcmp(fn,"join")==0){ if(shape) *shape="collection, separator"; return 2; }
+  if(strcmp(fn,"get")==0){ if(shape) *shape="map, key"; return 2; }
+ }
+ return 0;
+}
+static Value builtin_call(Runtime *rt,const char *name,Value *args,int argc,int *handled){ char ns[128], fn[128]; const char *dot=strrchr(name,'.'); const char *kind=NULL; const char *shape=NULL; int required; *handled=0; if(!dot) return v_none(); snprintf(ns,sizeof(ns),"%.*s",(int)(dot-name),name); snprintf(fn,sizeof(fn),"%s",dot+1); kind=module_kind(rt,ns); if(!kind) return v_none(); *handled=1; required=builtin_required_args(kind,fn,&shape); if(required>argc){ rt_error(rt,"",0,"%s.%s needs %d argument%s, but got %d. Try: CALL %s.%s WITH %s.",ns,fn,required,required==1?"":"s",argc,ns,fn,shape?shape:"the required values"); return v_none(); }
  if(strcmp(kind,"text")==0){ char *a=argc>0?v_to_string(args[0]):xstrdup(""); char *b=argc>1?v_to_string(args[1]):xstrdup(""); int i; if(strcmp(fn,"upper")==0){ for(i=0;a[i];i++) a[i]=(char)toupper((unsigned char)a[i]); Value r=v_str(a); free(a); free(b); return r; } if(strcmp(fn,"lower")==0){ for(i=0;a[i];i++) a[i]=(char)tolower((unsigned char)a[i]); Value r=v_str(a); free(a); free(b); return r; } if(strcmp(fn,"contains")==0){ Value r=v_bool(strstr(a,b)!=NULL); free(a); free(b); return r; } if(strcmp(fn,"endswith")==0){ size_t la=strlen(a), lb=strlen(b); Value r=v_bool(lb<=la && strcmp(a+la-lb,b)==0); free(a); free(b); return r; } if(strcmp(fn,"split2")==0){ char *pos=strstr(a,b); Value arr=v_list(); if(pos){ char *left=substr(a,pos); list_add(arr.list,v_str(left)); list_add(arr.list,v_str(pos+strlen(b))); free(left); } else list_add(arr.list,v_str(a)); free(a); free(b); return arr; } free(a); free(b); }
  if(strcmp(kind,"math")==0){ if(strcmp(fn,"abs")==0) return v_num(fabs(v_number(args[0]))); if(strcmp(fn,"clamp")==0){ double x=v_number(args[0]), lo=v_number(args[1]), hi=v_number(args[2]); if(x<lo)x=lo; if(x>hi)x=hi; return v_num(x); } }
  if(strcmp(kind,"random")==0){ if(strcmp(fn,"seed")==0){ srand((unsigned)v_number(args[0])); return v_none(); } if(strcmp(fn,"int")==0){ int a=(int)v_number(args[0]), b=(int)v_number(args[1]); int r=a + (rand() % (b-a+1)); return v_num(r); } }

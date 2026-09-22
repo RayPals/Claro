@@ -1,0 +1,26 @@
+IMPORT "lib/math.claro" AS math
+IMPORT "lib/random.claro" AS random
+
+TRY
+    CALL math.abs
+CATCH
+ENDTRY
+SAY LASTERROR
+
+TRY
+    CALL math.clamp WITH 1, 0
+CATCH
+ENDTRY
+SAY LASTERROR
+
+TRY
+    CALL random.seed
+CATCH
+ENDTRY
+SAY LASTERROR
+
+TRY
+    CALL random.int WITH 1
+CATCH
+ENDTRY
+SAY LASTERROR
