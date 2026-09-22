@@ -31,6 +31,8 @@ This run's narrow memory slice releases the previous deep value when a runtime v
 
 The `RUN COMMAND` path now decodes POSIX `pclose()` wait status before storing `LASTEXIT`, so a child that exits with code 3 exposes `3` rather than the encoded status `768`. Focused coverage is `tests/42_last_exit_code.claro`. HTTP responses now have a 1,048,576-byte cap and marker-like response bodies are preserved while extracting the final HTTP status marker. Focused coverage is `tools/validate_http_hardening.py`. Remaining memory-growth areas include final runtime teardown, loaded program storage, and other expression temporaries. Claro remains a trusted-script interpreter, not a sandbox.
 
+`RUN COMMAND` is documented and validated as a trusted-code capability: it executes shell commands with the user's permissions and is not a sandbox. Claro does not claim untrusted-script safety or use a fragile blacklist sanitizer. Focused documentation coverage is `tools/validate_trusted_command_docs.py`.
+
 ## Feature matrix
 
 ### Beginner scripting core

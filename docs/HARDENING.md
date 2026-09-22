@@ -42,3 +42,13 @@ python3 tools/validate_http_hardening.py
 ```
 
 This validator uses a local HTTP server to check marker-like response text, status `200`, and the oversized-response diagnostic.
+
+## External command trust boundary
+
+`RUN COMMAND` intentionally executes a shell command with the user's permissions. It is a trusted-code capability, not a sandbox or an untrusted-script safety feature. Claro does not attempt a fragile blacklist sanitizer; users must review scripts before running them.
+
+Focused documentation verification:
+
+```text
+python3 tools/validate_trusted_command_docs.py
+```

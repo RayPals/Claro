@@ -64,3 +64,5 @@ SAY LASTEXIT
 ```
 
 Use this carefully. It runs commands on the user's computer.
+
+`RUN COMMAND` is for trusted code only. It is not a sandbox: it can start programs, read or change files, and use the same permissions as the user running Claro. Do not run scripts from an untrusted source, and do not treat this feature as a security boundary.
