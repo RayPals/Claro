@@ -1,0 +1,7 @@
+IMPORT "lib/random.claro" AS random
+
+TRY
+    CALL random.int WITH 10, 1
+CATCH
+ENDTRY
+SAY LASTERROR

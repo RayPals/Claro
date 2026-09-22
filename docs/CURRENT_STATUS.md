@@ -13,16 +13,18 @@ This file is the beginner-safe status map for the current package. It separates 
 
 The v1.18.26 review identified missing-argument reads in standard-library built-ins. The current runtime now validates required argument counts centrally before any builtin indexes `args[]`. Covered calls include `math.abs`, `math.clamp`, `random.seed`, `random.int`, text helpers, CSV helpers, path helpers, and collection helpers. Missing arguments produce a beginner-facing `needs N arguments` runtime error.
 
-Focused regression coverage: `tests/38_builtin_arity.claro`.
+Focused regression coverage: `tests/38_builtin_arity.claro` and `tests/39_random_inverted_range.claro`.
+
+The runtime now rejects inverted `random.int` ranges before modulo arithmetic with: `random.int needs the lower bound to be less than or equal to the upper bound.` This prevents invalid ranges from producing incorrect values or a divide-by-zero signal.
 
 Verified in this checkout on 2026-09-22:
 
-- `gcc -std=c99 -O0 -g -fsanitize=address,undefined src/claro.c -o /tmp/claro-asan -lm` plus `ASAN_OPTIONS=detect_leaks=0 /tmp/claro-asan tests/38_builtin_arity.claro`: no AddressSanitizer or UndefinedBehaviorSanitizer report; LeakSanitizer still reports the pre-existing interpreter-wide cleanup backlog when leak detection is enabled.
+- `gcc -std=c99 -O0 -g -fsanitize=address,undefined src/claro.c -o /tmp/claro-h2-asan -lm` plus `ASAN_OPTIONS=detect_leaks=0 /tmp/claro-h2-asan tests/39_random_inverted_range.claro`: expected diagnostic; no AddressSanitizer or UndefinedBehaviorSanitizer report.
 - `./claro test`: `PASS: 0 failure(s)`.
 - `./claro doctor`: all checks `OK`.
 - `./claro validate`: validation passed.
 
-This slice does not yet fix inverted `random.int` ranges, recursion depth, memory cleanup, `LASTEXIT`, HTTP buffering/status handling, or other review findings. Claro remains a trusted-script interpreter, not a sandbox.
+This slice does not yet fix recursion depth, memory cleanup, `LASTEXIT`, HTTP buffering/status handling, or other review findings. Claro remains a trusted-script interpreter, not a sandbox.
 
 ## Feature matrix
 
