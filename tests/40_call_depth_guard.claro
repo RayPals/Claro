@@ -1,0 +1,9 @@
+TEACH recurse
+    DO recurse
+LEARNED
+
+TRY
+    DO recurse
+CATCH
+    SAY LASTERROR
+ENDTRY

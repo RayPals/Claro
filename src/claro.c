@@ -43,6 +43,7 @@ int pclose(FILE *stream);
 #endif
 
 #define CLARO_VERSION "Claro v1.18.26"
+#define CLARO_MAX_CALL_DEPTH 256
 
 static void *xmalloc(size_t n){ void *p=malloc(n?n:1); if(!p){ fprintf(stderr,"Out of memory\n"); exit(1);} return p; }
 static void *xrealloc(void *p,size_t n){ void *q=realloc(p,n?n:1); if(!q){ fprintf(stderr,"Out of memory\n"); exit(1);} return q; }
@@ -109,6 +110,7 @@ typedef struct Runtime {
  Str captured; int capture; int trace;
  int error; char *err_msg; char *err_file; int err_line;
  int returning; Value ret;
+ int call_depth;
  Program **programs; int pcount, pcap;
  char **import_stack; int import_depth;
  int script_argc; char **script_argv;
@@ -360,7 +362,7 @@ static int call_object_method(Runtime *rt,const char *name,Value *args,int argc)
  if(rt->returning){ rt_set(rt,"RESULT",rt->ret); rt->returning=0; }
  rt->locals=old; rt_set(rt,objname,obj); if(c){ for(fd=c->fields;fd;fd=fd->next){ Value fv=map_get(obj.map,fd->name); snprintf(fieldname,sizeof(fieldname),"%s.%s",objname,fd->name); rt_set_checked(rt,"",0,fieldname,fd->type,fv); } }
  return 1; }
-static void call_function(Runtime *rt,const char *name,Value *args,int argc){ int handled=0,i; Value br=builtin_call(rt,name,args,argc,&handled); if(handled){ rt_set(rt,"RESULT",br); return; } if(call_object_method(rt,name,args,argc)) return; Function *f=find_function(rt,name); if(!f){ rt_error(rt,"",0,"Unknown function: %s",name); return;} Var *old=rt->locals; rt->locals=NULL; for(i=0;i<f->pcnt;i++) rt_set(rt,f->params[i], i<argc?args[i]:v_none()); rt->returning=0; exec_range(rt,f->prog,f->start,f->end); if(rt->returning){ rt_set(rt,"RESULT",rt->ret); rt->returning=0; } rt->locals=old; }
+static void call_function(Runtime *rt,const char *name,Value *args,int argc){ int handled=0,i; Value br=builtin_call(rt,name,args,argc,&handled); if(handled){ rt_set(rt,"RESULT",br); return; } if(rt->call_depth>=CLARO_MAX_CALL_DEPTH){ rt_error(rt,"",0,"Claro function call depth exceeded the safe limit of %d. Simplify the recursion or add a stopping condition.",CLARO_MAX_CALL_DEPTH); return; } rt->call_depth++; if(call_object_method(rt,name,args,argc)){ rt->call_depth--; return; } { Function *f=find_function(rt,name); if(!f){ rt_error(rt,"",0,"Unknown function: %s",name); rt->call_depth--; return;} { Var *old=rt->locals; rt->locals=NULL; for(i=0;i<f->pcnt;i++) rt_set(rt,f->params[i], i<argc?args[i]:v_none()); rt->returning=0; exec_range(rt,f->prog,f->start,f->end); if(rt->returning){ rt_set(rt,"RESULT",rt->ret); rt->returning=0; } rt->locals=old; } } rt->call_depth--; }
 static int stack_has(Runtime *rt,const char *path){ int i; for(i=0;i<rt->import_depth;i++) if(strcmp(rt->import_stack[i],path)==0) return 1; return 0; }
 static int export_allows(char **exports,int ec,const char *name){ int i; if(ec==0) return 1; for(i=0;i<ec;i++) if(strcmp(exports[i],name)==0) return 1; return 0; }
 static void do_import(Runtime *rt,const char *path,const char *ns,const char *curfile,int line){ Program *p; char *prefix=NULL; char **exports=NULL; int ec=0,i; if(stack_has(rt,path)){ rt_error(rt,curfile,line,"Import cycle detected at: %s",path); return;} if(strstr(path,"lib/text.claro")&&ns){ add_module(rt,ns,"text"); return;} if(strstr(path,"lib/math.claro")&&ns){ add_module(rt,ns,"math"); return;} if(strstr(path,"lib/random.claro")&&ns){ add_module(rt,ns,"random"); return;} if(strstr(path,"lib/csv.claro")&&ns){ add_module(rt,ns,"csv"); return;} if(strstr(path,"lib/path.claro")&&ns){ add_module(rt,ns,"path"); return;} if(strstr(path,"lib/collections.claro")&&ns){ add_module(rt,ns,"collections"); return;} if(strstr(path,"lib/time.claro")&&ns){ add_module(rt,ns,"time"); return;}
