@@ -23,6 +23,10 @@ The validator builds an AddressSanitizer/UndefinedBehaviorSanitizer binary, runs
 
 ## Overwritten-value cleanup
 
-Runtime variables and map entries own deep copies of their values. Replacing an existing variable or map entry now releases the previous string, list, or map value before storing its replacement. This is intentionally limited to overwrite boundaries; final runtime teardown and discarded expression temporaries remain follow-up cleanup slices.
+Runtime variables and map entries own deep copies of their values. Replacing an existing variable or map entry now releases the previous string, list, or map value before storing its replacement. This is intentionally limited to overwrite boundaries; final runtime teardown remains a follow-up cleanup slice.
 
-Focused verification also checks the cleanup helper in the ASan/UBSan build and exercises string, list, and map overwrites without sanitizer errors.
+## Split-argument cleanup
+
+Command argument lists created by `DO`, `CALL`, `TEXT ... CONTAINS`, and `RANDOM` are temporary parser storage. They now share one cleanup helper, so repeated calls do not retain the duplicated argument strings or pointer array. The helper does not change argument evaluation or syntax compatibility.
+
+Focused verification builds with AddressSanitizer/UndefinedBehaviorSanitizer, repeatedly exercises a four-argument `DO`, and checks the cleanup helper before confirming the existing string, list, and map overwrite behavior.

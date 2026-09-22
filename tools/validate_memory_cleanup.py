@@ -18,6 +18,9 @@ def main() -> int:
         binary = tmp_path / "claro-lsan"
         script = tmp_path / "overwrite.claro"
         script.write_text(
+            'TEACH consume first, second, third, fourth\n'
+            '    RETURN first\n'
+            'END\n'
             'SET value TO "first"\n'
             'SET value TO "second"\n'
             'SET items TO LIST\n'
@@ -26,7 +29,8 @@ def main() -> int:
             'SET profile TO MAP\n'
             'PUT profile KEY "name" VALUE "Ada"\n'
             'PUT profile KEY "name" VALUE "Grace"\n'
-            'SAY profile\n',
+            + ''.join('DO consume "a", "b", "c", "d"\n' for _ in range(2000))
+            + 'SAY profile\n',
             encoding="utf-8",
         )
         build = subprocess.run(
@@ -50,6 +54,9 @@ def main() -> int:
             print(run.stderr, end="", file=sys.stderr)
             return 1
         source = (ROOT / "src" / "claro.c").read_text(encoding="utf-8")
+        if "static void split_args_free(char **parts, int count)" not in source:
+            print("FAIL: split argument storage has no cleanup boundary")
+            return 1
         if "static void value_free(Value v)" not in source or "value_free(v->val);" not in source:
             print("FAIL: overwritten runtime values are not released")
             return 1
