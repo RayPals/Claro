@@ -22,6 +22,7 @@ User-defined function and object-method calls now have a documented maximum acti
 Verified in this checkout on 2026-09-22:
 
 - `gcc -std=c99 -O0 -g -fsanitize=address,undefined src/claro.c -o /tmp/claro-call-depth-asan -lm` plus `ASAN_OPTIONS=detect_leaks=0 /tmp/claro-call-depth-asan tests/40_call_depth_guard.claro`: expected diagnostic; no AddressSanitizer or UndefinedBehaviorSanitizer report.
+- `gcc -std=c99 -O0 -g -fsanitize=address,undefined src/claro.c -o /tmp/claro-arity-asan -lm` plus `ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 /tmp/claro-arity-asan tests/38_builtin_arity.claro`: all four missing-argument diagnostics; no sanitizer report.
 - `make -s all`: rebuilt both `claro` and `claro.exe` from current source.
 - `./claro test`: `PASS: 0 failure(s)`.
 - `./claro doctor`: all checks `OK`.
