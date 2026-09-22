@@ -1,5 +1,10 @@
 # Changelog
 
+### Diagnose missing values in untyped object-field assignments
+
+- `claro typecheck` now explains how to repair `SET player.score` by adding a value expression after the field name.
+- Added focused negative coverage to the complete typecheck validation matrix.
+
 ### Validate missing short method-field values
 
 - Added focused coverage for `SET score NUMBER` inside a method, preserving the learner-facing repair hint that one value expression is required after the type.
