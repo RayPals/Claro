@@ -27,7 +27,7 @@ Verified in this checkout on 2026-09-22:
 - `./claro doctor`: all checks `OK`.
 - `./claro validate`: validation passed.
 
-This run's narrow memory slice releases expression token arrays and token strings after every `eval_expr()` call. Focused coverage is `tools/validate_memory_cleanup.py`; it reports `PASS: expression token allocations are released` under an ASan/UBSan build with LeakSanitizer checking. Remaining memory-growth areas include runtime-owned overwritten values, loaded program storage, and other expression temporaries. The `RUN COMMAND` path remains trusted shell execution, not a sandbox.
+This run's narrow memory slice releases the previous deep value when a runtime variable or map entry is overwritten. Focused coverage is `tools/validate_memory_cleanup.py`; it reports `PASS: expression token allocations are released` under an ASan/UBSan build with LeakSanitizer checking and verifies the overwrite cleanup helper is present. Remaining memory-growth areas include final runtime teardown, loaded program storage, and other expression temporaries. The `RUN COMMAND` path remains trusted shell execution, not a sandbox.
 
 The `RUN COMMAND` path now decodes POSIX `pclose()` wait status before storing `LASTEXIT`, so a child that exits with code 3 exposes `3` rather than the encoded status `768`. Focused coverage is `tests/42_last_exit_code.claro`. This slice does not yet fix HTTP buffering/status handling or the remaining memory-growth boundaries. Claro remains a trusted-script interpreter, not a sandbox.
 

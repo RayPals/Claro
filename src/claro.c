@@ -82,9 +82,10 @@ static Map *map_new(void){ Map *m=(Map*)xmalloc(sizeof(Map)); m->keys=NULL; m->v
 static Value v_list(void){ Value v=v_none(); v.type=V_LIST; v.list=list_new(); return v; }
 static Value v_map(void){ Value v=v_none(); v.type=V_MAP; v.map=map_new(); return v; }
 static Value v_copy(Value v);
+static void value_free(Value v){ int i; if(v.type==V_STR){ free(v.str); } else if(v.type==V_LIST&&v.list){ for(i=0;i<v.list->count;i++) value_free(v.list->items[i]); free(v.list->items); free(v.list); } else if(v.type==V_MAP&&v.map){ for(i=0;i<v.map->count;i++){ free(v.map->keys[i]); value_free(v.map->vals[i]); } free(v.map->keys); free(v.map->vals); free(v.map); } }
 static void list_add(List *l,Value v){ if(l->count>=l->cap){ l->cap=l->cap?l->cap*2:8; l->items=(Value*)xrealloc(l->items,sizeof(Value)*l->cap);} l->items[l->count++]=v_copy(v); }
 static int map_index(Map *m,const char *key){ int i; for(i=0;i<m->count;i++) if(strcmp(m->keys[i],key)==0) return i; return -1; }
-static void map_put(Map *m,const char *key,Value v){ int i=map_index(m,key); if(i>=0){ m->vals[i]=v_copy(v); return;} if(m->count>=m->cap){ m->cap=m->cap?m->cap*2:8; m->keys=(char**)xrealloc(m->keys,sizeof(char*)*m->cap); m->vals=(Value*)xrealloc(m->vals,sizeof(Value)*m->cap);} m->keys[m->count]=xstrdup(key); m->vals[m->count++]=v_copy(v); }
+static void map_put(Map *m,const char *key,Value v){ int i=map_index(m,key); if(i>=0){ value_free(m->vals[i]); m->vals[i]=v_copy(v); return;} if(m->count>=m->cap){ m->cap=m->cap?m->cap*2:8; m->keys=(char**)xrealloc(m->keys,sizeof(char*)*m->cap); m->vals=(Value*)xrealloc(m->vals,sizeof(Value)*m->cap);} m->keys[m->count]=xstrdup(key); m->vals[m->count++]=v_copy(v); }
 static Value map_get(Map *m,const char *key){ int i=map_index(m,key); if(i>=0) return v_copy(m->vals[i]); return v_none(); }
 static Value v_copy(Value v){ Value o=v_none(); int i; o.type=v.type; o.num=v.num; o.boolean=v.boolean; if(v.type==V_STR) o.str=xstrdup(v.str); else if(v.type==V_LIST){ o=v_list(); for(i=0;i<v.list->count;i++) list_add(o.list,v.list->items[i]); } else if(v.type==V_MAP){ o=v_map(); for(i=0;i<v.map->count;i++) map_put(o.map,v.map->keys[i],v.map->vals[i]); } return o; }
 static int v_truth(Value v){ if(v.type==V_BOOL) return v.boolean; if(v.type==V_NUM) return fabs(v.num)>0.0000001; if(v.type==V_STR) return v.str&&v.str[0]; if(v.type==V_LIST) return v.list&&v.list->count>0; if(v.type==V_MAP) return v.map&&v.map->count>0; return 0; }
@@ -120,8 +121,8 @@ static void rt_init(Runtime *rt){ memset(rt,0,sizeof(*rt)); str_init(&rt->captur
 static Var *env_find(Var *v,const char *name){ while(v){ if(strcmp(v->name,name)==0) return v; v=v->next;} return NULL; }
 static Value rt_get(Runtime *rt,const char *name){ Var *v=env_find(rt->locals,name); if(v) return v_copy(v->val); v=env_find(rt->globals,name); if(v) return v_copy(v->val); return v_none(); }
 static int rt_has(Runtime *rt,const char *name){ return env_find(rt->locals,name)||env_find(rt->globals,name); }
-static void rt_set(Runtime *rt,const char *name,Value val){ Var **head=rt->locals?&rt->locals:&rt->globals; Var *v=env_find(*head,name); if(!v && rt->locals) v=env_find(rt->globals,name); if(v){ v->val=v_copy(val); return;} v=(Var*)xmalloc(sizeof(Var)); v->name=xstrdup(name); v->val=v_copy(val); v->next=*head; *head=v; }
-static void rt_set_global(Runtime *rt,const char *name,Value val){ Var *v=env_find(rt->globals,name); if(v){ v->val=v_copy(val); return;} v=(Var*)xmalloc(sizeof(Var)); v->name=xstrdup(name); v->val=v_copy(val); v->next=rt->globals; rt->globals=v; }
+static void rt_set(Runtime *rt,const char *name,Value val){ Var **head=rt->locals?&rt->locals:&rt->globals; Var *v=env_find(*head,name); if(!v && rt->locals) v=env_find(rt->globals,name); if(v){ value_free(v->val); v->val=v_copy(val); return;} v=(Var*)xmalloc(sizeof(Var)); v->name=xstrdup(name); v->val=v_copy(val); v->next=*head; *head=v; }
+static void rt_set_global(Runtime *rt,const char *name,Value val){ Var *v=env_find(rt->globals,name); if(v){ value_free(v->val); v->val=v_copy(val); return;} v=(Var*)xmalloc(sizeof(Var)); v->name=xstrdup(name); v->val=v_copy(val); v->next=rt->globals; rt->globals=v; }
 
 static void rt_error(Runtime *rt,const char *file,int line,const char *fmt,...);
 static char *normalize_path_copy(const char *path){ char *out=xstrdup(path?path:""); char *p; for(p=out;*p;p++) if(*p=='\\') *p='/'; return out; }

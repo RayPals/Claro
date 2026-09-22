@@ -20,7 +20,13 @@ def main() -> int:
         script.write_text(
             'SET value TO "first"\n'
             'SET value TO "second"\n'
-            'SAY value\n',
+            'SET items TO LIST\n'
+            'ADD "one" TO items\n'
+            'SET items TO LIST\n'
+            'SET profile TO MAP\n'
+            'PUT profile KEY "name" VALUE "Ada"\n'
+            'PUT profile KEY "name" VALUE "Grace"\n'
+            'SAY profile\n',
             encoding="utf-8",
         )
         build = subprocess.run(
@@ -43,12 +49,16 @@ def main() -> int:
             print("FAIL: expression token allocations still leak")
             print(run.stderr, end="", file=sys.stderr)
             return 1
+        source = (ROOT / "src" / "claro.c").read_text(encoding="utf-8")
+        if "static void value_free(Value v)" not in source or "value_free(v->val);" not in source:
+            print("FAIL: overwritten runtime values are not released")
+            return 1
         functional = subprocess.run(
             [str(binary), str(script)], cwd=ROOT, text=True,
             capture_output=True,
             env={**os.environ, "ASAN_OPTIONS": "detect_leaks=0"},
         )
-        if functional.returncode or "second\n" not in functional.stdout:
+        if functional.returncode or "[map]\n" not in functional.stdout:
             print("FAIL: overwrite cleanup probe produced the wrong output")
             print(functional.stdout, end="", file=sys.stderr)
             return 1
