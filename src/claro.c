@@ -162,6 +162,7 @@ static Tokens tokenize(const char *s){ Tokens ts; size_t i=0; memset(&ts,0,sizeo
   { size_t st=i; while(s[i]&&!isspace((unsigned char)s[i])&&!strchr("(),+-*/=<>!",s[i])) i++; toks_add(&ts,s+st,i-st); }
  }
  return ts; }
+static void tokens_free(Tokens *ts){ int i; if(!ts) return; for(i=0;i<ts->n;i++) free(ts->t[i]); free(ts->t); ts->t=NULL; ts->n=ts->cap=ts->pos=0; }
 static int tok_end(Tokens *ts){ return ts->pos>=ts->n; }
 static char *tok_peek(Tokens *ts){ return tok_end(ts)?NULL:ts->t[ts->pos]; }
 static char *tok_next(Tokens *ts){ return tok_end(ts)?NULL:ts->t[ts->pos++]; }
@@ -179,7 +180,7 @@ static Value parse_add(Runtime *rt,Tokens *ts){ Value v=parse_mul(rt,ts); while(
 static Value parse_cmp(Runtime *rt,Tokens *ts){ Value v=parse_add(rt,ts); while(!tok_end(ts)){ char *op=tok_peek(ts); int c; if(!(ci_eq(op,"IS")||!strcmp(op,"=")||!strcmp(op,"!=")||!strcmp(op,"<")||!strcmp(op,"<=")||!strcmp(op,">")||!strcmp(op,">="))) break; tok_next(ts); Value r=parse_add(rt,ts); c=value_compare(v,r); if(ci_eq(op,"IS")||!strcmp(op,"=")) v=v_bool(c==0); else if(!strcmp(op,"!=")) v=v_bool(c!=0); else if(!strcmp(op,"<")) v=v_bool(c<0); else if(!strcmp(op,"<=")) v=v_bool(c<=0); else if(!strcmp(op,">")) v=v_bool(c>0); else v=v_bool(c>=0); } return v; }
 static Value parse_and(Runtime *rt,Tokens *ts){ Value v=parse_cmp(rt,ts); while(tok_match(ts,"AND")){ Value r=parse_cmp(rt,ts); v=v_bool(v_truth(v)&&v_truth(r)); } return v; }
 static Value parse_expr(Runtime *rt,Tokens *ts){ Value v=parse_and(rt,ts); while(tok_match(ts,"OR")){ Value r=parse_and(rt,ts); v=v_bool(v_truth(v)||v_truth(r)); } return v; }
-static Value eval_expr(Runtime *rt,const char *expr){ Tokens ts=tokenize(expr); Value v=parse_expr(rt,&ts); return v; }
+static Value eval_expr(Runtime *rt,const char *expr){ Tokens ts=tokenize(expr); Value v=parse_expr(rt,&ts); tokens_free(&ts); return v; }
 
 /* Better string token parsing helpers for commands. */
 static char *unquote_token(const char **ps){ const char *s=*ps; Str b; str_init(&b); while(*s&&isspace((unsigned char)*s)) s++; if(*s=='"'){ s++; while(*s&&*s!='"'){ if(*s=='\\'){ s++; if(*s=='n') str_ch(&b,'\n'); else if(*s=='t') str_ch(&b,'\t'); else if(*s=='r') str_ch(&b,'\r'); else if(*s=='"') str_ch(&b,'"'); else if(*s=='\\') str_ch(&b,'\\'); else if(*s) str_ch(&b,*s); if(*s) s++; } else str_ch(&b,*s++); } if(*s=='"') s++; } else { while(*s&&!isspace((unsigned char)*s)) str_ch(&b,*s++); } *ps=s; return str_take(&b); }
