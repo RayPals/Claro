@@ -198,20 +198,29 @@ static char *text_lower_copy(const char *s){ char *o=xstrdup(s?s:""); int i; for
 static char *text_trim_copy(const char *s){ char *o=xstrdup(s?s:""); char *t=trim_inplace(o); char *r=xstrdup(t); free(o); return r; }
 static int str_starts_with(const char *s,const char *prefix){ size_t n=strlen(prefix?prefix:""); return strncmp(s?s:"",prefix?prefix:"",n)==0; }
 static int str_ends_with(const char *s,const char *suffix){ size_t a=strlen(s?s:""), b=strlen(suffix?suffix:""); return b<=a && strcmp((s?s:"")+a-b,suffix?suffix:"")==0; }
-static char *capture_command_output(const char *cmd,int *exit_code){
- Str out; char buf[512]; FILE *fp; str_init(&out);
+static char *capture_command_output(const char *cmd,int *exit_code,size_t max_bytes){
+ Str out; char buf[512]; FILE *fp; int capped=0; str_init(&out);
 #ifdef _WIN32
  fp=_popen(cmd,"r");
 #else
  fp=popen(cmd,"r");
 #endif
  if(!fp){ if(exit_code) *exit_code=-1; return xstrdup(""); }
- while(fgets(buf,sizeof(buf),fp)) str_add(&out,buf);
+ while(fgets(buf,sizeof(buf),fp)){
+  size_t n=strlen(buf);
+  if(max_bytes && out.len+n>max_bytes){
+   if(out.len<max_bytes){ size_t keep=max_bytes-out.len; char *part=substr(buf,buf+keep); str_add(&out,part); free(part); }
+   capped=1;
+   continue;
+  }
+  if(!capped) str_add(&out,buf);
+ }
 #ifdef _WIN32
- if(exit_code) *exit_code=_pclose(fp);
+ if(exit_code && !capped) *exit_code=_pclose(fp); else _pclose(fp);
 #else
- if(exit_code){ int status=pclose(fp); if(WIFEXITED(status)) *exit_code=WEXITSTATUS(status); else if(WIFSIGNALED(status)) *exit_code=128+WTERMSIG(status); else *exit_code=-1; }
+ { int status=pclose(fp); if(exit_code && !capped){ if(WIFEXITED(status)) *exit_code=WEXITSTATUS(status); else if(WIFSIGNALED(status)) *exit_code=128+WTERMSIG(status); else *exit_code=-1; } }
 #endif
+ if(capped && exit_code) *exit_code=-2;
  return str_take(&out);
 }
 
@@ -233,13 +242,15 @@ static char *claro_mock_http(const char *url,int *status){
  if(status) *status=404; return xstrdup("Claro mock URL was not found.");
 }
 static char *claro_http_get_text(const char *url,int *http_status,int *exit_code){
- char cmd[2300]; char *raw,*mark,*body; const char *marker="\n__CLARO_HTTP_STATUS__";
+ char cmd[2300]; char *raw,*mark,*body; const char *marker="\n__CLARO_HTTP_STATUS__"; size_t max_bytes=1024*1024;
  if(http_status) *http_status=0;
  if(exit_code) *exit_code=0;
  if(starts_ci(url,"claro://")) return claro_mock_http(url,http_status);
  snprintf(cmd,sizeof(cmd),"curl -L -s -m 15 -w \"\\n__CLARO_HTTP_STATUS__%%{http_code}\" \"%s\"",url);
- raw=capture_command_output(cmd,exit_code);
- mark=strstr(raw,marker);
+ raw=capture_command_output(cmd,exit_code,max_bytes);
+ if(exit_code&&*exit_code==-2){ free(raw); return xstrdup(""); }
+ mark=NULL;
+ { char *scan=raw; while((scan=strstr(scan,marker))!=NULL){ mark=scan; scan++; } }
  if(mark){ *mark=0; if(http_status) *http_status=atoi(mark+strlen(marker)); body=xstrdup(raw); free(raw); return body; }
  if(http_status) *http_status=0;
  return raw;
@@ -390,17 +401,17 @@ static void exec_line(Runtime *rt,Program *p,int *pcp,const char *raw){ char buf
   if(as&&starts_ci(t+4," GET")){
    char *ue=substr(t+8,as); char *after=xstrdup(trim_inplace((char*)as+2)); const char *status_word=find_word_ci(after,"STATUS"); char *var=status_word?substr(after,status_word):xstrdup(after); char *status_var=status_word?xstrdup(trim_inplace((char*)status_word+6)):NULL; Value uv=eval_expr(rt,ue); char *url=v_to_string(uv); int code=0,http=0; char *out;
    if(!claro_url_is_safe(url)){ rt_error(rt,p->path,pc+1,"HTTP GET needs a safe http://, https://, or claro:// URL."); free(ue); free(after); free(var); free(status_var); free(url); return; }
-   out=claro_http_get_text(url,&http,&code); rt_set(rt,trim_inplace(var),v_str(out)); rt_set(rt,"LASTEXIT",v_num(code)); rt_set(rt,"LASTHTTP",v_num(http)); if(status_var&&*status_var) rt_set(rt,status_var,v_num(http)); free(out); free(url); free(ue); free(after); free(var); free(status_var); return;
+   out=claro_http_get_text(url,&http,&code); if(code==-2){ rt_error(rt,p->path,pc+1,"HTTP response exceeds the safe size limit of 1048576 bytes."); free(out); free(url); free(ue); free(after); free(var); free(status_var); return; } rt_set(rt,trim_inplace(var),v_str(out)); rt_set(rt,"LASTEXIT",v_num(code)); rt_set(rt,"LASTHTTP",v_num(http)); if(status_var&&*status_var) rt_set(rt,status_var,v_num(http)); free(out); free(url); free(ue); free(after); free(var); free(status_var); return;
   }
   if(as&&starts_ci(t+4," STATUS")){
    char *ue=substr(t+11,as); char *var=xstrdup(trim_inplace((char*)as+2)); Value uv=eval_expr(rt,ue); char *url=v_to_string(uv); int code=0,http=0; char *out;
    if(!claro_url_is_safe(url)){ rt_error(rt,p->path,pc+1,"HTTP STATUS needs a safe http://, https://, or claro:// URL."); free(ue); free(var); free(url); return; }
-   out=claro_http_get_text(url,&http,&code); rt_set(rt,trim_inplace(var),v_num(http)); rt_set(rt,"LASTEXIT",v_num(code)); rt_set(rt,"LASTHTTP",v_num(http)); free(out); free(url); free(ue); free(var); return;
+   out=claro_http_get_text(url,&http,&code); if(code==-2){ rt_error(rt,p->path,pc+1,"HTTP response exceeds the safe size limit of 1048576 bytes."); free(out); free(url); free(ue); free(var); return; } rt_set(rt,trim_inplace(var),v_num(http)); rt_set(rt,"LASTEXIT",v_num(code)); rt_set(rt,"LASTHTTP",v_num(http)); free(out); free(url); free(ue); free(var); return;
   }
   if(starts_ci(t+4," SAVE")){
    const char *to=find_word_ci(t,"TO"); const char *as2=find_word_ci(t,"AS"); if(to){ char *ue=substr(t+9,to); char *pe=as2?substr(to+2,as2):xstrdup(to+2); char *status_var=as2?xstrdup(trim_inplace((char*)as2+2)):NULL; Value uv=eval_expr(rt,ue), pv=eval_expr(rt,pe); char *url=v_to_string(uv), *path=v_to_string(pv); int code=0,http=0; char *out;
     if(!claro_url_is_safe(url)){ rt_error(rt,p->path,pc+1,"HTTP SAVE needs a safe http://, https://, or claro:// URL."); free(ue); free(pe); free(status_var); free(url); free(path); return; }
-    out=claro_http_get_text(url,&http,&code); if(!write_text_bytes(path,out)) rt_error(rt,p->path,pc+1,"Could not save HTTP response to file."); if(status_var&&*status_var) rt_set(rt,status_var,v_num(http)); rt_set(rt,"LASTEXIT",v_num(code)); rt_set(rt,"LASTHTTP",v_num(http)); free(out); free(url); free(path); free(ue); free(pe); free(status_var); return; }
+    out=claro_http_get_text(url,&http,&code); if(code==-2){ rt_error(rt,p->path,pc+1,"HTTP response exceeds the safe size limit of 1048576 bytes."); free(out); free(url); free(path); free(ue); free(pe); free(status_var); return; } if(!write_text_bytes(path,out)) rt_error(rt,p->path,pc+1,"Could not save HTTP response to file."); if(status_var&&*status_var) rt_set(rt,status_var,v_num(http)); rt_set(rt,"LASTEXIT",v_num(code)); rt_set(rt,"LASTHTTP",v_num(http)); free(out); free(url); free(path); free(ue); free(pe); free(status_var); return; }
   }
   if(as&&starts_ci(t+4," CHECK")){
    char *ue=substr(t+10,as); char *var=xstrdup(trim_inplace((char*)as+2)); Value uv=eval_expr(rt,ue); char *url=v_to_string(uv); rt_set(rt,var,v_bool(claro_url_is_safe(url))); free(url); free(ue); free(var); return;
@@ -441,7 +452,7 @@ static void exec_line(Runtime *rt,Program *p,int *pcp,const char *raw){ char buf
   else { char *ex=substr(pcur,as); Value v=eval_expr(rt,ex); char *txt=v_to_string(v); if(!strcmp(restup,"UPPER")){ char *r=text_upper_copy(txt); rt_set(rt,var,v_str(r)); free(r); } else if(!strcmp(restup,"LOWER")){ char *r=text_lower_copy(txt); rt_set(rt,var,v_str(r)); free(r); } else if(!strcmp(restup,"TRIM")){ char *r=text_trim_copy(txt); rt_set(rt,var,v_str(r)); free(r); } else if(!strcmp(restup,"LENGTH")){ rt_set(rt,var,v_num((double)strlen(txt))); } else if(!strcmp(restup,"CONTAINS")){ char *left=NULL,*right=NULL; const char *needle=find_word_ci(pcur,"NEEDLE"); if(!needle) needle=find_word_ci(pcur,"TEXT"); if(needle){ left=substr(pcur,needle); right=substr(needle+6,as); } else { char **args=NULL; int n=split_args(pcur,&args); if(n>=2){ left=xstrdup(args[0]); right=substr(args[1],as); } split_args_free(args,n); } if(left&&right){ Value lv=eval_expr(rt,left), rv=eval_expr(rt,right); char *ls=v_to_string(lv), *rs=v_to_string(rv); rt_set(rt,var,v_bool(strstr(ls,rs)!=NULL)); free(ls); free(rs); } free(left); free(right); } free(txt); free(ex); }
   free(var); } return; }
  if(strcmp(up,"RANDOM")==0){ const char *as=find_word_ci(t,"AS"); if(as&&starts_ci(t+6," NUMBER")){ char *range=substr(t+13,as); char *var=xstrdup(trim_inplace((char*)as+2)); char **args=NULL; int n=split_args(range,&args); double a=1,b=100; if(n>=2){ a=v_number(eval_expr(rt,args[0])); b=v_number(eval_expr(rt,args[1])); } else { char *tmp=range; char *one=unquote_token((const char**)&tmp); char *two=unquote_token((const char**)&tmp); if(*one) a=v_number(eval_expr(rt,one)); if(*two) b=v_number(eval_expr(rt,two)); free(one); free(two); } split_args_free(args,n); if(b<a){ double c=a; a=b; b=c; } rt_set(rt,var,v_num((int)a + (rand()%((int)(b-a+1))))); free(range); free(var); } return; }
- if(strcmp(up,"RUN")==0){ const char *as=find_word_ci(t,"AS"); if(as&&starts_ci(t+3," COMMAND")){ char *ex=substr(t+11,as); char *var=xstrdup(trim_inplace((char*)as+2)); Value cv=eval_expr(rt,ex); char *cmd=v_to_string(cv); int code=0; char *out=capture_command_output(cmd,&code); rt_set(rt,var,v_str(out)); rt_set(rt,"LASTEXIT",v_num(code)); free(out); free(cmd); free(ex); free(var); } return; }
+ if(strcmp(up,"RUN")==0){ const char *as=find_word_ci(t,"AS"); if(as&&starts_ci(t+3," COMMAND")){ char *ex=substr(t+11,as); char *var=xstrdup(trim_inplace((char*)as+2)); Value cv=eval_expr(rt,ex); char *cmd=v_to_string(cv); int code=0; char *out=capture_command_output(cmd,&code,0); rt_set(rt,var,v_str(out)); rt_set(rt,"LASTEXIT",v_num(code)); free(out); free(cmd); free(ex); free(var); } return; }
  if(strcmp(up,"SORT")==0){ char *name=xstrdup(trim_inplace(t+4)); Value v=rt_get(rt,name); value_list_sort(v); rt_set(rt,name,v); free(name); return; }
  if(strcmp(up,"REVERSE")==0){ char *name=xstrdup(trim_inplace(t+7)); Value v=rt_get(rt,name); value_list_reverse(v); rt_set(rt,name,v); free(name); return; }
  if(strcmp(up,"FIND")==0){ const char *in=find_word_ci(t,"IN"), *as=find_word_ci(t,"AS"); if(in&&as){ char *needle=substr(t+4,in); char *listname=substr(in+2,as); char *var=xstrdup(trim_inplace((char*)as+2)); Value nv=eval_expr(rt,needle), lv=eval_expr(rt,listname); int found=0,i; if(lv.type==V_LIST){ for(i=0;i<lv.list->count;i++) if(value_compare(nv,lv.list->items[i])==0){ found=i+1; break; } } rt_set(rt,var,v_num(found)); free(needle); free(listname); free(var); } return; }

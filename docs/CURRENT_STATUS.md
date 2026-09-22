@@ -29,7 +29,7 @@ Verified in this checkout on 2026-09-22:
 
 This run's narrow memory slice releases the previous deep value when a runtime variable or map entry is overwritten, and releases temporary split argument arrays and strings from `DO`, `CALL`, `TEXT ... CONTAINS`, and `RANDOM`. Focused coverage is `tools/validate_memory_cleanup.py`; it reports `PASS: expression token allocations are released` under an ASan/UBSan build with LeakSanitizer checking and exercises repeated four-argument calls plus string/list/map overwrites. Remaining memory-growth areas include final runtime teardown, loaded program storage, and other expression temporaries. The `RUN COMMAND` path remains trusted shell execution, not a sandbox.
 
-The `RUN COMMAND` path now decodes POSIX `pclose()` wait status before storing `LASTEXIT`, so a child that exits with code 3 exposes `3` rather than the encoded status `768`. Focused coverage is `tests/42_last_exit_code.claro`. This slice does not yet fix HTTP buffering/status handling or the remaining memory-growth boundaries. Claro remains a trusted-script interpreter, not a sandbox.
+The `RUN COMMAND` path now decodes POSIX `pclose()` wait status before storing `LASTEXIT`, so a child that exits with code 3 exposes `3` rather than the encoded status `768`. Focused coverage is `tests/42_last_exit_code.claro`. HTTP responses now have a 1,048,576-byte cap and marker-like response bodies are preserved while extracting the final HTTP status marker. Focused coverage is `tools/validate_http_hardening.py`. Remaining memory-growth areas include final runtime teardown, loaded program storage, and other expression temporaries. Claro remains a trusted-script interpreter, not a sandbox.
 
 ## Feature matrix
 

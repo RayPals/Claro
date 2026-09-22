@@ -30,3 +30,15 @@ Runtime variables and map entries own deep copies of their values. Replacing an 
 Command argument lists created by `DO`, `CALL`, `TEXT ... CONTAINS`, and `RANDOM` are temporary parser storage. They now share one cleanup helper, so repeated calls do not retain the duplicated argument strings or pointer array. The helper does not change argument evaluation or syntax compatibility.
 
 Focused verification builds with AddressSanitizer/UndefinedBehaviorSanitizer, repeatedly exercises a four-argument `DO`, and checks the cleanup helper before confirming the existing string, list, and map overwrite behavior.
+
+## HTTP response handling
+
+HTTP responses are capped at 1,048,576 bytes. Exceeding the cap produces a beginner-facing runtime error instead of retaining an unbounded response. The curl status suffix is taken from the final status marker, so a response body containing marker-like text is preserved. Existing `HTTP CHECK` URL safety rules remain unchanged.
+
+Focused verification:
+
+```text
+python3 tools/validate_http_hardening.py
+```
+
+This validator uses a local HTTP server to check marker-like response text, status `200`, and the oversized-response diagnostic.
