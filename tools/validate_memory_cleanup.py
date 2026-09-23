@@ -64,6 +64,9 @@ def main() -> int:
         if "static void value_free(Value v)" not in source or "value_free(v->val);" not in source:
             print("FAIL: overwritten runtime values are not released")
             return 1
+        if "static void runtime_free(Runtime *rt)" not in source:
+            print("FAIL: runtime-owned values have no final cleanup boundary")
+            return 1
         functional = subprocess.run(
             [str(binary), str(script)], cwd=ROOT, text=True,
             capture_output=True,
