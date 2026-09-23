@@ -53,6 +53,10 @@ def main() -> int:
             print("FAIL: expression token allocations still leak")
             print(run.stderr, end="", file=sys.stderr)
             return 1
+        if "load_program" in run.stderr:
+            print("FAIL: loaded program storage still leaks")
+            print(run.stderr, end="", file=sys.stderr)
+            return 1
         source = (ROOT / "src" / "claro.c").read_text(encoding="utf-8")
         if "static void split_args_free(char **parts, int count)" not in source:
             print("FAIL: split argument storage has no cleanup boundary")

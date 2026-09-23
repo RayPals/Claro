@@ -19,7 +19,7 @@ The runtime now rejects inverted `random.int` ranges before modulo arithmetic wi
 
 User-defined function and object-method calls now have a documented maximum active call depth of 256. Exceeding it produces: `Claro function call depth exceeded the safe limit of 256. Simplify the recursion or add a stopping condition.` Ordinary non-recursive beginner programs are unaffected.
 
-Verified in this checkout on 2026-09-22:
+Verified in this checkout on 2026-09-23:
 
 - `gcc -std=c99 -O0 -g -fsanitize=address,undefined src/claro.c -o /tmp/claro-call-depth-asan -lm` plus `ASAN_OPTIONS=detect_leaks=0 /tmp/claro-call-depth-asan tests/40_call_depth_guard.claro`: expected diagnostic; no AddressSanitizer or UndefinedBehaviorSanitizer report.
 - `gcc -std=c99 -O0 -g -fsanitize=address,undefined src/claro.c -o /tmp/claro-arity-asan -lm` plus `ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 /tmp/claro-arity-asan tests/38_builtin_arity.claro`: all four missing-argument diagnostics; no sanitizer report.
@@ -28,9 +28,9 @@ Verified in this checkout on 2026-09-22:
 - `./claro doctor`: all checks `OK`.
 - `./claro validate`: validation passed.
 
-This run's narrow memory slice releases the previous deep value when a runtime variable or map entry is overwritten, and releases temporary split argument arrays and strings from `DO`, `CALL`, `TEXT ... CONTAINS`, and `RANDOM`. Focused coverage is `tools/validate_memory_cleanup.py`; it reports `PASS: expression token allocations are released` under an ASan/UBSan build with LeakSanitizer checking and exercises repeated four-argument calls plus string/list/map overwrites. Remaining memory-growth areas include final runtime teardown, loaded program storage, and other expression temporaries. The `RUN COMMAND` path remains trusted shell execution, not a sandbox.
+The memory cleanup slices release the previous deep value when a runtime variable or map entry is overwritten, release temporary split argument arrays and strings from `DO`, `CALL`, `TEXT ... CONTAINS`, and `RANDOM`, and now release loaded program paths, lines, and pointer arrays at the end of each script run. Focused coverage is `tools/validate_memory_cleanup.py`; it reports `PASS: expression token allocations are released` under an ASan/UBSan build with LeakSanitizer checking and rejects any remaining `load_program` leak report while exercising repeated four-argument calls plus string/list/map overwrites. Remaining memory-growth areas include final runtime teardown for variables/functions/classes/modules and other expression temporaries. The `RUN COMMAND` path remains trusted shell execution, not a sandbox.
 
-The `RUN COMMAND` path now decodes POSIX `pclose()` wait status before storing `LASTEXIT`, so a child that exits with code 3 exposes `3` rather than the encoded status `768`. Focused coverage is `tests/42_last_exit_code.claro`. HTTP responses now have a 1,048,576-byte cap and marker-like response bodies are preserved while extracting the final HTTP status marker. Focused coverage is `tools/validate_http_hardening.py`. Remaining memory-growth areas include final runtime teardown, loaded program storage, and other expression temporaries. Claro remains a trusted-script interpreter, not a sandbox.
+The `RUN COMMAND` path now decodes POSIX `pclose()` wait status before storing `LASTEXIT`, so a child that exits with code 3 exposes `3` rather than the encoded status `768`. Focused coverage is `tests/42_last_exit_code.claro`. HTTP responses now have a 1,048,576-byte cap and marker-like response bodies are preserved while extracting the final HTTP status marker. Focused coverage is `tools/validate_http_hardening.py`. Remaining memory-growth areas include final runtime teardown for variables/functions/classes/modules and other expression temporaries. Claro remains a trusted-script interpreter, not a sandbox.
 
 `RUN COMMAND` is documented and validated as a trusted-code capability: it executes shell commands with the user's permissions and is not a sandbox. Claro does not claim untrusted-script safety or use a fragile blacklist sanitizer. Focused documentation coverage is `tools/validate_trusted_command_docs.py`.
 
