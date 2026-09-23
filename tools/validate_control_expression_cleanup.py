@@ -24,6 +24,12 @@ def main() -> int:
                 'ENDIF\n'
                 for _ in range(2000)
             )
+            + ''.join(
+                'DO "1" TIMES\n'
+                '    SET seen TO YES\n'
+                'DONE\n'
+                for _ in range(2000)
+            )
             + 'SAY seen\n',
             encoding="utf-8",
         )
