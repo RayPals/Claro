@@ -52,3 +52,20 @@ Focused documentation verification:
 ```text
 python3 tools/validate_trusted_command_docs.py
 ```
+
+## Control-flow expression cleanup
+
+Conditions evaluated by `IF` are temporary runtime values. The `IF` command now
+releases its condition after choosing a branch, including when the condition is
+a text expression. This is a narrow cleanup boundary; other expression
+temporaries remain separate follow-up work.
+
+Focused verification:
+
+```text
+python3 tools/validate_control_expression_cleanup.py
+```
+
+The validator builds with AddressSanitizer/UndefinedBehaviorSanitizer,
+executes 2,000 temporary `IF` conditions under LeakSanitizer, and checks the
+expected output.
