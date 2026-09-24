@@ -69,3 +69,18 @@ python3 tools/validate_control_expression_cleanup.py
 The validator builds with AddressSanitizer/UndefinedBehaviorSanitizer,
 executes 2,000 temporary `IF` conditions under LeakSanitizer, and checks the
 expected output.
+
+## ASK temporary-value cleanup
+
+`ASK` releases the evaluated prompt value after converting it to display text,
+and releases the temporary input value after `rt_set_checked` copies it into
+runtime storage. This keeps prompt and input strings from accumulating during
+repeated input loops without changing prompt or input behavior.
+
+Focused verification:
+
+```text
+python3 tools/validate_ask_prompt_cleanup.py
+```
+
+The validator runs 2,000 prompt/input operations with AddressSanitizer, UndefinedBehaviorSanitizer, and LeakSanitizer enabled. The dedicated validator passes. A separate malformed-input sanitizer smoke run (`gcc -std=c99 -O0 -g -fsanitize=address,undefined src/claro.c -o ... -lm` followed by the generated malformed script) exits 1 due to two existing leaked error-message strings (140 bytes total) allocated in `rt_error` at `src/claro.c:142`; this is outside the ASK cleanup slice and remains a blocker to sanitizer-clean malformed-input validation.
