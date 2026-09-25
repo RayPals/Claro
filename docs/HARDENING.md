@@ -31,6 +31,8 @@ Command argument lists created by `DO`, `CALL`, `TEXT ... CONTAINS`, and `RANDOM
 
 Focused verification builds with AddressSanitizer/UndefinedBehaviorSanitizer, repeatedly exercises a four-argument `DO`, and checks the cleanup helper before confirming the existing string, list, and map overwrite behavior.
 
+The `REMOVE` command now releases its evaluated needle and copied list/map value after updating runtime storage. Focused verification: `python3 tools/validate_remove_expression_cleanup.py` runs 2,000 discarded string needles under ASan/UBSan/LSan; it passed with no reported leaks. This slice does not yet address the separate ownership of an item removed from a populated copied list.
+
 ## HTTP response handling
 
 HTTP responses are capped at 1,048,576 bytes. Exceeding the cap produces a beginner-facing runtime error instead of retaining an unbounded response. The curl status suffix is taken from the final status marker, so a response body containing marker-like text is preserved. Existing `HTTP CHECK` URL safety rules remain unchanged.
