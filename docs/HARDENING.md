@@ -88,3 +88,7 @@ python3 tools/validate_ask_prompt_cleanup.py
 ```
 
 The validator runs 2,000 prompt/input operations with AddressSanitizer, UndefinedBehaviorSanitizer, and LeakSanitizer enabled. The dedicated validator passes. A separate malformed-input sanitizer smoke run (`gcc -std=c99 -O0 -g -fsanitize=address,undefined src/claro.c -o ... -lm` followed by the generated malformed script) exits 1 due to two existing leaked error-message strings (140 bytes total) allocated in `rt_error` at `src/claro.c:142`; this is outside the ASK cleanup slice and remains a blocker to sanitizer-clean malformed-input validation.
+
+## GET KEY temporary-value cleanup
+
+`GET ... KEY ... AS ...` releases its evaluated map copy and key value after storing the selected value. `python3 tools/validate_get_key_expression_cleanup.py` runs 2,000 lookups under ASan/UBSan/LSan; before the cleanup it reproduced 1,004,000 bytes leaked, and after it passes with the expected output and no reported leaks.

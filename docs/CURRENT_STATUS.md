@@ -42,6 +42,8 @@ The `RUN COMMAND` path now decodes POSIX `pclose()` wait status before storing `
 
 `RUN COMMAND` is documented and validated as a trusted-code capability: it executes shell commands with the user's permissions and is not a sandbox. Claro does not claim untrusted-script safety or use a fragile blacklist sanitizer. Focused documentation coverage is `tools/validate_trusted_command_docs.py`.
 
+`GET ... KEY ... AS ...` now releases its temporary map and key values after lookup. `python3 tools/validate_get_key_expression_cleanup.py` reproduced 1,004,000 leaked bytes before the change and passes after it with ASan/UBSan/LSan enabled; this is one narrow expression-temporary cleanup slice, not a claim that all runtime allocations are leak-free.
+
 ## Feature matrix
 
 ### Beginner scripting core
