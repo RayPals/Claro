@@ -300,3 +300,9 @@ Use feature docs with these expectations:
 - **Plans or experiments:** `PACKAGE_REGISTRY.md`, `WEB_SERVER_PLAN.md`, `EDITOR_EXTENSION_PLAN.md`, `GRAPHICS.md`, `SDL12.md`, `COMPLETE_PLATFORM_ROADMAP.md`, `FUTURE_FEATURES_ROADMAP.md`.
 
 If a doc sounds more ambitious than this status map, treat this file as the current source of truth and update the older doc before teaching from it.
+
+## 2026-09-28 random.int full-range arithmetic follow-up
+
+`random.int` now calculates its inclusive range width and result in `long long`, avoiding signed-int overflow for the full accepted C `int` range. The regression fixture is `tests/43_random_int_extreme_bounds.claro`.
+
+Verified: built with `gcc -std=c99 -O0 -g -fsanitize=address,undefined src/claro.c -o /home/ubuntu/.hermes/profiles/maxwell/cache/scratch/claro-rng-probe -lm`; ran `ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 /home/ubuntu/.hermes/profiles/maxwell/cache/scratch/claro-rng-probe tests/43_random_int_extreme_bounds.claro` (exit 0, no sanitizer report). Before the change, the same full-range call failed with UBSan signed integer overflow at `src/claro.c:347`. This validates the extreme-range runtime behavior under ASan/UBSan; `make -s all`, `./claro test` (0 failures, including this fixture), `./claro doctor`, `./claro validate`, and `git diff --check` pass.

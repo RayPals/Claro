@@ -1,0 +1,6 @@
+IMPORT "lib/random.claro" AS random
+CALL random.seed WITH 17
+CALL random.int WITH -2147483648, 2147483647
+SET value RESULT
+SAY value >= -2147483648
+SAY value <= 2147483647
