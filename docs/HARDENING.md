@@ -33,6 +33,8 @@ Focused verification builds with AddressSanitizer/UndefinedBehaviorSanitizer, re
 
 The `REMOVE` command now releases its evaluated needle and copied list/map value after updating runtime storage. Focused verification: `python3 tools/validate_remove_expression_cleanup.py` runs 2,000 discarded string needles under ASan/UBSan/LSan; it passed with no reported leaks. This slice does not yet address the separate ownership of an item removed from a populated copied list.
 
+When `REMOVE` finds an item in its copied list, it now frees that removed item before shifting the remaining owned values left. `python3 tools/validate_remove_list_item_cleanup.py` repeatedly adds and removes strings under ASan/UBSan/LSan to check that the item ownership is released without changing the list update behavior.
+
 The `PUT ... KEY ... VALUE ...` command now releases its evaluated map, key, and value copies after `map_put`/`rt_set` have copied the data they own. Focused verification: `python3 tools/validate_put_expression_cleanup.py` exercises 2,000 string-valued writes under ASan/UBSan/LSan and passes with no reported leaks. This covers expression-temporary ownership only; broader malformed-input sanitizer runs still report the previously documented `rt_error` diagnostic-string leaks.
 
 ## HTTP response handling
