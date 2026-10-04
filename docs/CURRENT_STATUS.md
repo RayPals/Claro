@@ -51,6 +51,8 @@ The `DELETE FILE ...` and `DELETE FOLDER ...` commands now release their evaluat
 
 `typecheck` now frees its temporary type environment on return, including the owned variable names and type-string values; replacing an inferred type releases the previous value first. `python3 tools/validate_typecheck_token_cleanup.py` reproduced 479 bytes of leaked type-environment allocations before the change, then passed under ASan/UBSan/LSan with the fix. The validator is named for the original local work file; it specifically checks type-environment cleanup, not tokenizer allocations. This is a narrow cleanup slice and does not establish that all typecheck metadata allocations are leak-free.
 
+`claro check` now releases expression-token arrays and strings after variable-name analysis, and frees its temporary variable environment at the end of each check. The untracked focused regression validator `tools/validate_check_token_cleanup.py` first reproduced 310,447 leaked bytes across 2,000 repeated-string expressions; after the cleanup, `python3 tools/validate_check_token_cleanup.py` passes under ASan/UBSan/LSan. Fresh verification: `make -s all`, `./claro test` (0 failures), `./claro doctor`, `./claro validate`, and `git diff --check` pass. This is a narrow, runtime-verified cleanup for check mode; it does not establish that all allocations are leak-free.
+
 ## Feature matrix
 
 ### Beginner scripting core

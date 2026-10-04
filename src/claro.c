@@ -480,6 +480,7 @@ static char *check_var_after_as(const char *line){ const char *as=find_word_ci(l
 static char *check_between_words(const char *line,const char *a,const char *b){ const char *pa=find_word_ci(line,a); const char *pb; if(!pa) return NULL; pa+=strlen(a); pb=find_word_ci(pa,b); if(!pb) return NULL; return substr(pa,pb); }
 typedef struct CheckBlock { const char *expect; const char *open; int line; } CheckBlock;
 
+static void check_vars_free(Var **vars){ Var *v,*next; if(!vars) return; for(v=*vars;v;v=next){ next=v->next; free(v->name); value_free(v->val); free(v); } *vars=NULL; }
 static int check_file(const char *path){
  FILE *f=fopen(path,"rb"); char line[4096]; int line_no=0,errs=0,sp=0; CheckBlock stack[256]; Var *vars=NULL;
  check_add_var(&vars,"RESULT"); check_add_var(&vars,"LASTERROR"); check_add_var(&vars,"LASTERRORFILE"); check_add_var(&vars,"LASTERRORLINE"); check_add_var(&vars,"LASTEXIT"); check_add_var(&vars,"LASTHTTP");
@@ -570,11 +571,13 @@ static int check_file(const char *path){
      errs++;
     }
    }
+   tokens_free(&ts);
   }
  }
  fclose(f);
  while(sp>0){ CheckBlock b=stack[--sp]; printf("%s:%d: %s block opened here needs %s\n",path,b.line,b.open,b.expect); errs++; }
  if(errs==0) printf("OK\n");
+ check_vars_free(&vars);
  return errs?1:0;
 }
 
