@@ -47,6 +47,7 @@ def main():
     run([sys.executable, "tools/validate_concurrency.py"])
     run([sys.executable, "tools/validate_package_security.py"])
     run([sys.executable, "tools/validate_typecheck_diagnostics.py"])
+    run([sys.executable, "tools/validate_runtime_error_cleanup.py"])
     run([sys.executable, "tools/validate_version_convention.py"])
     run([str(EXE), "examples/networking.claro"])
     print("v1.18.26 validation complete")

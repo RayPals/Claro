@@ -35,7 +35,11 @@ The `REMOVE` command now releases its evaluated needle and copied list/map value
 
 When `REMOVE` finds an item in its copied list, it now frees that removed item before shifting the remaining owned values left. `python3 tools/validate_remove_list_item_cleanup.py` repeatedly adds and removes strings under ASan/UBSan/LSan to check that the item ownership is released without changing the list update behavior.
 
-The `PUT ... KEY ... VALUE ...` command now releases its evaluated map, key, and value copies after `map_put`/`rt_set` have copied the data they own. Focused verification: `python3 tools/validate_put_expression_cleanup.py` exercises 2,000 string-valued writes under ASan/UBSan/LSan and passes with no reported leaks. This covers expression-temporary ownership only; broader malformed-input sanitizer runs still report the previously documented `rt_error` diagnostic-string leaks.
+The `PUT ... KEY ... VALUE ...` command now releases its evaluated map, key, and value copies after `map_put`/`rt_set` have copied the data they own. Focused verification: `python3 tools/validate_put_expression_cleanup.py` exercises 2,000 string-valued writes under ASan/UBSan/LSan and passes with no reported leaks. This covers expression-temporary ownership only; caught runtime diagnostic-value leaks are covered by the separate cleanup slice below.
+
+Caught runtime errors release the previous owned error-message and source-path strings when `TRY` clears the error state. `python3 tools/validate_runtime_error_cleanup.py` covers repeated caught builtin-arity errors and an inverted `random.int` range under ASan/UBSan/LSan.
+
+Verified 2026-10-06: `python3 tools/validate_runtime_error_cleanup.py` passes with LeakSanitizer enabled; `make -s all`, `./claro test` (0 failures), `./claro doctor`, and `./claro validate` pass. The focused validator is also part of `tools/validate_v1_17.py`. This addresses caught diagnostic-value ownership only; it does not claim every malformed-input path is leak-free.
 
 ## HTTP response handling
 

@@ -1,5 +1,10 @@
 # Changelog
 
+### Release caught runtime diagnostic values
+
+- Runtime errors caught by `TRY` now release their prior owned message and file strings when the error state is cleared.
+- Added `tools/validate_runtime_error_cleanup.py` to exercise builtin-arity and inverted-range diagnostics under ASan/UBSan/LSan.
+
 ### Diagnose missing values in untyped object-field assignments
 
 - `claro typecheck` now explains how to repair `SET player.score` by adding a value expression after the field name.
