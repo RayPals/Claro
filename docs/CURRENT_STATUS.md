@@ -55,6 +55,8 @@ The `DELETE FILE ...` and `DELETE FOLDER ...` commands now release their evaluat
 
 `claro check` now releases expression-token arrays and strings after variable-name analysis, and frees its temporary variable environment at the end of each check. The untracked focused regression validator `tools/validate_check_token_cleanup.py` first reproduced 310,447 leaked bytes across 2,000 repeated-string expressions; after the cleanup, `python3 tools/validate_check_token_cleanup.py` passes under ASan/UBSan/LSan. Fresh verification: `make -s all`, `./claro test` (0 failures), `./claro doctor`, `./claro validate`, and `git diff --check` pass. This is a narrow, runtime-verified cleanup for check mode; it does not establish that all allocations are leak-free.
 
+`READ FILE ... AS ...` now releases both its evaluated path and the temporary file-content value after copying contents into runtime storage. `python3 tools/validate_read_file_expression_cleanup.py` reproduced 204,000 leaked bytes across 2,000 reads before the fix, then passed under ASan/UBSan/LSan. The check is wired into `tools/validate_v1_17.py`; this is one verified cleanup boundary, not a claim that all file-command temporaries are leak-free.
+
 ## Feature matrix
 
 ### Beginner scripting core

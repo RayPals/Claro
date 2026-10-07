@@ -56,6 +56,14 @@ python3 tools/validate_http_hardening.py
 
 This validator uses a local HTTP server to check marker-like response text, status `200`, and the oversized-response diagnostic.
 
+## READ FILE expression cleanup
+
+`READ FILE ... AS ...` now releases its evaluated path value and the temporary file-content value after runtime storage copies the contents. `python3 tools/validate_read_file_expression_cleanup.py` first reproduced 204,000 leaked bytes across 2,000 reads under ASan/UBSan/LSan; after the cleanup it passes with the expected output and no reported leak. This is a narrow ownership fix; other file-command temporaries remain separate.
+
+## Verification
+
+2026-10-07: `python3 tools/validate_read_file_expression_cleanup.py` passes under ASan/UBSan/LSan; `make -s all`, `./claro test` (0 failures), `./claro doctor`, `./claro validate`, and `python3 tools/validate_v1_17.py` all pass. Runtime-verified narrow cleanup; full validation does not establish that every allocation path is leak-free.
+
 ## External command trust boundary
 
 `RUN COMMAND` intentionally executes a shell command with the user's permissions. It is a trusted-code capability, not a sandbox or an untrusted-script safety feature. Claro does not attempt a fragile blacklist sanitizer; users must review scripts before running them.
