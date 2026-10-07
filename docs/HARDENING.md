@@ -43,7 +43,8 @@ Verified 2026-10-06: `python3 tools/validate_runtime_error_cleanup.py` passes wi
 
 The `GET ARGUMENT ... AS ...` command now releases both its evaluated index expression and temporary argument value after runtime storage has copied the result. `python3 tools/validate_get_argument_expression_cleanup.py` first reproduced 6,000 leaked bytes over 2,000 accesses, then passes with AddressSanitizer, UndefinedBehaviorSanitizer, and LeakSanitizer enabled. This is a focused ownership cleanup; other `GET` forms have separate temporary-value ownership boundaries.
 
-## HTTP response handling
+`GET ENV ... AS ...` now releases its evaluated environment-name value after converting it to the lookup string. `python3 tools/validate_get_env_expression_cleanup.py` reproduced 1,688,000 leaked bytes across 2,000 lookups before the fix and checks the same repeated lookup under ASan/UBSan/LSan. This is a narrow ownership improvement; other `GET` expression branches remain separate boundaries.
+
 
 HTTP responses are capped at 1,048,576 bytes. Exceeding the cap produces a beginner-facing runtime error instead of retaining an unbounded response. The curl status suffix is taken from the final status marker, so a response body containing marker-like text is preserved. Existing `HTTP CHECK` URL safety rules remain unchanged.
 
