@@ -60,6 +60,8 @@ This validator uses a local HTTP server to check marker-like response text, stat
 
 `READ FILE ... AS ...` now releases its evaluated path value and the temporary file-content value after runtime storage copies the contents. `python3 tools/validate_read_file_expression_cleanup.py` first reproduced 204,000 leaked bytes across 2,000 reads under ASan/UBSan/LSan; after the cleanup it passes with the expected output and no reported leak. This is a narrow ownership fix; other file-command temporaries remain separate.
 
+`WRITE FILE ... WITH ...` and `APPEND FILE ... WITH ...` now release their evaluated path and content values after writing. `python3 tools/validate_write_file_expression_cleanup.py` reproduced 206,000 leaked bytes across 2,000 writes before the cleanup; it verifies repeated writes under ASan/UBSan/LSan and checks the resulting file content.
+
 ## Verification
 
 2026-10-07: `python3 tools/validate_read_file_expression_cleanup.py` passes under ASan/UBSan/LSan; `make -s all`, `./claro test` (0 failures), `./claro doctor`, `./claro validate`, and `python3 tools/validate_v1_17.py` all pass. Runtime-verified narrow cleanup; full validation does not establish that every allocation path is leak-free.

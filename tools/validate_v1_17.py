@@ -51,6 +51,7 @@ def main():
     run([sys.executable, "tools/validate_get_argument_expression_cleanup.py"])
     run([sys.executable, "tools/validate_get_env_expression_cleanup.py"])
     run([sys.executable, "tools/validate_read_file_expression_cleanup.py"])
+    run([sys.executable, "tools/validate_write_file_expression_cleanup.py"])
     run([sys.executable, "tools/validate_version_convention.py"])
     run([str(EXE), "examples/networking.claro"])
     print("v1.18.26 validation complete")

@@ -57,6 +57,8 @@ The `DELETE FILE ...` and `DELETE FOLDER ...` commands now release their evaluat
 
 `READ FILE ... AS ...` now releases both its evaluated path and the temporary file-content value after copying contents into runtime storage. `python3 tools/validate_read_file_expression_cleanup.py` reproduced 204,000 leaked bytes across 2,000 reads before the fix, then passed under ASan/UBSan/LSan. The check is wired into `tools/validate_v1_17.py`; this is one verified cleanup boundary, not a claim that all file-command temporaries are leak-free.
 
+`WRITE FILE` and `APPEND FILE` now release their evaluated path and content values after the operation. `python3 tools/validate_write_file_expression_cleanup.py` reproduced 206,000 leaked bytes across 2,000 writes before the fix; the focused ASan/UBSan/LSan validator is wired into `tools/validate_v1_17.py`. Other file-command temporary ownership remains separate.
+
 ## Feature matrix
 
 ### Beginner scripting core
