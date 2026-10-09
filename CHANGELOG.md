@@ -1,5 +1,10 @@
 # Changelog
 
+### Release GET list-index expression temporaries
+
+- `GET ... AT ... AS ...` now releases its evaluated index value after converting it to a list position.
+- Added `tools/validate_get_at_expression_cleanup.py` with a repeated string-index regression check under ASan/UBSan/LSan.
+
 ### Release caught runtime diagnostic values
 
 - Runtime errors caught by `TRY` now release their prior owned message and file strings when the error state is cleared.

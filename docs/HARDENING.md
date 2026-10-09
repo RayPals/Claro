@@ -112,6 +112,8 @@ The validator runs 2,000 prompt/input operations with AddressSanitizer, Undefine
 
 `GET ... KEY ... AS ...` releases its evaluated map copy and key value after storing the selected value. `python3 tools/validate_get_key_expression_cleanup.py` runs 2,000 lookups under ASan/UBSan/LSan; before the cleanup it reproduced 1,004,000 bytes leaked, and after it passes with the expected output and no reported leaks.
 
+`GET ... AT ... AS ...` now releases its evaluated index expression after converting it to a list position. The regression validator `python3 tools/validate_get_at_expression_cleanup.py` repeats a string-valued index 2,000 times under ASan/UBSan/LSan; before the fix, LeakSanitizer reported 4,000 leaked bytes, and after it passes with the expected selected value.
+
 ## COPY/MOVE expression temporary cleanup
 
 `COPY FILE ... TO ...` and `MOVE FILE ... TO ...` release both evaluated path values after converting them to owned path strings. `python3 tools/validate_copy_move_expression_cleanup.py` runs 1,000 copy/move pairs under ASan/UBSan/LSan; before the cleanup it reproduced 74,000 bytes leaked across 4,000 path-expression values, and after it passes with no reported leaks.
