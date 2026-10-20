@@ -19,7 +19,7 @@ def main() -> int:
         script = tmp_path / "typecheck.claro"
         script.write_text("SET known TO 1\n" + "SAY known\n" * 2000, encoding="utf-8")
         build = subprocess.run(
-            ["gcc", "-std=c99", "-O0", "-g", "-fsanitize=address,undefined",
+            ["gcc", "-std=c89", "-pedantic-errors", "-Werror=implicit-function-declaration", "-O0", "-g", "-fsanitize=address,undefined",
              "src/claro.c", "-o", str(binary), "-lm"],
             cwd=ROOT, text=True, capture_output=True,
         )

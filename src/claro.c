@@ -1,5 +1,5 @@
 /*
-  Claro v2026.10.20.155641 - Networking Reliability Release
+  Claro v2026.10.20.160950 - Networking Reliability Release
 
   A compact, buildable Claro interpreter focused on the beginner-friendly
   teaching core: readable commands, simple expressions, functions, collections,
@@ -7,7 +7,7 @@
   built-ins.
 
   Build:
-    gcc -std=c99 src/claro.c -O0 -o claro -lm
+    gcc -std=c89 -pedantic-errors -Werror=implicit-function-declaration src/claro.c -O0 -o claro -lm
 */
 
 #include <stdio.h>
@@ -24,6 +24,8 @@
 #include <errno.h>
 #include <math.h>
 #include <time.h>
+#include <limits.h>
+#include <float.h>
 #include <sys/stat.h>
 #ifndef _WIN32
 FILE *popen(const char *command, const char *mode);
@@ -43,800 +45,7778 @@ int pclose(FILE *stream);
 #define F_OK 0
 #endif
 
-#define CLARO_VERSION "Claro v2026.10.20.155641"
+#define CLARO_VERSION "Claro v2026.10.20.160950"
 #define CLARO_MAX_CALL_DEPTH 256
 
-static void *xmalloc(size_t n){ void *p=malloc(n?n:1); if(!p){ fprintf(stderr,"Out of memory\n"); exit(1);} return p; }
-static void *xrealloc(void *p,size_t n){ void *q=realloc(p,n?n:1); if(!q){ fprintf(stderr,"Out of memory\n"); exit(1);} return q; }
-static char *xstrdup(const char *s){ size_t n; char *p; if(!s) s=""; n=strlen(s); p=(char*)xmalloc(n+1); memcpy(p,s,n+1); return p; }
-static int ci_cmp(const char *a,const char *b){ while(*a&&*b){ int ca=toupper((unsigned char)*a), cb=toupper((unsigned char)*b); if(ca!=cb) return ca-cb; a++; b++; } return (unsigned char)*a-(unsigned char)*b; }
-static int ci_eq(const char *a,const char *b){ return ci_cmp(a,b)==0; }
-static int starts_ci(const char *s,const char *p){ while(*p){ if(!*s) return 0; if(toupper((unsigned char)*s)!=toupper((unsigned char)*p)) return 0; s++; p++; } return 1; }
-static char *trim_inplace(char *s){ char *e; while(*s&&isspace((unsigned char)*s)) s++; e=s+strlen(s); while(e>s&&isspace((unsigned char)e[-1])) e--; *e=0; return s; }
-static void first_word(const char *s,char *out,size_t n){ size_t i=0; while(*s&&isspace((unsigned char)*s)) s++; while(*s&&!isspace((unsigned char)*s)&&i+1<n){ out[i++]=*s++; } out[i]=0; }
-static void upper_copy(char *d,const char *s,size_t n){ size_t i=0; if(!n) return; while(s&&s[i]&&i+1<n){ d[i]=(char)toupper((unsigned char)s[i]); i++; } d[i]=0; }
-static int is_blank_or_comment(const char *s){ while(*s&&isspace((unsigned char)*s)) s++; return *s==0 || *s=='#'; }
+static void *xmalloc(size_t n) {
+    void *p = malloc(n ? n : 1);
+    if (!p) {
+        fprintf(stderr, "Out of memory\n");
+        exit(1);
+    }
+    return p;
+}
+static void *xrealloc(void *p, size_t n) {
+    void *q = realloc(p, n ? n : 1);
+    if (!q) {
+        fprintf(stderr, "Out of memory\n");
+        exit(1);
+    }
+    return q;
+}
+static char *xstrdup(const char *s) {
+    size_t n;
+    char *p;
+    if (!s)
+        s = "";
+    n = strlen(s);
+    p = (char *)xmalloc(n + 1);
+    memcpy(p, s, n + 1);
+    return p;
+}
+static int ci_cmp(const char *a, const char *b) {
+    while (*a && *b) {
+        int ca = toupper((unsigned char)*a), cb = toupper((unsigned char)*b);
+        if (ca != cb)
+            return ca - cb;
+        a++;
+        b++;
+    }
+    return (unsigned char)*a - (unsigned char)*b;
+}
+static int ci_eq(const char *a, const char *b) { return ci_cmp(a, b) == 0; }
+static int starts_ci(const char *s, const char *p) {
+    while (*p) {
+        if (!*s)
+            return 0;
+        if (toupper((unsigned char)*s) != toupper((unsigned char)*p))
+            return 0;
+        s++;
+        p++;
+    }
+    return 1;
+}
+static char *trim_inplace(char *s) {
+    char *e;
+    while (*s && isspace((unsigned char)*s))
+        s++;
+    e = s + strlen(s);
+    while (e > s && isspace((unsigned char)e[-1]))
+        e--;
+    *e = 0;
+    return s;
+}
+static void first_word(const char *s, char *out, size_t n) {
+    size_t i = 0;
+    while (*s && isspace((unsigned char)*s))
+        s++;
+    while (*s && !isspace((unsigned char)*s) && i + 1 < n) {
+        out[i++] = *s++;
+    }
+    out[i] = 0;
+}
+static void upper_copy(char *d, const char *s, size_t n) {
+    size_t i = 0;
+    if (!n)
+        return;
+    while (s && s[i] && i + 1 < n) {
+        d[i] = (char)toupper((unsigned char)s[i]);
+        i++;
+    }
+    d[i] = 0;
+}
+static int is_blank_or_comment(const char *s) {
+    while (*s && isspace((unsigned char)*s))
+        s++;
+    return *s == 0 || *s == '#';
+}
+
+/* C89 bounded formatter for Claro's internal formats only. Not a public printf
+   replacement: supported conversions are %s, %.*s, %d, %08lx, %.15g, %.0f,
+   and %%. Strings are copied directly with bounds; sprintf is used only for
+   fixed numeric formats into a buffer sized for the largest double. */
+static void claro_format_copy(char *out, size_t size, size_t *total, const char *text,
+                              size_t length) {
+    size_t copy = 0;
+    if (size && *total < size - 1) {
+        copy = size - 1 - *total;
+        if (copy > length)
+            copy = length;
+        if (copy)
+            memcpy(out + *total, text, copy);
+    }
+    if (length > (size_t)INT_MAX - *total) {
+        fprintf(stderr, "Claro format output is too large.\n");
+        exit(1);
+    }
+    *total += length;
+}
+
+static int claro_vsnprintf(char *out, size_t size, const char *format, va_list args) {
+    size_t total = 0;
+    while (*format) {
+        const char *text;
+        size_t length;
+        char number[DBL_MAX_10_EXP + 64];
+        if (*format != '%') {
+            text = format;
+            while (*format && *format != '%')
+                format++;
+            length = (size_t)(format - text);
+        } else {
+            format++;
+            if (*format == '%') {
+                text = "%";
+                length = 1;
+                format++;
+            } else if (*format == 's') {
+                text = va_arg(args, const char *);
+                if (!text)
+                    text = "(null)";
+                length = strlen(text);
+                format++;
+            } else if (strncmp(format, ".*s", 3) == 0) {
+                int limit = va_arg(args, int);
+                text = va_arg(args, const char *);
+                if (!text)
+                    text = "(null)";
+                length = 0;
+                while (text[length] && (limit < 0 || length < (size_t)limit))
+                    length++;
+                format += 3;
+            } else if (*format == 'd') {
+                sprintf(number, "%d", va_arg(args, int));
+                text = number;
+                length = strlen(number);
+                format++;
+            } else if (strncmp(format, "08lx", 4) == 0) {
+                sprintf(number, "%08lx", va_arg(args, unsigned long));
+                text = number;
+                length = strlen(number);
+                format += 4;
+            } else if (strncmp(format, ".15g", 4) == 0) {
+                sprintf(number, "%.15g", va_arg(args, double));
+                text = number;
+                length = strlen(number);
+                format += 4;
+            } else if (strncmp(format, ".0f", 3) == 0) {
+                sprintf(number, "%.0f", va_arg(args, double));
+                text = number;
+                length = strlen(number);
+                format += 3;
+            } else {
+                fprintf(stderr, "Unsupported internal Claro format.\n");
+                exit(1);
+            }
+        }
+        claro_format_copy(out, size, &total, text, length);
+    }
+    if (size)
+        out[total < size ? total : size - 1] = 0;
+    return (int)total;
+}
+
+static int claro_snprintf(char *out, size_t size, const char *format, ...) {
+    va_list args;
+    int result;
+    va_start(args, format);
+    result = claro_vsnprintf(out, size, format, args);
+    va_end(args);
+    return result;
+}
 
 /* ---------- growable string ---------- */
-typedef struct { char *s; size_t len, cap; } Str;
-static void str_init(Str *b){ b->s=NULL; b->len=0; b->cap=0; }
-static void str_need(Str *b,size_t extra){ size_t need=b->len+extra+1; if(need>b->cap){ size_t nc=b->cap?b->cap*2:64; while(nc<need) nc*=2; b->s=(char*)xrealloc(b->s,nc); b->cap=nc; } }
-static void str_addn(Str *b,const char *s,size_t n){ str_need(b,n); memcpy(b->s+b->len,s,n); b->len+=n; b->s[b->len]=0; }
-static void str_add(Str *b,const char *s){ if(s) str_addn(b,s,strlen(s)); }
-static void str_ch(Str *b,char c){ str_need(b,1); b->s[b->len++]=c; b->s[b->len]=0; }
-static char *str_take(Str *b){ char *s=b->s?b->s:xstrdup(""); b->s=NULL; b->len=b->cap=0; return s; }
+typedef struct {
+    char *s;
+    size_t len, cap;
+} Str;
+static void str_init(Str *b) {
+    b->s = NULL;
+    b->len = 0;
+    b->cap = 0;
+}
+static void str_need(Str *b, size_t extra) {
+    size_t need = b->len + extra + 1;
+    if (need > b->cap) {
+        size_t nc = b->cap ? b->cap * 2 : 64;
+        while (nc < need)
+            nc *= 2;
+        b->s = (char *)xrealloc(b->s, nc);
+        b->cap = nc;
+    }
+}
+static void str_addn(Str *b, const char *s, size_t n) {
+    str_need(b, n);
+    memcpy(b->s + b->len, s, n);
+    b->len += n;
+    b->s[b->len] = 0;
+}
+static void str_add(Str *b, const char *s) {
+    if (s)
+        str_addn(b, s, strlen(s));
+}
+static void str_ch(Str *b, char c) {
+    str_need(b, 1);
+    b->s[b->len++] = c;
+    b->s[b->len] = 0;
+}
+static char *str_take(Str *b) {
+    char *s = b->s ? b->s : xstrdup("");
+    b->s = NULL;
+    b->len = b->cap = 0;
+    return s;
+}
 
 /* ---------- values ---------- */
 typedef struct Value Value;
-typedef struct { Value *items; int count, cap; } List;
-typedef struct { char **keys; Value *vals; int count, cap; } Map;
-struct Value { int type; double num; int boolean; char *str; List *list; Map *map; };
+typedef struct {
+    Value *items;
+    int count, cap;
+} List;
+typedef struct {
+    char **keys;
+    Value *vals;
+    int count, cap;
+} Map;
+struct Value {
+    int type;
+    double num;
+    int boolean;
+    char *str;
+    List *list;
+    Map *map;
+};
 enum { V_NONE, V_NUM, V_STR, V_BOOL, V_LIST, V_MAP };
 
-static Value v_none(void){ Value v; memset(&v,0,sizeof(v)); v.type=V_NONE; return v; }
-static Value v_num(double n){ Value v=v_none(); v.type=V_NUM; v.num=n; return v; }
-static Value v_bool(int b){ Value v=v_none(); v.type=V_BOOL; v.boolean=b?1:0; return v; }
-static Value v_str(const char *s){ Value v=v_none(); v.type=V_STR; v.str=xstrdup(s?s:""); return v; }
-static List *list_new(void){ List *l=(List*)xmalloc(sizeof(List)); l->items=NULL; l->count=l->cap=0; return l; }
-static Map *map_new(void){ Map *m=(Map*)xmalloc(sizeof(Map)); m->keys=NULL; m->vals=NULL; m->count=m->cap=0; return m; }
-static Value v_list(void){ Value v=v_none(); v.type=V_LIST; v.list=list_new(); return v; }
-static Value v_map(void){ Value v=v_none(); v.type=V_MAP; v.map=map_new(); return v; }
+static Value v_none(void) {
+    Value v;
+    memset(&v, 0, sizeof(v));
+    v.type = V_NONE;
+    return v;
+}
+static Value v_num(double n) {
+    Value v = v_none();
+    v.type = V_NUM;
+    v.num = n;
+    return v;
+}
+static Value v_bool(int b) {
+    Value v = v_none();
+    v.type = V_BOOL;
+    v.boolean = b ? 1 : 0;
+    return v;
+}
+static Value v_str(const char *s) {
+    Value v = v_none();
+    v.type = V_STR;
+    v.str = xstrdup(s ? s : "");
+    return v;
+}
+static List *list_new(void) {
+    List *l = (List *)xmalloc(sizeof(List));
+    l->items = NULL;
+    l->count = l->cap = 0;
+    return l;
+}
+static Map *map_new(void) {
+    Map *m = (Map *)xmalloc(sizeof(Map));
+    m->keys = NULL;
+    m->vals = NULL;
+    m->count = m->cap = 0;
+    return m;
+}
+static Value v_list(void) {
+    Value v = v_none();
+    v.type = V_LIST;
+    v.list = list_new();
+    return v;
+}
+static Value v_map(void) {
+    Value v = v_none();
+    v.type = V_MAP;
+    v.map = map_new();
+    return v;
+}
 static Value v_copy(Value v);
-static void value_free(Value v){ int i; if(v.type==V_STR){ free(v.str); } else if(v.type==V_LIST&&v.list){ for(i=0;i<v.list->count;i++) value_free(v.list->items[i]); free(v.list->items); free(v.list); } else if(v.type==V_MAP&&v.map){ for(i=0;i<v.map->count;i++){ free(v.map->keys[i]); value_free(v.map->vals[i]); } free(v.map->keys); free(v.map->vals); free(v.map); } }
-static void list_add(List *l,Value v){ if(l->count>=l->cap){ l->cap=l->cap?l->cap*2:8; l->items=(Value*)xrealloc(l->items,sizeof(Value)*l->cap);} l->items[l->count++]=v_copy(v); }
-static int map_index(Map *m,const char *key){ int i; for(i=0;i<m->count;i++) if(strcmp(m->keys[i],key)==0) return i; return -1; }
-static void map_put(Map *m,const char *key,Value v){ int i=map_index(m,key); if(i>=0){ value_free(m->vals[i]); m->vals[i]=v_copy(v); return;} if(m->count>=m->cap){ m->cap=m->cap?m->cap*2:8; m->keys=(char**)xrealloc(m->keys,sizeof(char*)*m->cap); m->vals=(Value*)xrealloc(m->vals,sizeof(Value)*m->cap);} m->keys[m->count]=xstrdup(key); m->vals[m->count++]=v_copy(v); }
-static Value map_get(Map *m,const char *key){ int i=map_index(m,key); if(i>=0) return v_copy(m->vals[i]); return v_none(); }
-static Value v_copy(Value v){ Value o=v_none(); int i; o.type=v.type; o.num=v.num; o.boolean=v.boolean; if(v.type==V_STR) o.str=xstrdup(v.str); else if(v.type==V_LIST){ o=v_list(); for(i=0;i<v.list->count;i++) list_add(o.list,v.list->items[i]); } else if(v.type==V_MAP){ o=v_map(); for(i=0;i<v.map->count;i++) map_put(o.map,v.map->keys[i],v.map->vals[i]); } return o; }
-static int v_truth(Value v){ if(v.type==V_BOOL) return v.boolean; if(v.type==V_NUM) return fabs(v.num)>0.0000001; if(v.type==V_STR) return v.str&&v.str[0]; if(v.type==V_LIST) return v.list&&v.list->count>0; if(v.type==V_MAP) return v.map&&v.map->count>0; return 0; }
-static double v_number(Value v){ if(v.type==V_NUM) return v.num; if(v.type==V_BOOL) return v.boolean; if(v.type==V_STR) return atof(v.str?v.str:""); return 0; }
+static void value_free(Value v) {
+    int i;
+    if (v.type == V_STR) {
+        free(v.str);
+    } else if (v.type == V_LIST && v.list) {
+        for (i = 0; i < v.list->count; i++)
+            value_free(v.list->items[i]);
+        free(v.list->items);
+        free(v.list);
+    } else if (v.type == V_MAP && v.map) {
+        for (i = 0; i < v.map->count; i++) {
+            free(v.map->keys[i]);
+            value_free(v.map->vals[i]);
+        }
+        free(v.map->keys);
+        free(v.map->vals);
+        free(v.map);
+    }
+}
+static void list_add(List *l, Value v) {
+    if (l->count >= l->cap) {
+        l->cap = l->cap ? l->cap * 2 : 8;
+        l->items = (Value *)xrealloc(l->items, sizeof(Value) * l->cap);
+    }
+    l->items[l->count++] = v_copy(v);
+}
+static int map_index(Map *m, const char *key) {
+    int i;
+    for (i = 0; i < m->count; i++)
+        if (strcmp(m->keys[i], key) == 0)
+            return i;
+    return -1;
+}
+static void map_put(Map *m, const char *key, Value v) {
+    int i = map_index(m, key);
+    if (i >= 0) {
+        value_free(m->vals[i]);
+        m->vals[i] = v_copy(v);
+        return;
+    }
+    if (m->count >= m->cap) {
+        m->cap = m->cap ? m->cap * 2 : 8;
+        m->keys = (char **)xrealloc(m->keys, sizeof(char *) * m->cap);
+        m->vals = (Value *)xrealloc(m->vals, sizeof(Value) * m->cap);
+    }
+    m->keys[m->count] = xstrdup(key);
+    m->vals[m->count++] = v_copy(v);
+}
+static Value map_get(Map *m, const char *key) {
+    int i = map_index(m, key);
+    if (i >= 0)
+        return v_copy(m->vals[i]);
+    return v_none();
+}
+static Value v_copy(Value v) {
+    Value o = v_none();
+    int i;
+    o.type = v.type;
+    o.num = v.num;
+    o.boolean = v.boolean;
+    if (v.type == V_STR)
+        o.str = xstrdup(v.str);
+    else if (v.type == V_LIST) {
+        o = v_list();
+        for (i = 0; i < v.list->count; i++)
+            list_add(o.list, v.list->items[i]);
+    } else if (v.type == V_MAP) {
+        o = v_map();
+        for (i = 0; i < v.map->count; i++)
+            map_put(o.map, v.map->keys[i], v.map->vals[i]);
+    }
+    return o;
+}
+static int v_truth(Value v) {
+    if (v.type == V_BOOL)
+        return v.boolean;
+    if (v.type == V_NUM)
+        return fabs(v.num) > 0.0000001;
+    if (v.type == V_STR)
+        return v.str && v.str[0];
+    if (v.type == V_LIST)
+        return v.list && v.list->count > 0;
+    if (v.type == V_MAP)
+        return v.map && v.map->count > 0;
+    return 0;
+}
+static double v_number(Value v) {
+    if (v.type == V_NUM)
+        return v.num;
+    if (v.type == V_BOOL)
+        return v.boolean;
+    if (v.type == V_STR)
+        return atof(v.str ? v.str : "");
+    return 0;
+}
 static char *v_to_string(Value v);
-static char *num_to_string(double d){ char buf[80]; if(fabs(d-(long long)d)<0.0000001) snprintf(buf,sizeof(buf),"%lld",(long long)d); else snprintf(buf,sizeof(buf),"%.15g",d); return xstrdup(buf); }
-static char *v_to_string(Value v){ if(v.type==V_NONE) return xstrdup(""); if(v.type==V_NUM) return num_to_string(v.num); if(v.type==V_BOOL) return xstrdup(v.boolean?"YES":"NO"); if(v.type==V_STR) return xstrdup(v.str?v.str:""); if(v.type==V_LIST) return xstrdup("[list]"); if(v.type==V_MAP) return xstrdup("[map]"); return xstrdup(""); }
-static int parse_number_strict(const char *s,double *out){ char *end; double d; if(!s) return 0; while(*s&&isspace((unsigned char)*s)) s++; if(!*s) return 0; d=strtod(s,&end); if(end==s) return 0; while(end&&*end&&isspace((unsigned char)*end)) end++; if(end&&*end) return 0; if(out) *out=d; return 1; }
-static int value_compare(Value a,Value b){ char *as,*bs; int r; double x,y; if((a.type==V_NUM||a.type==V_BOOL)&&(b.type==V_NUM||b.type==V_BOOL)){ x=v_number(a); y=v_number(b); if(x<y) return -1; if(x>y) return 1; return 0; }
- if(a.type==V_STR && (b.type==V_NUM||b.type==V_BOOL) && parse_number_strict(a.str,&x)){ y=v_number(b); if(x<y) return -1; if(x>y) return 1; return 0; }
- if((a.type==V_NUM||a.type==V_BOOL) && b.type==V_STR && parse_number_strict(b.str,&y)){ x=v_number(a); if(x<y) return -1; if(x>y) return 1; return 0; }
- if(a.type==V_STR && b.type==V_STR && parse_number_strict(a.str,&x) && parse_number_strict(b.str,&y)){ if(x<y) return -1; if(x>y) return 1; return 0; }
- as=v_to_string(a); bs=v_to_string(b); r=strcmp(as,bs); free(as); free(bs); return r; }
+static char *num_to_string(double d) {
+    char buf[80];
+    double integer;
+    if (fabs(d) < 9223372036854775808.0 && fabs(modf(d, &integer)) < 0.0000001)
+        claro_snprintf(buf, sizeof(buf), "%.0f", integer == 0.0 ? 0.0 : integer);
+    else
+        claro_snprintf(buf, sizeof(buf), "%.15g", d);
+    return xstrdup(buf);
+}
+static char *v_to_string(Value v) {
+    if (v.type == V_NONE)
+        return xstrdup("");
+    if (v.type == V_NUM)
+        return num_to_string(v.num);
+    if (v.type == V_BOOL)
+        return xstrdup(v.boolean ? "YES" : "NO");
+    if (v.type == V_STR)
+        return xstrdup(v.str ? v.str : "");
+    if (v.type == V_LIST)
+        return xstrdup("[list]");
+    if (v.type == V_MAP)
+        return xstrdup("[map]");
+    return xstrdup("");
+}
+static int parse_number_strict(const char *s, double *out) {
+    char *end;
+    double d;
+    if (!s)
+        return 0;
+    while (*s && isspace((unsigned char)*s))
+        s++;
+    if (!*s)
+        return 0;
+    d = strtod(s, &end);
+    if (end == s)
+        return 0;
+    while (end && *end && isspace((unsigned char)*end))
+        end++;
+    if (end && *end)
+        return 0;
+    if (out)
+        *out = d;
+    return 1;
+}
+static int value_compare(Value a, Value b) {
+    char *as, *bs;
+    int r;
+    double x, y;
+    if ((a.type == V_NUM || a.type == V_BOOL) && (b.type == V_NUM || b.type == V_BOOL)) {
+        x = v_number(a);
+        y = v_number(b);
+        if (x < y)
+            return -1;
+        if (x > y)
+            return 1;
+        return 0;
+    }
+    if (a.type == V_STR && (b.type == V_NUM || b.type == V_BOOL) &&
+        parse_number_strict(a.str, &x)) {
+        y = v_number(b);
+        if (x < y)
+            return -1;
+        if (x > y)
+            return 1;
+        return 0;
+    }
+    if ((a.type == V_NUM || a.type == V_BOOL) && b.type == V_STR &&
+        parse_number_strict(b.str, &y)) {
+        x = v_number(a);
+        if (x < y)
+            return -1;
+        if (x > y)
+            return 1;
+        return 0;
+    }
+    if (a.type == V_STR && b.type == V_STR && parse_number_strict(a.str, &x) &&
+        parse_number_strict(b.str, &y)) {
+        if (x < y)
+            return -1;
+        if (x > y)
+            return 1;
+        return 0;
+    }
+    as = v_to_string(a);
+    bs = v_to_string(b);
+    r = strcmp(as, bs);
+    free(as);
+    free(bs);
+    return r;
+}
 
 /* ---------- env/program/runtime ---------- */
-typedef struct Var { char *name; Value val; struct Var *next; } Var;
-typedef struct Program { char *path; char **lines; int count, cap; } Program;
-typedef struct Function { char *name; char **params; int pcnt; Program *prog; int start, end; struct Function *next; } Function;
-typedef struct Module { char *ns; char *kind; struct Module *next; } Module;
-typedef struct FieldDef { char *name; char *type; struct FieldDef *next; } FieldDef;
-typedef struct ClassDef { char *name; FieldDef *fields; struct ClassDef *next; } ClassDef;
+typedef struct Var {
+    char *name;
+    Value val;
+    struct Var *next;
+} Var;
+typedef struct Program {
+    char *path;
+    char **lines;
+    int count, cap;
+} Program;
+typedef struct Function {
+    char *name;
+    char **params;
+    int pcnt;
+    Program *prog;
+    int start, end;
+    struct Function *next;
+} Function;
+typedef struct Module {
+    char *ns;
+    char *kind;
+    struct Module *next;
+} Module;
+typedef struct FieldDef {
+    char *name;
+    char *type;
+    struct FieldDef *next;
+} FieldDef;
+typedef struct ClassDef {
+    char *name;
+    FieldDef *fields;
+    struct ClassDef *next;
+} ClassDef;
 typedef struct Runtime {
- Var *globals; Var *locals; Function *funcs; Module *modules; ClassDef *classes;
- Str captured; int capture; int trace;
- int error; char *err_msg; char *err_file; int err_line;
- int returning; Value ret;
- int call_depth;
- Program **programs; int pcount, pcap;
- char **import_stack; int import_depth;
- int script_argc; char **script_argv;
+    Var *globals;
+    Var *locals;
+    Function *funcs;
+    Module *modules;
+    ClassDef *classes;
+    Str captured;
+    int capture;
+    int trace;
+    int error;
+    char *err_msg;
+    char *err_file;
+    int err_line;
+    int returning;
+    Value ret;
+    int call_depth;
+    Program **programs;
+    int pcount, pcap;
+    char **import_stack;
+    int import_depth;
+    int script_argc;
+    char **script_argv;
 } Runtime;
-static void rt_init(Runtime *rt){ memset(rt,0,sizeof(*rt)); str_init(&rt->captured); rt->ret=v_none(); srand(1); }
-static Var *env_find(Var *v,const char *name){ while(v){ if(strcmp(v->name,name)==0) return v; v=v->next;} return NULL; }
-static Value rt_get(Runtime *rt,const char *name){ Var *v=env_find(rt->locals,name); if(v) return v_copy(v->val); v=env_find(rt->globals,name); if(v) return v_copy(v->val); return v_none(); }
-static int rt_has(Runtime *rt,const char *name){ return env_find(rt->locals,name)||env_find(rt->globals,name); }
-static void rt_set(Runtime *rt,const char *name,Value val){ Var **head=rt->locals?&rt->locals:&rt->globals; Var *v=env_find(*head,name); if(!v && rt->locals) v=env_find(rt->globals,name); if(v){ value_free(v->val); v->val=v_copy(val); return;} v=(Var*)xmalloc(sizeof(Var)); v->name=xstrdup(name); v->val=v_copy(val); v->next=*head; *head=v; }
-static void rt_set_global(Runtime *rt,const char *name,Value val){ Var *v=env_find(rt->globals,name); if(v){ value_free(v->val); v->val=v_copy(val); return;} v=(Var*)xmalloc(sizeof(Var)); v->name=xstrdup(name); v->val=v_copy(val); v->next=rt->globals; rt->globals=v; }
+static void rt_init(Runtime *rt) {
+    memset(rt, 0, sizeof(*rt));
+    str_init(&rt->captured);
+    rt->ret = v_none();
+    srand(1);
+}
+static Var *env_find(Var *v, const char *name) {
+    while (v) {
+        if (strcmp(v->name, name) == 0)
+            return v;
+        v = v->next;
+    }
+    return NULL;
+}
+static Value rt_get(Runtime *rt, const char *name) {
+    Var *v = env_find(rt->locals, name);
+    if (v)
+        return v_copy(v->val);
+    v = env_find(rt->globals, name);
+    if (v)
+        return v_copy(v->val);
+    return v_none();
+}
+static int rt_has(Runtime *rt, const char *name) {
+    return env_find(rt->locals, name) || env_find(rt->globals, name);
+}
+static void rt_set(Runtime *rt, const char *name, Value val) {
+    Var **head = rt->locals ? &rt->locals : &rt->globals;
+    Var *v = env_find(*head, name);
+    if (!v && rt->locals)
+        v = env_find(rt->globals, name);
+    if (v) {
+        value_free(v->val);
+        v->val = v_copy(val);
+        return;
+    }
+    v = (Var *)xmalloc(sizeof(Var));
+    v->name = xstrdup(name);
+    v->val = v_copy(val);
+    v->next = *head;
+    *head = v;
+}
+static void rt_set_global(Runtime *rt, const char *name, Value val) {
+    Var *v = env_find(rt->globals, name);
+    if (v) {
+        value_free(v->val);
+        v->val = v_copy(val);
+        return;
+    }
+    v = (Var *)xmalloc(sizeof(Var));
+    v->name = xstrdup(name);
+    v->val = v_copy(val);
+    v->next = rt->globals;
+    rt->globals = v;
+}
 
-static void rt_error(Runtime *rt,const char *file,int line,const char *fmt,...);
-static char *normalize_path_copy(const char *path){ char *out=xstrdup(path?path:""); char *p; for(p=out;*p;p++) if(*p=='\\') *p='/'; return out; }
-static int claro_is_type_word(const char *s){ return s&&(ci_eq(s,"NUMBER")||ci_eq(s,"TEXT")||ci_eq(s,"YESNO")||ci_eq(s,"BOOL")||ci_eq(s,"BOOLEAN")||ci_eq(s,"LIST")||ci_eq(s,"MAP")||ci_eq(s,"OBJECT")||ci_eq(s,"ANY")); }
-static const char *claro_value_type(Value v){ if(v.type==V_NUM) return "NUMBER"; if(v.type==V_STR) return "TEXT"; if(v.type==V_BOOL) return "YESNO"; if(v.type==V_LIST) return "LIST"; if(v.type==V_MAP) return "MAP"; return "NONE"; }
-static Value claro_default_for_type(const char *type){ if(ci_eq(type,"NUMBER")) return v_num(0); if(ci_eq(type,"TEXT")) return v_str(""); if(ci_eq(type,"YESNO")||ci_eq(type,"BOOL")||ci_eq(type,"BOOLEAN")) return v_bool(0); if(ci_eq(type,"LIST")) return v_list(); if(ci_eq(type,"MAP")||ci_eq(type,"OBJECT")) return v_map(); return v_none(); }
-static int claro_type_matches(const char *type,Value v){ if(!type||!*type||ci_eq(type,"ANY")) return 1; if(ci_eq(type,"NUMBER")) return v.type==V_NUM || (v.type==V_STR && parse_number_strict(v.str,NULL)); if(ci_eq(type,"TEXT")) return v.type==V_STR; if(ci_eq(type,"YESNO")||ci_eq(type,"BOOL")||ci_eq(type,"BOOLEAN")) return v.type==V_BOOL; if(ci_eq(type,"LIST")) return v.type==V_LIST; if(ci_eq(type,"MAP")||ci_eq(type,"OBJECT")) return v.type==V_MAP; return 1; }
-static int claro_value_from_text(const char *type,const char *text,Value *out){ double d; if(!type||!*type||ci_eq(type,"TEXT")||ci_eq(type,"ANY")){ if(out) *out=v_str(text?text:""); return 1; } if(ci_eq(type,"NUMBER")){ if(parse_number_strict(text,&d)){ if(out) *out=v_num(d); return 1; } return 0; } if(ci_eq(type,"YESNO")||ci_eq(type,"BOOL")||ci_eq(type,"BOOLEAN")){ if(ci_eq(text,"YES")||ci_eq(text,"TRUE")||strcmp(text,"1")==0){ if(out) *out=v_bool(1); return 1; } if(ci_eq(text,"NO")||ci_eq(text,"FALSE")||strcmp(text,"0")==0){ if(out) *out=v_bool(0); return 1; } return 0; } if(ci_eq(type,"LIST")){ if(out) *out=v_list(); return 1; } if(ci_eq(type,"MAP")||ci_eq(type,"OBJECT")){ if(out) *out=v_map(); return 1; } if(out) *out=v_str(text?text:""); return 1; }
-static const char *runtime_type_for(Runtime *rt,const char *name,char *buf,size_t n);
-static const char *declared_type_for_expr(Runtime *rt,const char *expr,char *buf,size_t n){ char tmp[256]; const char *t=expr; size_t i=0; while(t&&*t&&isspace((unsigned char)*t)) t++; if(!t||!*t) return NULL; while(t[i]&&(isalnum((unsigned char)t[i])||t[i]=='_'||t[i]=='.')&&i+1<sizeof(tmp)){ tmp[i]=t[i]; i++; } tmp[i]=0; if(!tmp[0]) return NULL; return runtime_type_for(rt,tmp,buf,n); }
-static void type_key_for(const char *name,char *out,size_t n){ snprintf(out,n,"__type_%s",name?name:""); }
-static const char *runtime_type_for(Runtime *rt,const char *name,char *buf,size_t n){ Value tv; type_key_for(name,buf,n); tv=rt_get(rt,buf); if(tv.type==V_STR && tv.str && tv.str[0]) return tv.str; return NULL; }
-static int rt_set_checked(Runtime *rt,const char *file,int line,const char *name,const char *type,Value val){ char key[320], oldbuf[320]; const char *oldtype=NULL; char *dot; if(!name||!*name) return 0; if(type&&*type){ type_key_for(name,key,sizeof(key)); rt_set(rt,key,v_str(type)); oldtype=type; } else oldtype=runtime_type_for(rt,name,oldbuf,sizeof(oldbuf)); if(oldtype && !claro_type_matches(oldtype,val)){ rt_error(rt,file,line,"%s must be %s, but got %s.",name,oldtype,claro_value_type(val)); return 0; } dot=strchr(name,'.'); if(dot){ char objname[256]; char field[256]; Value obj; snprintf(objname,sizeof(objname),"%.*s",(int)(dot-name),name); snprintf(field,sizeof(field),"%s",dot+1); obj=rt_get(rt,objname); if(obj.type!=V_MAP) obj=v_map(); map_put(obj.map,field,val); rt_set(rt,objname,obj); }
- rt_set(rt,name,val); return 1; }
-static void graphics_note(Runtime *rt,const char *what){ (void)what; rt_set(rt,"GRAPHICS_READY",v_bool(1)); }
+static void rt_error(Runtime *rt, const char *file, int line, const char *fmt, ...);
+static char *normalize_path_copy(const char *path) {
+    char *out = xstrdup(path ? path : "");
+    char *p;
+    for (p = out; *p; p++)
+        if (*p == '\\')
+            *p = '/';
+    return out;
+}
+static int claro_is_type_word(const char *s) {
+    return s && (ci_eq(s, "NUMBER") || ci_eq(s, "TEXT") || ci_eq(s, "YESNO") || ci_eq(s, "BOOL") ||
+                 ci_eq(s, "BOOLEAN") || ci_eq(s, "LIST") || ci_eq(s, "MAP") || ci_eq(s, "OBJECT") ||
+                 ci_eq(s, "ANY"));
+}
+static const char *claro_value_type(Value v) {
+    if (v.type == V_NUM)
+        return "NUMBER";
+    if (v.type == V_STR)
+        return "TEXT";
+    if (v.type == V_BOOL)
+        return "YESNO";
+    if (v.type == V_LIST)
+        return "LIST";
+    if (v.type == V_MAP)
+        return "MAP";
+    return "NONE";
+}
+static Value claro_default_for_type(const char *type) {
+    if (ci_eq(type, "NUMBER"))
+        return v_num(0);
+    if (ci_eq(type, "TEXT"))
+        return v_str("");
+    if (ci_eq(type, "YESNO") || ci_eq(type, "BOOL") || ci_eq(type, "BOOLEAN"))
+        return v_bool(0);
+    if (ci_eq(type, "LIST"))
+        return v_list();
+    if (ci_eq(type, "MAP") || ci_eq(type, "OBJECT"))
+        return v_map();
+    return v_none();
+}
+static int claro_type_matches(const char *type, Value v) {
+    if (!type || !*type || ci_eq(type, "ANY"))
+        return 1;
+    if (ci_eq(type, "NUMBER"))
+        return v.type == V_NUM || (v.type == V_STR && parse_number_strict(v.str, NULL));
+    if (ci_eq(type, "TEXT"))
+        return v.type == V_STR;
+    if (ci_eq(type, "YESNO") || ci_eq(type, "BOOL") || ci_eq(type, "BOOLEAN"))
+        return v.type == V_BOOL;
+    if (ci_eq(type, "LIST"))
+        return v.type == V_LIST;
+    if (ci_eq(type, "MAP") || ci_eq(type, "OBJECT"))
+        return v.type == V_MAP;
+    return 1;
+}
+static int claro_value_from_text(const char *type, const char *text, Value *out) {
+    double d;
+    if (!type || !*type || ci_eq(type, "TEXT") || ci_eq(type, "ANY")) {
+        if (out)
+            *out = v_str(text ? text : "");
+        return 1;
+    }
+    if (ci_eq(type, "NUMBER")) {
+        if (parse_number_strict(text, &d)) {
+            if (out)
+                *out = v_num(d);
+            return 1;
+        }
+        return 0;
+    }
+    if (ci_eq(type, "YESNO") || ci_eq(type, "BOOL") || ci_eq(type, "BOOLEAN")) {
+        if (ci_eq(text, "YES") || ci_eq(text, "TRUE") || strcmp(text, "1") == 0) {
+            if (out)
+                *out = v_bool(1);
+            return 1;
+        }
+        if (ci_eq(text, "NO") || ci_eq(text, "FALSE") || strcmp(text, "0") == 0) {
+            if (out)
+                *out = v_bool(0);
+            return 1;
+        }
+        return 0;
+    }
+    if (ci_eq(type, "LIST")) {
+        if (out)
+            *out = v_list();
+        return 1;
+    }
+    if (ci_eq(type, "MAP") || ci_eq(type, "OBJECT")) {
+        if (out)
+            *out = v_map();
+        return 1;
+    }
+    if (out)
+        *out = v_str(text ? text : "");
+    return 1;
+}
+static const char *runtime_type_for(Runtime *rt, const char *name, char *buf, size_t n);
+static const char *declared_type_for_expr(Runtime *rt, const char *expr, char *buf, size_t n) {
+    char tmp[256];
+    const char *t = expr;
+    size_t i = 0;
+    while (t && *t && isspace((unsigned char)*t))
+        t++;
+    if (!t || !*t)
+        return NULL;
+    while (t[i] && (isalnum((unsigned char)t[i]) || t[i] == '_' || t[i] == '.') &&
+           i + 1 < sizeof(tmp)) {
+        tmp[i] = t[i];
+        i++;
+    }
+    tmp[i] = 0;
+    if (!tmp[0])
+        return NULL;
+    return runtime_type_for(rt, tmp, buf, n);
+}
+static void type_key_for(const char *name, char *out, size_t n) {
+    claro_snprintf(out, n, "__type_%s", name ? name : "");
+}
+static const char *runtime_type_for(Runtime *rt, const char *name, char *buf, size_t n) {
+    Value tv;
+    type_key_for(name, buf, n);
+    tv = rt_get(rt, buf);
+    if (tv.type == V_STR && tv.str && tv.str[0])
+        return tv.str;
+    return NULL;
+}
+static int rt_set_checked(Runtime *rt, const char *file, int line, const char *name,
+                          const char *type, Value val) {
+    char key[320], oldbuf[320];
+    const char *oldtype = NULL;
+    char *dot;
+    if (!name || !*name)
+        return 0;
+    if (type && *type) {
+        type_key_for(name, key, sizeof(key));
+        rt_set(rt, key, v_str(type));
+        oldtype = type;
+    } else
+        oldtype = runtime_type_for(rt, name, oldbuf, sizeof(oldbuf));
+    if (oldtype && !claro_type_matches(oldtype, val)) {
+        rt_error(rt, file, line, "%s must be %s, but got %s.", name, oldtype,
+                 claro_value_type(val));
+        return 0;
+    }
+    dot = strchr(name, '.');
+    if (dot) {
+        char objname[256];
+        char field[256];
+        Value obj;
+        claro_snprintf(objname, sizeof(objname), "%.*s", (int)(dot - name), name);
+        claro_snprintf(field, sizeof(field), "%s", dot + 1);
+        obj = rt_get(rt, objname);
+        if (obj.type != V_MAP)
+            obj = v_map();
+        map_put(obj.map, field, val);
+        rt_set(rt, objname, obj);
+    }
+    rt_set(rt, name, val);
+    return 1;
+}
+static void graphics_note(Runtime *rt, const char *what) {
+    (void)what;
+    rt_set(rt, "GRAPHICS_READY", v_bool(1));
+}
 
-static void rt_error(Runtime *rt,const char *file,int line,const char *fmt,...){ va_list ap; char buf[1024]; char *nfile; Value message,file_value; if(rt->error) return; va_start(ap,fmt); vsnprintf(buf,sizeof(buf),fmt,ap); va_end(ap); nfile=normalize_path_copy(file?file:""); rt->error=1; rt->err_msg=xstrdup(buf); rt->err_file=xstrdup(nfile); rt->err_line=line; message=v_str(buf); rt_set(rt,"LASTERROR",message); value_free(message); file_value=v_str(nfile); rt_set(rt,"LASTERRORFILE",file_value); value_free(file_value); rt_set(rt,"LASTERRORLINE",v_num(line)); free(nfile); }
-static void rt_clear_error(Runtime *rt){ rt->error=0; free(rt->err_msg); free(rt->err_file); rt->err_msg=NULL; rt->err_file=NULL; }
-static void out_line(Runtime *rt,Value v){ char *s=v_to_string(v); if(rt->capture){ str_add(&rt->captured,s); str_ch(&rt->captured,'\n'); } else { printf("%s\n",s); } free(s); }
-static void add_function(Runtime *rt,const char *name,char **params,int pcnt,Program *p,int start,int end){ Function *f=(Function*)xmalloc(sizeof(Function)); int i; f->name=xstrdup(name); f->pcnt=pcnt; f->params=(char**)xmalloc(sizeof(char*)*(pcnt?pcnt:1)); for(i=0;i<pcnt;i++) f->params[i]=xstrdup(params[i]); f->prog=p; f->start=start; f->end=end; f->next=rt->funcs; rt->funcs=f; }
-static Function *find_function(Runtime *rt,const char *name){ Function *f=rt->funcs; while(f){ if(strcmp(f->name,name)==0) return f; f=f->next;} return NULL; }
-static void add_module(Runtime *rt,const char *ns,const char *kind){ Module *m=(Module*)xmalloc(sizeof(Module)); m->ns=xstrdup(ns); m->kind=xstrdup(kind); m->next=rt->modules; rt->modules=m; }
-static const char *module_kind(Runtime *rt,const char *ns){ Module *m=rt->modules; while(m){ if(strcmp(m->ns,ns)==0) return m->kind; m=m->next;} return NULL; }
+static void rt_error(Runtime *rt, const char *file, int line, const char *fmt, ...) {
+    va_list ap;
+    char buf[1024];
+    char *nfile;
+    Value message, file_value;
+    if (rt->error)
+        return;
+    va_start(ap, fmt);
+    claro_vsnprintf(buf, sizeof(buf), fmt, ap);
+    va_end(ap);
+    nfile = normalize_path_copy(file ? file : "");
+    rt->error = 1;
+    rt->err_msg = xstrdup(buf);
+    rt->err_file = xstrdup(nfile);
+    rt->err_line = line;
+    message = v_str(buf);
+    rt_set(rt, "LASTERROR", message);
+    value_free(message);
+    file_value = v_str(nfile);
+    rt_set(rt, "LASTERRORFILE", file_value);
+    value_free(file_value);
+    rt_set(rt, "LASTERRORLINE", v_num(line));
+    free(nfile);
+}
+static void rt_clear_error(Runtime *rt) {
+    rt->error = 0;
+    free(rt->err_msg);
+    free(rt->err_file);
+    rt->err_msg = NULL;
+    rt->err_file = NULL;
+}
+static void out_line(Runtime *rt, Value v) {
+    char *s = v_to_string(v);
+    if (rt->capture) {
+        str_add(&rt->captured, s);
+        str_ch(&rt->captured, '\n');
+    } else {
+        printf("%s\n", s);
+    }
+    free(s);
+}
+static void add_function(Runtime *rt, const char *name, char **params, int pcnt, Program *p,
+                         int start, int end) {
+    Function *f = (Function *)xmalloc(sizeof(Function));
+    int i;
+    f->name = xstrdup(name);
+    f->pcnt = pcnt;
+    f->params = (char **)xmalloc(sizeof(char *) * (pcnt ? pcnt : 1));
+    for (i = 0; i < pcnt; i++)
+        f->params[i] = xstrdup(params[i]);
+    f->prog = p;
+    f->start = start;
+    f->end = end;
+    f->next = rt->funcs;
+    rt->funcs = f;
+}
+static Function *find_function(Runtime *rt, const char *name) {
+    Function *f = rt->funcs;
+    while (f) {
+        if (strcmp(f->name, name) == 0)
+            return f;
+        f = f->next;
+    }
+    return NULL;
+}
+static void add_module(Runtime *rt, const char *ns, const char *kind) {
+    Module *m = (Module *)xmalloc(sizeof(Module));
+    m->ns = xstrdup(ns);
+    m->kind = xstrdup(kind);
+    m->next = rt->modules;
+    rt->modules = m;
+}
+static const char *module_kind(Runtime *rt, const char *ns) {
+    Module *m = rt->modules;
+    while (m) {
+        if (strcmp(m->ns, ns) == 0)
+            return m->kind;
+        m = m->next;
+    }
+    return NULL;
+}
 
-static ClassDef *find_class(Runtime *rt,const char *name){ ClassDef *c=rt->classes; while(c){ if(strcmp(c->name,name)==0) return c; c=c->next; } return NULL; }
-static ClassDef *add_class(Runtime *rt,const char *name){ ClassDef *c=find_class(rt,name); if(c) return c; c=(ClassDef*)xmalloc(sizeof(ClassDef)); c->name=xstrdup(name); c->fields=NULL; c->next=rt->classes; rt->classes=c; return c; }
-static FieldDef *find_field(ClassDef *c,const char *name){ FieldDef *f=c?c->fields:NULL; while(f){ if(strcmp(f->name,name)==0) return f; f=f->next; } return NULL; }
-static void class_add_field(ClassDef *c,const char *name,const char *type){ FieldDef *f; if(!c||!name||!*name) return; f=find_field(c,name); if(f){ free(f->type); f->type=xstrdup(type&&*type?type:"ANY"); return; } f=(FieldDef*)xmalloc(sizeof(FieldDef)); f->name=xstrdup(name); f->type=xstrdup(type&&*type?type:"ANY"); f->next=c->fields; c->fields=f; }
-static const char *object_class_name(Value obj){ Value cv; if(obj.type!=V_MAP||!obj.map) return NULL; cv=map_get(obj.map,"class"); if(cv.type==V_STR && cv.str && cv.str[0]) return cv.str; return NULL; }
+static ClassDef *find_class(Runtime *rt, const char *name) {
+    ClassDef *c = rt->classes;
+    while (c) {
+        if (strcmp(c->name, name) == 0)
+            return c;
+        c = c->next;
+    }
+    return NULL;
+}
+static ClassDef *add_class(Runtime *rt, const char *name) {
+    ClassDef *c = find_class(rt, name);
+    if (c)
+        return c;
+    c = (ClassDef *)xmalloc(sizeof(ClassDef));
+    c->name = xstrdup(name);
+    c->fields = NULL;
+    c->next = rt->classes;
+    rt->classes = c;
+    return c;
+}
+static FieldDef *find_field(ClassDef *c, const char *name) {
+    FieldDef *f = c ? c->fields : NULL;
+    while (f) {
+        if (strcmp(f->name, name) == 0)
+            return f;
+        f = f->next;
+    }
+    return NULL;
+}
+static void class_add_field(ClassDef *c, const char *name, const char *type) {
+    FieldDef *f;
+    if (!c || !name || !*name)
+        return;
+    f = find_field(c, name);
+    if (f) {
+        free(f->type);
+        f->type = xstrdup(type && *type ? type : "ANY");
+        return;
+    }
+    f = (FieldDef *)xmalloc(sizeof(FieldDef));
+    f->name = xstrdup(name);
+    f->type = xstrdup(type && *type ? type : "ANY");
+    f->next = c->fields;
+    c->fields = f;
+}
+static const char *object_class_name(Value obj) {
+    Value cv;
+    if (obj.type != V_MAP || !obj.map)
+        return NULL;
+    cv = map_get(obj.map, "class");
+    if (cv.type == V_STR && cv.str && cv.str[0])
+        return cv.str;
+    return NULL;
+}
 
 /* ---------- tokenization / expressions ---------- */
-typedef struct { char **t; int n, cap, pos; } Tokens;
-static void toks_add(Tokens *ts,const char *s,size_t n){ if(ts->n>=ts->cap){ ts->cap=ts->cap?ts->cap*2:16; ts->t=(char**)xrealloc(ts->t,sizeof(char*)*ts->cap);} ts->t[ts->n]=(char*)xmalloc(n+1); memcpy(ts->t[ts->n],s,n); ts->t[ts->n][n]=0; ts->n++; }
-static Tokens tokenize(const char *s){ Tokens ts; size_t i=0; memset(&ts,0,sizeof(ts)); while(s[i]){ if(isspace((unsigned char)s[i])){ i++; continue;} if(s[i]=='"'){ Str b; Str q; str_init(&b); str_init(&q); i++; while(s[i]&&s[i]!='"'){ if(s[i]=='\\'){ i++; if(s[i]=='n') str_ch(&b,'\n'); else if(s[i]=='t') str_ch(&b,'\t'); else if(s[i]=='r') str_ch(&b,'\r'); else if(s[i]=='"') str_ch(&b,'"'); else if(s[i]=='\\') str_ch(&b,'\\'); else if(s[i]) str_ch(&b,s[i]); if(s[i]) i++; } else str_ch(&b,s[i++]); } if(s[i]=='"') i++; str_ch(&q,'\001'); str_add(&q,b.s?b.s:""); toks_add(&ts,q.s?q.s:"",strlen(q.s?q.s:"")); free(b.s); free(q.s); continue; }
-  if(strchr("(),",s[i])){ toks_add(&ts,s+i,1); i++; continue; }
-  if((s[i]=='!'||s[i]=='<'||s[i]=='>')&&s[i+1]=='='){ toks_add(&ts,s+i,2); i+=2; continue; }
-  if(strchr("+-*/=<>",s[i])){ toks_add(&ts,s+i,1); i++; continue; }
-  { size_t st=i; while(s[i]&&!isspace((unsigned char)s[i])&&!strchr("(),+-*/=<>!",s[i])) i++; toks_add(&ts,s+st,i-st); }
- }
- return ts; }
-static void tokens_free(Tokens *ts){ int i; if(!ts) return; for(i=0;i<ts->n;i++) free(ts->t[i]); free(ts->t); ts->t=NULL; ts->n=ts->cap=ts->pos=0; }
-static int tok_end(Tokens *ts){ return ts->pos>=ts->n; }
-static char *tok_peek(Tokens *ts){ return tok_end(ts)?NULL:ts->t[ts->pos]; }
-static char *tok_next(Tokens *ts){ return tok_end(ts)?NULL:ts->t[ts->pos++]; }
-static int tok_match(Tokens *ts,const char *s){ if(!tok_end(ts)&&ci_eq(ts->t[ts->pos],s)){ ts->pos++; return 1;} return 0; }
-static Value parse_expr(Runtime *rt,Tokens *ts);
-static Value parse_primary(Runtime *rt,Tokens *ts){ char *t=tok_next(ts); Value v; if(!t) return v_none(); if(strcmp(t,"(")==0){ v=parse_expr(rt,ts); tok_match(ts,")"); return v; } if(t[0]=='\001') return v_str(t+1); if(ci_eq(t,"YES")) return v_bool(1); if(ci_eq(t,"NO")) return v_bool(0); if(ci_eq(t,"NONE")) return v_none(); if(ci_eq(t,"LIST")) return v_list(); if(ci_eq(t,"MAP")) return v_map(); if((isdigit((unsigned char)t[0])||((t[0]=='-'||t[0]=='+')&&isdigit((unsigned char)t[1])))){ char *end=NULL; double d=strtod(t,&end); if(end&&*end==0) return v_num(d); }
- /* Because tokenizer stores string literals as raw token text, quoted and bare identifiers are ambiguous. Bare identifiers resolve to variables; unresolved become strings only when they came from quotes. We mark quoted literals by detecting tokens that contain spaces/newlines or are followed by original quotes is not possible here. To keep Claro beginner-friendly, unresolved words become variable lookup if known, otherwise plain text. */
- if(rt_has(rt,t)) return rt_get(rt,t);
- if(isalpha((unsigned char)t[0]) || strchr(t,'.')){ rt_error(rt,"",0,"I do not know the variable \"%s\" yet.",t); return v_none(); }
- return v_str(t);
+typedef struct {
+    char **t;
+    int n, cap, pos;
+} Tokens;
+static void toks_add(Tokens *ts, const char *s, size_t n) {
+    if (ts->n >= ts->cap) {
+        ts->cap = ts->cap ? ts->cap * 2 : 16;
+        ts->t = (char **)xrealloc(ts->t, sizeof(char *) * ts->cap);
+    }
+    ts->t[ts->n] = (char *)xmalloc(n + 1);
+    memcpy(ts->t[ts->n], s, n);
+    ts->t[ts->n][n] = 0;
+    ts->n++;
 }
-static Value parse_unary(Runtime *rt,Tokens *ts){ if(tok_match(ts,"NOT")){ Value v=parse_unary(rt,ts); Value out=v_bool(!v_truth(v)); value_free(v); return out; } if(tok_match(ts,"-")){ Value v=parse_unary(rt,ts); Value out=v_num(-v_number(v)); value_free(v); return out; } return parse_primary(rt,ts); }
-static Value parse_mul(Runtime *rt,Tokens *ts){ Value v=parse_unary(rt,ts); while(!tok_end(ts)){ char *op=tok_peek(ts); Value out; if(strcmp(op,"*")&&strcmp(op,"/")) break; tok_next(ts); { Value r=parse_unary(rt,ts); if(strcmp(op,"*")==0) out=v_num(v_number(v)*v_number(r)); else out=v_num(v_number(r)==0?0:v_number(v)/v_number(r)); value_free(v); value_free(r); v=out; } } return v; }
-static Value parse_add(Runtime *rt,Tokens *ts){ Value v=parse_mul(rt,ts); while(!tok_end(ts)){ char *op=tok_peek(ts); Value out; if(strcmp(op,"+")&&strcmp(op,"-")) break; tok_next(ts); { Value r=parse_mul(rt,ts); if(strcmp(op,"+")==0){ double x,y; int vn=0,rn=0; if(v.type==V_NUM||v.type==V_BOOL){ x=v_number(v); vn=1; } else if(v.type==V_STR && parse_number_strict(v.str,&x)) vn=1; if(r.type==V_NUM||r.type==V_BOOL){ y=v_number(r); rn=1; } else if(r.type==V_STR && parse_number_strict(r.str,&y)) rn=1; if(vn&&rn) out=v_num(x+y); else if(v.type==V_STR||r.type==V_STR){ char *a=v_to_string(v), *b=v_to_string(r); Str s; str_init(&s); str_add(&s,a); str_add(&s,b); out=v_str(s.s?s.s:""); free(a); free(b); free(s.s); } else out=v_num(v_number(v)+v_number(r)); } else out=v_num(v_number(v)-v_number(r)); value_free(v); value_free(r); v=out; } } return v; }
-static Value parse_cmp(Runtime *rt,Tokens *ts){ Value v=parse_add(rt,ts); while(!tok_end(ts)){ char *op=tok_peek(ts); int c; Value out; if(!(ci_eq(op,"IS")||!strcmp(op,"=")||!strcmp(op,"!=")||!strcmp(op,"<")||!strcmp(op,"<=")||!strcmp(op,">")||!strcmp(op,">="))) break; tok_next(ts); { Value r=parse_add(rt,ts); c=value_compare(v,r); if(ci_eq(op,"IS")||!strcmp(op,"=")) out=v_bool(c==0); else if(!strcmp(op,"!=")) out=v_bool(c!=0); else if(!strcmp(op,"<")) out=v_bool(c<0); else if(!strcmp(op,"<=")) out=v_bool(c<=0); else if(!strcmp(op,">")) out=v_bool(c>0); else out=v_bool(c>=0); value_free(v); value_free(r); v=out; } } return v; }
-static Value parse_and(Runtime *rt,Tokens *ts){ Value v=parse_cmp(rt,ts); while(tok_match(ts,"AND")){ Value r=parse_cmp(rt,ts); Value out=v_bool(v_truth(v)&&v_truth(r)); value_free(v); value_free(r); v=out; } return v; }
-static Value parse_expr(Runtime *rt,Tokens *ts){ Value v=parse_and(rt,ts); while(tok_match(ts,"OR")){ Value r=parse_and(rt,ts); Value out=v_bool(v_truth(v)||v_truth(r)); value_free(v); value_free(r); v=out; } return v; }
-static Value eval_expr(Runtime *rt,const char *expr){ Tokens ts=tokenize(expr); Value v=parse_expr(rt,&ts); tokens_free(&ts); return v; }
+static Tokens tokenize(const char *s) {
+    Tokens ts;
+    size_t i = 0;
+    memset(&ts, 0, sizeof(ts));
+    while (s[i]) {
+        if (isspace((unsigned char)s[i])) {
+            i++;
+            continue;
+        }
+        if (s[i] == '"') {
+            Str b;
+            Str q;
+            str_init(&b);
+            str_init(&q);
+            i++;
+            while (s[i] && s[i] != '"') {
+                if (s[i] == '\\') {
+                    i++;
+                    if (s[i] == 'n')
+                        str_ch(&b, '\n');
+                    else if (s[i] == 't')
+                        str_ch(&b, '\t');
+                    else if (s[i] == 'r')
+                        str_ch(&b, '\r');
+                    else if (s[i] == '"')
+                        str_ch(&b, '"');
+                    else if (s[i] == '\\')
+                        str_ch(&b, '\\');
+                    else if (s[i])
+                        str_ch(&b, s[i]);
+                    if (s[i])
+                        i++;
+                } else
+                    str_ch(&b, s[i++]);
+            }
+            if (s[i] == '"')
+                i++;
+            str_ch(&q, '\001');
+            str_add(&q, b.s ? b.s : "");
+            toks_add(&ts, q.s ? q.s : "", strlen(q.s ? q.s : ""));
+            free(b.s);
+            free(q.s);
+            continue;
+        }
+        if (strchr("(),", s[i])) {
+            toks_add(&ts, s + i, 1);
+            i++;
+            continue;
+        }
+        if ((s[i] == '!' || s[i] == '<' || s[i] == '>') && s[i + 1] == '=') {
+            toks_add(&ts, s + i, 2);
+            i += 2;
+            continue;
+        }
+        if (strchr("+-*/=<>", s[i])) {
+            toks_add(&ts, s + i, 1);
+            i++;
+            continue;
+        }
+        {
+            size_t st = i;
+            while (s[i] && !isspace((unsigned char)s[i]) && !strchr("(),+-*/=<>!", s[i]))
+                i++;
+            toks_add(&ts, s + st, i - st);
+        }
+    }
+    return ts;
+}
+static void tokens_free(Tokens *ts) {
+    int i;
+    if (!ts)
+        return;
+    for (i = 0; i < ts->n; i++)
+        free(ts->t[i]);
+    free(ts->t);
+    ts->t = NULL;
+    ts->n = ts->cap = ts->pos = 0;
+}
+static int tok_end(Tokens *ts) { return ts->pos >= ts->n; }
+static char *tok_peek(Tokens *ts) { return tok_end(ts) ? NULL : ts->t[ts->pos]; }
+static char *tok_next(Tokens *ts) { return tok_end(ts) ? NULL : ts->t[ts->pos++]; }
+static int tok_match(Tokens *ts, const char *s) {
+    if (!tok_end(ts) && ci_eq(ts->t[ts->pos], s)) {
+        ts->pos++;
+        return 1;
+    }
+    return 0;
+}
+static Value parse_expr(Runtime *rt, Tokens *ts);
+static Value parse_primary(Runtime *rt, Tokens *ts) {
+    char *t = tok_next(ts);
+    Value v;
+    if (!t)
+        return v_none();
+    if (strcmp(t, "(") == 0) {
+        v = parse_expr(rt, ts);
+        tok_match(ts, ")");
+        return v;
+    }
+    if (t[0] == '\001')
+        return v_str(t + 1);
+    if (ci_eq(t, "YES"))
+        return v_bool(1);
+    if (ci_eq(t, "NO"))
+        return v_bool(0);
+    if (ci_eq(t, "NONE"))
+        return v_none();
+    if (ci_eq(t, "LIST"))
+        return v_list();
+    if (ci_eq(t, "MAP"))
+        return v_map();
+    if ((isdigit((unsigned char)t[0]) ||
+         ((t[0] == '-' || t[0] == '+') && isdigit((unsigned char)t[1])))) {
+        char *end = NULL;
+        double d = strtod(t, &end);
+        if (end && *end == 0)
+            return v_num(d);
+    }
+    /* Because tokenizer stores string literals as raw token text, quoted and bare identifiers are
+     * ambiguous. Bare identifiers resolve to variables; unresolved become strings only when they
+     * came from quotes. We mark quoted literals by detecting tokens that contain spaces/newlines or
+     * are followed by original quotes is not possible here. To keep Claro beginner-friendly,
+     * unresolved words become variable lookup if known, otherwise plain text. */
+    if (rt_has(rt, t))
+        return rt_get(rt, t);
+    if (isalpha((unsigned char)t[0]) || strchr(t, '.')) {
+        rt_error(rt, "", 0, "I do not know the variable \"%s\" yet.", t);
+        return v_none();
+    }
+    return v_str(t);
+}
+static Value parse_unary(Runtime *rt, Tokens *ts) {
+    if (tok_match(ts, "NOT")) {
+        Value v = parse_unary(rt, ts);
+        Value out = v_bool(!v_truth(v));
+        value_free(v);
+        return out;
+    }
+    if (tok_match(ts, "-")) {
+        Value v = parse_unary(rt, ts);
+        Value out = v_num(-v_number(v));
+        value_free(v);
+        return out;
+    }
+    return parse_primary(rt, ts);
+}
+static Value parse_mul(Runtime *rt, Tokens *ts) {
+    Value v = parse_unary(rt, ts);
+    while (!tok_end(ts)) {
+        char *op = tok_peek(ts);
+        Value out;
+        if (strcmp(op, "*") && strcmp(op, "/"))
+            break;
+        tok_next(ts);
+        {
+            Value r = parse_unary(rt, ts);
+            if (strcmp(op, "*") == 0)
+                out = v_num(v_number(v) * v_number(r));
+            else
+                out = v_num(v_number(r) == 0 ? 0 : v_number(v) / v_number(r));
+            value_free(v);
+            value_free(r);
+            v = out;
+        }
+    }
+    return v;
+}
+static Value parse_add(Runtime *rt, Tokens *ts) {
+    Value v = parse_mul(rt, ts);
+    while (!tok_end(ts)) {
+        char *op = tok_peek(ts);
+        Value out;
+        if (strcmp(op, "+") && strcmp(op, "-"))
+            break;
+        tok_next(ts);
+        {
+            Value r = parse_mul(rt, ts);
+            if (strcmp(op, "+") == 0) {
+                double x, y;
+                int vn = 0, rn = 0;
+                if (v.type == V_NUM || v.type == V_BOOL) {
+                    x = v_number(v);
+                    vn = 1;
+                } else if (v.type == V_STR && parse_number_strict(v.str, &x))
+                    vn = 1;
+                if (r.type == V_NUM || r.type == V_BOOL) {
+                    y = v_number(r);
+                    rn = 1;
+                } else if (r.type == V_STR && parse_number_strict(r.str, &y))
+                    rn = 1;
+                if (vn && rn)
+                    out = v_num(x + y);
+                else if (v.type == V_STR || r.type == V_STR) {
+                    char *a = v_to_string(v), *b = v_to_string(r);
+                    Str s;
+                    str_init(&s);
+                    str_add(&s, a);
+                    str_add(&s, b);
+                    out = v_str(s.s ? s.s : "");
+                    free(a);
+                    free(b);
+                    free(s.s);
+                } else
+                    out = v_num(v_number(v) + v_number(r));
+            } else
+                out = v_num(v_number(v) - v_number(r));
+            value_free(v);
+            value_free(r);
+            v = out;
+        }
+    }
+    return v;
+}
+static Value parse_cmp(Runtime *rt, Tokens *ts) {
+    Value v = parse_add(rt, ts);
+    while (!tok_end(ts)) {
+        char *op = tok_peek(ts);
+        int c;
+        Value out;
+        if (!(ci_eq(op, "IS") || !strcmp(op, "=") || !strcmp(op, "!=") || !strcmp(op, "<") ||
+              !strcmp(op, "<=") || !strcmp(op, ">") || !strcmp(op, ">=")))
+            break;
+        tok_next(ts);
+        {
+            Value r = parse_add(rt, ts);
+            c = value_compare(v, r);
+            if (ci_eq(op, "IS") || !strcmp(op, "="))
+                out = v_bool(c == 0);
+            else if (!strcmp(op, "!="))
+                out = v_bool(c != 0);
+            else if (!strcmp(op, "<"))
+                out = v_bool(c < 0);
+            else if (!strcmp(op, "<="))
+                out = v_bool(c <= 0);
+            else if (!strcmp(op, ">"))
+                out = v_bool(c > 0);
+            else
+                out = v_bool(c >= 0);
+            value_free(v);
+            value_free(r);
+            v = out;
+        }
+    }
+    return v;
+}
+static Value parse_and(Runtime *rt, Tokens *ts) {
+    Value v = parse_cmp(rt, ts);
+    while (tok_match(ts, "AND")) {
+        Value r = parse_cmp(rt, ts);
+        Value out = v_bool(v_truth(v) && v_truth(r));
+        value_free(v);
+        value_free(r);
+        v = out;
+    }
+    return v;
+}
+static Value parse_expr(Runtime *rt, Tokens *ts) {
+    Value v = parse_and(rt, ts);
+    while (tok_match(ts, "OR")) {
+        Value r = parse_and(rt, ts);
+        Value out = v_bool(v_truth(v) || v_truth(r));
+        value_free(v);
+        value_free(r);
+        v = out;
+    }
+    return v;
+}
+static Value eval_expr(Runtime *rt, const char *expr) {
+    Tokens ts = tokenize(expr);
+    Value v = parse_expr(rt, &ts);
+    tokens_free(&ts);
+    return v;
+}
 
 /* Better string token parsing helpers for commands. */
-static char *unquote_token(const char **ps){ const char *s=*ps; Str b; str_init(&b); while(*s&&isspace((unsigned char)*s)) s++; if(*s=='"'){ s++; while(*s&&*s!='"'){ if(*s=='\\'){ s++; if(*s=='n') str_ch(&b,'\n'); else if(*s=='t') str_ch(&b,'\t'); else if(*s=='r') str_ch(&b,'\r'); else if(*s=='"') str_ch(&b,'"'); else if(*s=='\\') str_ch(&b,'\\'); else if(*s) str_ch(&b,*s); if(*s) s++; } else str_ch(&b,*s++); } if(*s=='"') s++; } else { while(*s&&!isspace((unsigned char)*s)) str_ch(&b,*s++); } *ps=s; return str_take(&b); }
-static char *expr_after_word(const char *line,const char *word){ const char *p=line; while(*p&&isspace((unsigned char)*p)) p++; while(*p&&!isspace((unsigned char)*p)) p++; while(*p&&isspace((unsigned char)*p)) p++; (void)word; return xstrdup(p); }
-static char *substr(const char *a,const char *b){ if(b<a) b=a; char *s=(char*)xmalloc((size_t)(b-a)+1); memcpy(s,a,(size_t)(b-a)); s[b-a]=0; return s; }
-static const char *find_word_ci(const char *s,const char *word){ size_t n=strlen(word); int inq=0, depth=0; const char *p=s; while(*p){ if(*p=='"'&&(p==s||p[-1]!='\\')) inq=!inq; if(!inq){ if(*p=='(') depth++; else if(*p==')') depth--; if(depth==0 && (p==s||isspace((unsigned char)p[-1])) && strnicmp2(p,word,n)==0 && (p[n]==0||isspace((unsigned char)p[n]))) return p; } p++; } return NULL; }
-static int split_args(const char *s,char ***out){ int count=0, cap=0; char **arr=NULL; int inq=0, depth=0; const char *st=s,*p=s; while(1){ char c=*p; if(c=='"'&&(p==s||p[-1]!='\\')) inq=!inq; if(!inq){ if(c=='(') depth++; else if(c==')') depth--; if((c==','&&depth==0)||c==0){ char *part=substr(st,p); char *t=trim_inplace(part); if(count>=cap){ cap=cap?cap*2:4; arr=(char**)xrealloc(arr,sizeof(char*)*cap);} arr[count++]=xstrdup(t); free(part); if(c==0) break; st=p+1; } } p++; } *out=arr; return count; }
-static void split_args_free(char **parts, int count){ int i; for(i=0;i<count;i++) free(parts[i]); free(parts); }
-static void call_args_free(Value *args, int count){ int i; for(i=0;i<count;i++) value_free(args[i]); free(args); }
-
-static int is_word_token(const char *s){ if(!s||!*s) return 0; if(!(isalpha((unsigned char)s[0])||s[0]=='_')) return 0; for(s++;*s;s++) if(!(isalnum((unsigned char)*s)||*s=='_')) return 0; return 1; }
-static char *text_upper_copy(const char *s){ char *o=xstrdup(s?s:""); int i; for(i=0;o[i];i++) o[i]=(char)toupper((unsigned char)o[i]); return o; }
-static char *text_lower_copy(const char *s){ char *o=xstrdup(s?s:""); int i; for(i=0;o[i];i++) o[i]=(char)tolower((unsigned char)o[i]); return o; }
-static char *text_trim_copy(const char *s){ char *o=xstrdup(s?s:""); char *t=trim_inplace(o); char *r=xstrdup(t); free(o); return r; }
-static int str_starts_with(const char *s,const char *prefix){ size_t n=strlen(prefix?prefix:""); return strncmp(s?s:"",prefix?prefix:"",n)==0; }
-static int str_ends_with(const char *s,const char *suffix){ size_t a=strlen(s?s:""), b=strlen(suffix?suffix:""); return b<=a && strcmp((s?s:"")+a-b,suffix?suffix:"")==0; }
-static char *capture_command_output(const char *cmd,int *exit_code,size_t max_bytes){
- Str out; char buf[512]; FILE *fp; int capped=0; str_init(&out);
-#ifdef _WIN32
- fp=_popen(cmd,"r");
-#else
- fp=popen(cmd,"r");
-#endif
- if(!fp){ if(exit_code) *exit_code=-1; return xstrdup(""); }
- while(fgets(buf,sizeof(buf),fp)){
-  size_t n=strlen(buf);
-  if(max_bytes && out.len+n>max_bytes){
-   if(out.len<max_bytes){ size_t keep=max_bytes-out.len; char *part=substr(buf,buf+keep); str_add(&out,part); free(part); }
-   capped=1;
-   continue;
-  }
-  if(!capped) str_add(&out,buf);
- }
-#ifdef _WIN32
- if(exit_code && !capped) *exit_code=_pclose(fp); else _pclose(fp);
-#else
- { int status=pclose(fp); if(exit_code && !capped){ if(WIFEXITED(status)) *exit_code=WEXITSTATUS(status); else if(WIFSIGNALED(status)) *exit_code=128+WTERMSIG(status); else *exit_code=-1; } }
-#endif
- if(capped && exit_code) *exit_code=-2;
- return str_take(&out);
+static char *unquote_token(const char **ps) {
+    const char *s = *ps;
+    Str b;
+    str_init(&b);
+    while (*s && isspace((unsigned char)*s))
+        s++;
+    if (*s == '"') {
+        s++;
+        while (*s && *s != '"') {
+            if (*s == '\\') {
+                s++;
+                if (*s == 'n')
+                    str_ch(&b, '\n');
+                else if (*s == 't')
+                    str_ch(&b, '\t');
+                else if (*s == 'r')
+                    str_ch(&b, '\r');
+                else if (*s == '"')
+                    str_ch(&b, '"');
+                else if (*s == '\\')
+                    str_ch(&b, '\\');
+                else if (*s)
+                    str_ch(&b, *s);
+                if (*s)
+                    s++;
+            } else
+                str_ch(&b, *s++);
+        }
+        if (*s == '"')
+            s++;
+    } else {
+        while (*s && !isspace((unsigned char)*s))
+            str_ch(&b, *s++);
+    }
+    *ps = s;
+    return str_take(&b);
+}
+static char *expr_after_word(const char *line, const char *word) {
+    const char *p = line;
+    while (*p && isspace((unsigned char)*p))
+        p++;
+    while (*p && !isspace((unsigned char)*p))
+        p++;
+    while (*p && isspace((unsigned char)*p))
+        p++;
+    (void)word;
+    return xstrdup(p);
+}
+static char *substr(const char *a, const char *b) {
+    char *s;
+    if (b < a)
+        b = a;
+    s = (char *)xmalloc((size_t)(b - a) + 1);
+    memcpy(s, a, (size_t)(b - a));
+    s[b - a] = 0;
+    return s;
+}
+static const char *find_word_ci(const char *s, const char *word) {
+    size_t n = strlen(word);
+    int inq = 0, depth = 0;
+    const char *p = s;
+    while (*p) {
+        if (*p == '"' && (p == s || p[-1] != '\\'))
+            inq = !inq;
+        if (!inq) {
+            if (*p == '(')
+                depth++;
+            else if (*p == ')')
+                depth--;
+            if (depth == 0 && (p == s || isspace((unsigned char)p[-1])) &&
+                strnicmp2(p, word, n) == 0 && (p[n] == 0 || isspace((unsigned char)p[n])))
+                return p;
+        }
+        p++;
+    }
+    return NULL;
+}
+static int split_args(const char *s, char ***out) {
+    int count = 0, cap = 0;
+    char **arr = NULL;
+    int inq = 0, depth = 0;
+    const char *st = s, *p = s;
+    while (1) {
+        char c = *p;
+        if (c == '"' && (p == s || p[-1] != '\\'))
+            inq = !inq;
+        if (!inq) {
+            if (c == '(')
+                depth++;
+            else if (c == ')')
+                depth--;
+            if ((c == ',' && depth == 0) || c == 0) {
+                char *part = substr(st, p);
+                char *t = trim_inplace(part);
+                if (count >= cap) {
+                    cap = cap ? cap * 2 : 4;
+                    arr = (char **)xrealloc(arr, sizeof(char *) * cap);
+                }
+                arr[count++] = xstrdup(t);
+                free(part);
+                if (c == 0)
+                    break;
+                st = p + 1;
+            }
+        }
+        p++;
+    }
+    *out = arr;
+    return count;
+}
+static int split_simple_args(const char *s, char ***out) {
+    int count = 0, cap = 0;
+    char **arr = NULL;
+    const char *p = s;
+    if (strchr(s, ','))
+        return split_args(s, out);
+    while (*p) {
+        const char *st;
+        while (*p && isspace((unsigned char)*p))
+            p++;
+        if (!*p)
+            break;
+        st = p;
+        if (*p == '"') {
+            p++;
+            while (*p && (*p != '"' || p[-1] == '\\'))
+                p++;
+            if (*p)
+                p++;
+        } else
+            while (*p && !isspace((unsigned char)*p))
+                p++;
+        if (count >= cap) {
+            cap = cap ? cap * 2 : 4;
+            arr = (char **)xrealloc(arr, sizeof(char *) * cap);
+        }
+        arr[count++] = substr(st, p);
+    }
+    *out = arr;
+    return count;
+}
+static void split_args_free(char **parts, int count) {
+    int i;
+    for (i = 0; i < count; i++)
+        free(parts[i]);
+    free(parts);
+}
+static void call_args_free(Value *args, int count) {
+    int i;
+    for (i = 0; i < count; i++)
+        value_free(args[i]);
+    free(args);
 }
 
-static int claro_url_is_safe(const char *url){
- int i;
- if(!url||!*url) return 0;
- if(!(starts_ci(url,"http://")||starts_ci(url,"https://")||starts_ci(url,"claro://"))) return 0;
- for(i=0;url[i];i++){
-  unsigned char c=(unsigned char)url[i];
-  if(c<32||c>126) return 0;
-  if(url[i]=='"'||url[i]=='\''||url[i]=='`'||url[i]=='$'||url[i]=='\\'||url[i]=='|'||url[i]=='<'||url[i]=='>') return 0;
- }
- return 1;
+static int is_word_token(const char *s) {
+    if (!s || !*s)
+        return 0;
+    if (!(isalpha((unsigned char)s[0]) || s[0] == '_'))
+        return 0;
+    for (s++; *s; s++)
+        if (!(isalnum((unsigned char)*s) || *s == '_'))
+            return 0;
+    return 1;
 }
-static char *claro_mock_http(const char *url,int *status){
- if(starts_ci(url,"claro://hello")){ if(status) *status=200; return xstrdup("Hello from Claro networking."); }
- if(starts_ci(url,"claro://json")){ if(status) *status=200; return xstrdup("{\"message\":\"Hello from Claro\",\"ok\":true}"); }
- if(starts_ci(url,"claro://empty")){ if(status) *status=204; return xstrdup(""); }
- if(status) *status=404; return xstrdup("Claro mock URL was not found.");
+static char *text_upper_copy(const char *s) {
+    char *o = xstrdup(s ? s : "");
+    int i;
+    for (i = 0; o[i]; i++)
+        o[i] = (char)toupper((unsigned char)o[i]);
+    return o;
 }
-static char *claro_http_get_text(const char *url,int *http_status,int *exit_code){
- char cmd[2300]; char *raw,*mark,*body; const char *marker="\n__CLARO_HTTP_STATUS__"; size_t max_bytes=1024*1024;
- if(http_status) *http_status=0;
- if(exit_code) *exit_code=0;
- if(starts_ci(url,"claro://")) return claro_mock_http(url,http_status);
- snprintf(cmd,sizeof(cmd),"curl -L -s -m 15 -w \"\\n__CLARO_HTTP_STATUS__%%{http_code}\" \"%s\"",url);
- raw=capture_command_output(cmd,exit_code,max_bytes);
- if(exit_code&&*exit_code==-2){ free(raw); return xstrdup(""); }
- mark=NULL;
- { char *scan=raw; while((scan=strstr(scan,marker))!=NULL){ mark=scan; scan++; } }
- if(mark){ *mark=0; if(http_status) *http_status=atoi(mark+strlen(marker)); body=xstrdup(raw); free(raw); return body; }
- if(http_status) *http_status=0;
- return raw;
+static char *text_lower_copy(const char *s) {
+    char *o = xstrdup(s ? s : "");
+    int i;
+    for (i = 0; o[i]; i++)
+        o[i] = (char)tolower((unsigned char)o[i]);
+    return o;
 }
-static int write_text_bytes(const char *path,const char *text){ FILE *f=fopen(path,"wb"); if(!f) return 0; fwrite(text?text:"",1,strlen(text?text:""),f); fclose(f); return 1; }
+static char *text_trim_copy(const char *s) {
+    char *o = xstrdup(s ? s : "");
+    char *t = trim_inplace(o);
+    char *r = xstrdup(t);
+    free(o);
+    return r;
+}
+static int str_starts_with(const char *s, const char *prefix) {
+    size_t n = strlen(prefix ? prefix : "");
+    return strncmp(s ? s : "", prefix ? prefix : "", n) == 0;
+}
+static int str_ends_with(const char *s, const char *suffix) {
+    size_t a = strlen(s ? s : ""), b = strlen(suffix ? suffix : "");
+    return b <= a && strcmp((s ? s : "") + a - b, suffix ? suffix : "") == 0;
+}
+static char *capture_command_output(const char *cmd, int *exit_code, size_t max_bytes) {
+    Str out;
+    char buf[512];
+    FILE *fp;
+    int capped = 0;
+    str_init(&out);
+#ifdef _WIN32
+    fp = _popen(cmd, "r");
+#else
+    fp = popen(cmd, "r");
+#endif
+    if (!fp) {
+        if (exit_code)
+            *exit_code = -1;
+        return xstrdup("");
+    }
+    while (fgets(buf, sizeof(buf), fp)) {
+        size_t n = strlen(buf);
+        if (max_bytes && out.len + n > max_bytes) {
+            if (out.len < max_bytes) {
+                size_t keep = max_bytes - out.len;
+                char *part = substr(buf, buf + keep);
+                str_add(&out, part);
+                free(part);
+            }
+            capped = 1;
+            continue;
+        }
+        if (!capped)
+            str_add(&out, buf);
+    }
+#ifdef _WIN32
+    if (exit_code && !capped)
+        *exit_code = _pclose(fp);
+    else
+        _pclose(fp);
+#else
+    {
+        int status = pclose(fp);
+        if (exit_code && !capped) {
+            if (WIFEXITED(status))
+                *exit_code = WEXITSTATUS(status);
+            else if (WIFSIGNALED(status))
+                *exit_code = 128 + WTERMSIG(status);
+            else
+                *exit_code = -1;
+        }
+    }
+#endif
+    if (capped && exit_code)
+        *exit_code = -2;
+    return str_take(&out);
+}
 
-static int copy_file_bytes(const char *src,const char *dst){ FILE *a=fopen(src,"rb"), *b; char buf[8192]; size_t n; if(!a) return 0; b=fopen(dst,"wb"); if(!b){ fclose(a); return 0; } while((n=fread(buf,1,sizeof(buf),a))>0) fwrite(buf,1,n,b); fclose(a); fclose(b); return 1; }
-static int make_folder(const char *path){
+static int claro_url_is_safe(const char *url) {
+    int i;
+    if (!url || !*url)
+        return 0;
+    if (!(starts_ci(url, "http://") || starts_ci(url, "https://") || starts_ci(url, "claro://")))
+        return 0;
+    for (i = 0; url[i]; i++) {
+        unsigned char c = (unsigned char)url[i];
+        if (c < 32 || c > 126)
+            return 0;
+        if (url[i] == '"' || url[i] == '\'' || url[i] == '`' || url[i] == '$' || url[i] == '\\' ||
+            url[i] == '|' || url[i] == '<' || url[i] == '>')
+            return 0;
+    }
+    return 1;
+}
+static char *claro_mock_http(const char *url, int *status) {
+    if (starts_ci(url, "claro://hello")) {
+        if (status)
+            *status = 200;
+        return xstrdup("Hello from Claro networking.");
+    }
+    if (starts_ci(url, "claro://json")) {
+        if (status)
+            *status = 200;
+        return xstrdup("{\"message\":\"Hello from Claro\",\"ok\":true}");
+    }
+    if (starts_ci(url, "claro://empty")) {
+        if (status)
+            *status = 204;
+        return xstrdup("");
+    }
+    if (status)
+        *status = 404;
+    return xstrdup("Claro mock URL was not found.");
+}
+static char *claro_http_get_text(const char *url, int *http_status, int *exit_code) {
+    char cmd[2300];
+    char *raw, *mark, *body;
+    const char *marker = "\n__CLARO_HTTP_STATUS__";
+    size_t max_bytes = 1024 * 1024;
+    if (http_status)
+        *http_status = 0;
+    if (exit_code)
+        *exit_code = 0;
+    if (starts_ci(url, "claro://"))
+        return claro_mock_http(url, http_status);
+    claro_snprintf(cmd, sizeof(cmd),
+                   "curl -L -s -m 15 -w \"\\n__CLARO_HTTP_STATUS__%%{http_code}\" \"%s\"", url);
+    raw = capture_command_output(cmd, exit_code, max_bytes);
+    if (exit_code && *exit_code == -2) {
+        free(raw);
+        return xstrdup("");
+    }
+    mark = NULL;
+    {
+        char *scan = raw;
+        while ((scan = strstr(scan, marker)) != NULL) {
+            mark = scan;
+            scan++;
+        }
+    }
+    if (mark) {
+        *mark = 0;
+        if (http_status)
+            *http_status = atoi(mark + strlen(marker));
+        body = xstrdup(raw);
+        free(raw);
+        return body;
+    }
+    if (http_status)
+        *http_status = 0;
+    return raw;
+}
+static int write_text_bytes(const char *path, const char *text) {
+    FILE *f = fopen(path, "wb");
+    if (!f)
+        return 0;
+    fwrite(text ? text : "", 1, strlen(text ? text : ""), f);
+    fclose(f);
+    return 1;
+}
+
+static int copy_file_bytes(const char *src, const char *dst) {
+    FILE *a = fopen(src, "rb"), *b;
+    char buf[8192];
+    size_t n;
+    if (!a)
+        return 0;
+    b = fopen(dst, "wb");
+    if (!b) {
+        fclose(a);
+        return 0;
+    }
+    while ((n = fread(buf, 1, sizeof(buf), a)) > 0)
+        fwrite(buf, 1, n, b);
+    fclose(a);
+    fclose(b);
+    return 1;
+}
+static int make_folder(const char *path) {
 #ifdef _WIN32
- return _mkdir(path)==0 || errno==EEXIST;
+    return _mkdir(path) == 0 || errno == EEXIST;
 #else
- return mkdir(path,0777)==0 || errno==EEXIST;
+    return mkdir(path, 0777) == 0 || errno == EEXIST;
 #endif
 }
-static int remove_folder(const char *path){
+static int remove_folder(const char *path) {
 #ifdef _WIN32
- return _rmdir(path)==0;
+    return _rmdir(path) == 0;
 #else
- return rmdir(path)==0;
+    return rmdir(path) == 0;
 #endif
 }
-static Value list_folder_value(const char *path){ Value arr=v_list();
+static Value list_folder_value(const char *path) {
+    Value arr = v_list();
 #if defined(_WIN32) && !defined(__MINGW32__)
- (void)path;
+    (void)path;
 #else
- DIR *d=opendir(path); struct dirent *de; if(!d) return arr; while((de=readdir(d))){ if(strcmp(de->d_name,".")&&strcmp(de->d_name,"..")) list_add(arr.list,v_str(de->d_name)); } closedir(d);
+    DIR *d = opendir(path);
+    struct dirent *de;
+    if (!d)
+        return arr;
+    while ((de = readdir(d))) {
+        if (strcmp(de->d_name, ".") && strcmp(de->d_name, ".."))
+            list_add(arr.list, v_str(de->d_name));
+    }
+    closedir(d);
 #endif
- return arr; }
-static void value_list_sort(Value v){ int i,j; if(v.type!=V_LIST||!v.list) return; for(i=0;i<v.list->count;i++) for(j=i+1;j<v.list->count;j++){ char *a=v_to_string(v.list->items[i]); char *b=v_to_string(v.list->items[j]); if(strcmp(a,b)>0){ Value tmp=v.list->items[i]; v.list->items[i]=v.list->items[j]; v.list->items[j]=tmp; } free(a); free(b); } }
-static void value_list_reverse(Value v){ int i; if(v.type!=V_LIST||!v.list) return; for(i=0;i<v.list->count/2;i++){ Value tmp=v.list->items[i]; v.list->items[i]=v.list->items[v.list->count-1-i]; v.list->items[v.list->count-1-i]=tmp; } }
-
+    return arr;
+}
+static void value_list_sort(Value v) {
+    int i, j;
+    if (v.type != V_LIST || !v.list)
+        return;
+    for (i = 0; i < v.list->count; i++)
+        for (j = i + 1; j < v.list->count; j++) {
+            char *a = v_to_string(v.list->items[i]);
+            char *b = v_to_string(v.list->items[j]);
+            if (strcmp(a, b) > 0) {
+                Value tmp = v.list->items[i];
+                v.list->items[i] = v.list->items[j];
+                v.list->items[j] = tmp;
+            }
+            free(a);
+            free(b);
+        }
+}
+static void value_list_reverse(Value v) {
+    int i;
+    if (v.type != V_LIST || !v.list)
+        return;
+    for (i = 0; i < v.list->count / 2; i++) {
+        Value tmp = v.list->items[i];
+        v.list->items[i] = v.list->items[v.list->count - 1 - i];
+        v.list->items[v.list->count - 1 - i] = tmp;
+    }
+}
 
 /* ---------- program loading / blocks ---------- */
-static Program *load_program(Runtime *rt,const char *path){ FILE *f; char buf[4096]; Program *p; int i; for(i=0;i<rt->pcount;i++) if(strcmp(rt->programs[i]->path,path)==0) return rt->programs[i]; f=fopen(path,"rb"); if(!f) return NULL; p=(Program*)xmalloc(sizeof(Program)); p->path=xstrdup(path); p->lines=NULL; p->count=p->cap=0; while(fgets(buf,sizeof(buf),f)){ size_t n=strlen(buf); while(n&& (buf[n-1]=='\n'||buf[n-1]=='\r')) buf[--n]=0; if(p->count>=p->cap){ p->cap=p->cap?p->cap*2:32; p->lines=(char**)xrealloc(p->lines,sizeof(char*)*p->cap);} p->lines[p->count++]=xstrdup(buf); } fclose(f); if(rt->pcount>=rt->pcap){ rt->pcap=rt->pcap?rt->pcap*2:16; rt->programs=(Program**)xrealloc(rt->programs,sizeof(Program*)*rt->pcap);} rt->programs[rt->pcount++]=p; return p; }
-static void program_free(Program *p){ int i; if(!p) return; for(i=0;i<p->count;i++) free(p->lines[i]); free(p->lines); free(p->path); free(p); }
-static void runtime_programs_free(Runtime *rt){ int i; if(!rt) return; for(i=0;i<rt->pcount;i++) program_free(rt->programs[i]); free(rt->programs); rt->programs=NULL; rt->pcount=rt->pcap=0; }
-static void runtime_vars_free(Var **head){ Var *v,*next; if(!head) return; for(v=*head;v;v=next){ next=v->next; free(v->name); value_free(v->val); free(v); } *head=NULL; }
-static void runtime_free(Runtime *rt){ Function *fn,*fn_next; Module *m,*m_next; ClassDef *c,*c_next; FieldDef *field,*field_next; int i; if(!rt) return; runtime_programs_free(rt); runtime_vars_free(&rt->locals); runtime_vars_free(&rt->globals); for(fn=rt->funcs;fn;fn=fn_next){ fn_next=fn->next; free(fn->name); for(i=0;i<fn->pcnt;i++) free(fn->params[i]); free(fn->params); free(fn); } rt->funcs=NULL; for(m=rt->modules;m;m=m_next){ m_next=m->next; free(m->ns); free(m->kind); free(m); } rt->modules=NULL; for(c=rt->classes;c;c=c_next){ c_next=c->next; for(field=c->fields;field;field=field_next){ field_next=field->next; free(field->name); free(field->type); free(field); } free(c->name); free(c); } rt->classes=NULL; for(i=0;i<rt->import_depth;i++) free(rt->import_stack[i]); free(rt->import_stack); rt->import_stack=NULL; rt->import_depth=0; free(rt->captured.s); rt->captured.s=NULL; value_free(rt->ret); rt->ret=v_none(); free(rt->err_msg); free(rt->err_file); rt->err_msg=NULL; rt->err_file=NULL; }
-static void scan_functions(Runtime *rt,Program *p,const char *prefix);
-static void line_word(Program *p,int i,char *up,size_t n){ char tmp[512],w[128]; strncpy(tmp,p->lines[i],sizeof(tmp)-1); tmp[sizeof(tmp)-1]=0; first_word(trim_inplace(tmp),w,sizeof(w)); upper_copy(up,w,n); }
-static int line_is_block_opener(Program *p,int i,const char *up){ char *t; char tmp[512]; if(ci_eq(up,"IF")||ci_eq(up,"FOR")||ci_eq(up,"REPEAT")||ci_eq(up,"TEACH")||ci_eq(up,"TRY")||ci_eq(up,"COMMENT")||ci_eq(up,"CLASS")) return 1; if(ci_eq(up,"DO")){ strncpy(tmp,p->lines[i],sizeof(tmp)-1); tmp[sizeof(tmp)-1]=0; t=trim_inplace(tmp); return find_word_ci(t,"TIMES")!=NULL; } if(ci_eq(up,"START")){ strncpy(tmp,p->lines[i],sizeof(tmp)-1); tmp[sizeof(tmp)-1]=0; t=trim_inplace(tmp); return starts_ci(t+5," TASK"); } return 0; }
-static int line_is_block_closer(const char *up){ return ci_eq(up,"END")||ci_eq(up,"ENDIF")||ci_eq(up,"DONE")||ci_eq(up,"UNTIL")||ci_eq(up,"LEARNED")||ci_eq(up,"ENDTRY")||ci_eq(up,"ENDCOMMENT")||ci_eq(up,"ENDCLASS")||ci_eq(up,"ENDTASK"); }
-static int match_block(Program *p,int start,const char *open,const char *close,const char *mid,int *midpos){ int depth=0,i; char up[64]; if(midpos) *midpos=-1; for(i=start;i<p->count;i++){ line_word(p,i,up,sizeof(up)); if(line_is_block_opener(p,i,up)){ depth++; continue; } if(mid&&ci_eq(up,mid)&&depth==1){ if(midpos&&*midpos<0) *midpos=i; continue; } if(depth>1 && line_is_block_closer(up)){ depth--; continue; } if(depth==1 && (ci_eq(up,close)||ci_eq(up,"END"))) { depth--; if(depth==0) return i; } } return -1; }
-static int find_done(Program *p,int start){ int depth=0,i; char up[64]; for(i=start;i<p->count;i++){ line_word(p,i,up,sizeof(up)); if(line_is_block_opener(p,i,up)){ depth++; continue; } if(line_is_block_closer(up)){ depth--; if(depth==0) return i; } } return -1; }
+static Program *load_program(Runtime *rt, const char *path) {
+    FILE *f;
+    char buf[4096];
+    Program *p;
+    int i;
+    for (i = 0; i < rt->pcount; i++)
+        if (strcmp(rt->programs[i]->path, path) == 0)
+            return rt->programs[i];
+    f = fopen(path, "rb");
+    if (!f)
+        return NULL;
+    p = (Program *)xmalloc(sizeof(Program));
+    p->path = xstrdup(path);
+    p->lines = NULL;
+    p->count = p->cap = 0;
+    while (fgets(buf, sizeof(buf), f)) {
+        size_t n = strlen(buf);
+        while (n && (buf[n - 1] == '\n' || buf[n - 1] == '\r'))
+            buf[--n] = 0;
+        if (p->count >= p->cap) {
+            p->cap = p->cap ? p->cap * 2 : 32;
+            p->lines = (char **)xrealloc(p->lines, sizeof(char *) * p->cap);
+        }
+        p->lines[p->count++] = xstrdup(buf);
+    }
+    fclose(f);
+    if (rt->pcount >= rt->pcap) {
+        rt->pcap = rt->pcap ? rt->pcap * 2 : 16;
+        rt->programs = (Program **)xrealloc(rt->programs, sizeof(Program *) * rt->pcap);
+    }
+    rt->programs[rt->pcount++] = p;
+    return p;
+}
+static void program_free(Program *p) {
+    int i;
+    if (!p)
+        return;
+    for (i = 0; i < p->count; i++)
+        free(p->lines[i]);
+    free(p->lines);
+    free(p->path);
+    free(p);
+}
+static void runtime_programs_free(Runtime *rt) {
+    int i;
+    if (!rt)
+        return;
+    for (i = 0; i < rt->pcount; i++)
+        program_free(rt->programs[i]);
+    free(rt->programs);
+    rt->programs = NULL;
+    rt->pcount = rt->pcap = 0;
+}
+static void runtime_vars_free(Var **head) {
+    Var *v, *next;
+    if (!head)
+        return;
+    for (v = *head; v; v = next) {
+        next = v->next;
+        free(v->name);
+        value_free(v->val);
+        free(v);
+    }
+    *head = NULL;
+}
+static void runtime_free(Runtime *rt) {
+    Function *fn, *fn_next;
+    Module *m, *m_next;
+    ClassDef *c, *c_next;
+    FieldDef *field, *field_next;
+    int i;
+    if (!rt)
+        return;
+    runtime_programs_free(rt);
+    runtime_vars_free(&rt->locals);
+    runtime_vars_free(&rt->globals);
+    for (fn = rt->funcs; fn; fn = fn_next) {
+        fn_next = fn->next;
+        free(fn->name);
+        for (i = 0; i < fn->pcnt; i++)
+            free(fn->params[i]);
+        free(fn->params);
+        free(fn);
+    }
+    rt->funcs = NULL;
+    for (m = rt->modules; m; m = m_next) {
+        m_next = m->next;
+        free(m->ns);
+        free(m->kind);
+        free(m);
+    }
+    rt->modules = NULL;
+    for (c = rt->classes; c; c = c_next) {
+        c_next = c->next;
+        for (field = c->fields; field; field = field_next) {
+            field_next = field->next;
+            free(field->name);
+            free(field->type);
+            free(field);
+        }
+        free(c->name);
+        free(c);
+    }
+    rt->classes = NULL;
+    for (i = 0; i < rt->import_depth; i++)
+        free(rt->import_stack[i]);
+    free(rt->import_stack);
+    rt->import_stack = NULL;
+    rt->import_depth = 0;
+    free(rt->captured.s);
+    rt->captured.s = NULL;
+    value_free(rt->ret);
+    rt->ret = v_none();
+    free(rt->err_msg);
+    free(rt->err_file);
+    rt->err_msg = NULL;
+    rt->err_file = NULL;
+}
+static void scan_functions(Runtime *rt, Program *p, const char *prefix);
+static void line_word(Program *p, int i, char *up, size_t n) {
+    char tmp[512], w[128];
+    strncpy(tmp, p->lines[i], sizeof(tmp) - 1);
+    tmp[sizeof(tmp) - 1] = 0;
+    first_word(trim_inplace(tmp), w, sizeof(w));
+    upper_copy(up, w, n);
+}
+static int line_is_block_opener(Program *p, int i, const char *up) {
+    char *t;
+    char tmp[512];
+    if (ci_eq(up, "IF") || ci_eq(up, "FOR") || ci_eq(up, "REPEAT") || ci_eq(up, "TEACH") ||
+        ci_eq(up, "TRY") || ci_eq(up, "COMMENT") || ci_eq(up, "CLASS"))
+        return 1;
+    if (ci_eq(up, "DO")) {
+        strncpy(tmp, p->lines[i], sizeof(tmp) - 1);
+        tmp[sizeof(tmp) - 1] = 0;
+        t = trim_inplace(tmp);
+        return find_word_ci(t, "TIMES") != NULL;
+    }
+    if (ci_eq(up, "START")) {
+        strncpy(tmp, p->lines[i], sizeof(tmp) - 1);
+        tmp[sizeof(tmp) - 1] = 0;
+        t = trim_inplace(tmp);
+        return starts_ci(t + 5, " TASK");
+    }
+    return 0;
+}
+static int line_is_block_closer(const char *up) {
+    return ci_eq(up, "END") || ci_eq(up, "ENDIF") || ci_eq(up, "DONE") || ci_eq(up, "UNTIL") ||
+           ci_eq(up, "LEARNED") || ci_eq(up, "ENDTRY") || ci_eq(up, "ENDCOMMENT") ||
+           ci_eq(up, "ENDCLASS") || ci_eq(up, "ENDTASK");
+}
+static int match_block(Program *p, int start, const char *open, const char *close, const char *mid,
+                       int *midpos) {
+    int depth = 0, i;
+    char up[64];
+    if (midpos)
+        *midpos = -1;
+    for (i = start; i < p->count; i++) {
+        line_word(p, i, up, sizeof(up));
+        if (line_is_block_opener(p, i, up)) {
+            depth++;
+            continue;
+        }
+        if (mid && ci_eq(up, mid) && depth == 1) {
+            if (midpos && *midpos < 0)
+                *midpos = i;
+            continue;
+        }
+        if (depth > 1 && line_is_block_closer(up)) {
+            depth--;
+            continue;
+        }
+        if (depth == 1 && (ci_eq(up, close) || ci_eq(up, "END"))) {
+            depth--;
+            if (depth == 0)
+                return i;
+        }
+    }
+    return -1;
+}
+static int find_done(Program *p, int start) {
+    int depth = 0, i;
+    char up[64];
+    for (i = start; i < p->count; i++) {
+        line_word(p, i, up, sizeof(up));
+        if (line_is_block_opener(p, i, up)) {
+            depth++;
+            continue;
+        }
+        if (line_is_block_closer(up)) {
+            depth--;
+            if (depth == 0)
+                return i;
+        }
+    }
+    return -1;
+}
 
 /* ---------- JSON ---------- */
-typedef struct { const char *s; } JsonP;
-static void jp_ws(JsonP *j){ while(*j->s&&isspace((unsigned char)*j->s)) j->s++; }
-static char *jp_string(JsonP *j){ Str b; str_init(&b); jp_ws(j); if(*j->s!='"') return xstrdup(""); j->s++; while(*j->s&&*j->s!='"'){ if(*j->s=='\\'){ j->s++; if(*j->s=='n') str_ch(&b,'\n'); else if(*j->s=='t') str_ch(&b,'\t'); else if(*j->s=='r') str_ch(&b,'\r'); else if(*j->s) str_ch(&b,*j->s); if(*j->s) j->s++; } else str_ch(&b,*j->s++); } if(*j->s=='"') j->s++; return str_take(&b); }
+typedef struct {
+    const char *s;
+} JsonP;
+static void jp_ws(JsonP *j) {
+    while (*j->s && isspace((unsigned char)*j->s))
+        j->s++;
+}
+static char *jp_string(JsonP *j) {
+    Str b;
+    str_init(&b);
+    jp_ws(j);
+    if (*j->s != '"')
+        return xstrdup("");
+    j->s++;
+    while (*j->s && *j->s != '"') {
+        if (*j->s == '\\') {
+            j->s++;
+            if (*j->s == 'n')
+                str_ch(&b, '\n');
+            else if (*j->s == 't')
+                str_ch(&b, '\t');
+            else if (*j->s == 'r')
+                str_ch(&b, '\r');
+            else if (*j->s)
+                str_ch(&b, *j->s);
+            if (*j->s)
+                j->s++;
+        } else
+            str_ch(&b, *j->s++);
+    }
+    if (*j->s == '"')
+        j->s++;
+    return str_take(&b);
+}
 static Value jp_value(JsonP *j);
-static Value jp_array(JsonP *j){ Value arr=v_list(); jp_ws(j); if(*j->s=='[') j->s++; jp_ws(j); if(*j->s==']'){ j->s++; return arr; } while(*j->s){ Value v=jp_value(j); list_add(arr.list,v); jp_ws(j); if(*j->s==','){ j->s++; continue;} if(*j->s==']'){ j->s++; break;} } return arr; }
-static Value jp_object(JsonP *j){ Value obj=v_map(); jp_ws(j); if(*j->s=='{') j->s++; jp_ws(j); if(*j->s=='}'){ j->s++; return obj; } while(*j->s){ char *k=jp_string(j); jp_ws(j); if(*j->s==':') j->s++; Value v=jp_value(j); map_put(obj.map,k,v); free(k); jp_ws(j); if(*j->s==','){ j->s++; continue;} if(*j->s=='}'){ j->s++; break;} } return obj; }
-static Value jp_value(JsonP *j){ char *end; jp_ws(j); if(*j->s=='"'){ char *s=jp_string(j); Value v=v_str(s); free(s); return v;} if(*j->s=='{') return jp_object(j); if(*j->s=='[') return jp_array(j); if(!strncmp(j->s,"true",4)){ j->s+=4; return v_bool(1);} if(!strncmp(j->s,"false",5)){ j->s+=5; return v_bool(0);} if(!strncmp(j->s,"null",4)){ j->s+=4; return v_none();} end=NULL; { double d=strtod(j->s,&end); if(end&&end!=j->s){ j->s=end; return v_num(d);} } return v_none(); }
-static Value parse_json_text(const char *s){ JsonP j; j.s=s; return jp_value(&j); }
-static void json_escape(Str *b,const char *s){ str_ch(b,'"'); while(s&&*s){ if(*s=='"'){ str_add(b,"\\\""); } else if(*s=='\\'){ str_add(b,"\\\\"); } else if(*s=='\n'){ str_add(b,"\\n"); } else str_ch(b,*s); s++; } str_ch(b,'"'); }
-static void json_write(Str *b,Value v,int pretty,int indent);
-static void indent_add(Str *b,int n){ int i; for(i=0;i<n;i++) str_ch(b,' '); }
-static void json_write(Str *b,Value v,int pretty,int indent){ int i; char *s; if(v.type==V_STR){ json_escape(b,v.str); } else if(v.type==V_NUM){ s=num_to_string(v.num); str_add(b,s); free(s); } else if(v.type==V_BOOL){ str_add(b,v.boolean?"true":"false"); } else if(v.type==V_NONE){ str_add(b,"null"); } else if(v.type==V_LIST){ str_ch(b,'['); if(pretty&&v.list->count) str_ch(b,'\n'); for(i=0;i<v.list->count;i++){ if(pretty) indent_add(b,indent+2); json_write(b,v.list->items[i],pretty,indent+2); if(i+1<v.list->count) str_ch(b,','); if(pretty) str_ch(b,'\n'); } if(pretty&&v.list->count) indent_add(b,indent); str_ch(b,']'); } else if(v.type==V_MAP){ str_ch(b,'{'); if(pretty&&v.map->count) str_ch(b,'\n'); for(i=0;i<v.map->count;i++){ if(pretty) indent_add(b,indent+2); json_escape(b,v.map->keys[i]); str_ch(b,':'); if(pretty) str_ch(b,' '); json_write(b,v.map->vals[i],pretty,indent+2); if(i+1<v.map->count) str_ch(b,','); if(pretty) str_ch(b,'\n'); } if(pretty&&v.map->count) indent_add(b,indent); str_ch(b,'}'); } }
-static char *make_json(Value v,int pretty){ Str b; str_init(&b); json_write(&b,v,pretty,0); return str_take(&b); }
+static Value jp_array(JsonP *j) {
+    Value arr = v_list();
+    jp_ws(j);
+    if (*j->s == '[')
+        j->s++;
+    jp_ws(j);
+    if (*j->s == ']') {
+        j->s++;
+        return arr;
+    }
+    while (*j->s) {
+        Value v = jp_value(j);
+        list_add(arr.list, v);
+        jp_ws(j);
+        if (*j->s == ',') {
+            j->s++;
+            continue;
+        }
+        if (*j->s == ']') {
+            j->s++;
+            break;
+        }
+    }
+    return arr;
+}
+static Value jp_object(JsonP *j) {
+    Value obj = v_map();
+    jp_ws(j);
+    if (*j->s == '{')
+        j->s++;
+    jp_ws(j);
+    if (*j->s == '}') {
+        j->s++;
+        return obj;
+    }
+    while (*j->s) {
+        char *k = jp_string(j);
+        Value v;
+        jp_ws(j);
+        if (*j->s == ':')
+            j->s++;
+        v = jp_value(j);
+        map_put(obj.map, k, v);
+        free(k);
+        jp_ws(j);
+        if (*j->s == ',') {
+            j->s++;
+            continue;
+        }
+        if (*j->s == '}') {
+            j->s++;
+            break;
+        }
+    }
+    return obj;
+}
+static Value jp_value(JsonP *j) {
+    char *end;
+    jp_ws(j);
+    if (*j->s == '"') {
+        char *s = jp_string(j);
+        Value v = v_str(s);
+        free(s);
+        return v;
+    }
+    if (*j->s == '{')
+        return jp_object(j);
+    if (*j->s == '[')
+        return jp_array(j);
+    if (!strncmp(j->s, "true", 4)) {
+        j->s += 4;
+        return v_bool(1);
+    }
+    if (!strncmp(j->s, "false", 5)) {
+        j->s += 5;
+        return v_bool(0);
+    }
+    if (!strncmp(j->s, "null", 4)) {
+        j->s += 4;
+        return v_none();
+    }
+    end = NULL;
+    {
+        double d = strtod(j->s, &end);
+        if (end && end != j->s) {
+            j->s = end;
+            return v_num(d);
+        }
+    }
+    return v_none();
+}
+static Value parse_json_text(const char *s) {
+    JsonP j;
+    j.s = s;
+    return jp_value(&j);
+}
+static void json_escape(Str *b, const char *s) {
+    str_ch(b, '"');
+    while (s && *s) {
+        if (*s == '"') {
+            str_add(b, "\\\"");
+        } else if (*s == '\\') {
+            str_add(b, "\\\\");
+        } else if (*s == '\n') {
+            str_add(b, "\\n");
+        } else
+            str_ch(b, *s);
+        s++;
+    }
+    str_ch(b, '"');
+}
+static void json_write(Str *b, Value v, int pretty, int indent);
+static void indent_add(Str *b, int n) {
+    int i;
+    for (i = 0; i < n; i++)
+        str_ch(b, ' ');
+}
+static void json_write(Str *b, Value v, int pretty, int indent) {
+    int i;
+    char *s;
+    if (v.type == V_STR) {
+        json_escape(b, v.str);
+    } else if (v.type == V_NUM) {
+        s = num_to_string(v.num);
+        str_add(b, s);
+        free(s);
+    } else if (v.type == V_BOOL) {
+        str_add(b, v.boolean ? "true" : "false");
+    } else if (v.type == V_NONE) {
+        str_add(b, "null");
+    } else if (v.type == V_LIST) {
+        str_ch(b, '[');
+        if (pretty && v.list->count)
+            str_ch(b, '\n');
+        for (i = 0; i < v.list->count; i++) {
+            if (pretty)
+                indent_add(b, indent + 2);
+            json_write(b, v.list->items[i], pretty, indent + 2);
+            if (i + 1 < v.list->count)
+                str_ch(b, ',');
+            if (pretty)
+                str_ch(b, '\n');
+        }
+        if (pretty && v.list->count)
+            indent_add(b, indent);
+        str_ch(b, ']');
+    } else if (v.type == V_MAP) {
+        str_ch(b, '{');
+        if (pretty && v.map->count)
+            str_ch(b, '\n');
+        for (i = 0; i < v.map->count; i++) {
+            if (pretty)
+                indent_add(b, indent + 2);
+            json_escape(b, v.map->keys[i]);
+            str_ch(b, ':');
+            if (pretty)
+                str_ch(b, ' ');
+            json_write(b, v.map->vals[i], pretty, indent + 2);
+            if (i + 1 < v.map->count)
+                str_ch(b, ',');
+            if (pretty)
+                str_ch(b, '\n');
+        }
+        if (pretty && v.map->count)
+            indent_add(b, indent);
+        str_ch(b, '}');
+    }
+}
+static char *make_json(Value v, int pretty) {
+    Str b;
+    str_init(&b);
+    json_write(&b, v, pretty, 0);
+    return str_take(&b);
+}
 
 /* ---------- stdlib built-ins ---------- */
-static int builtin_required_args(const char *kind,const char *fn,const char **shape){
- if(strcmp(kind,"text")==0){
-  if(strcmp(fn,"upper")==0||strcmp(fn,"lower")==0){ if(shape) *shape="value"; return 1; }
-  if(strcmp(fn,"contains")==0||strcmp(fn,"endswith")==0||strcmp(fn,"split2")==0){ if(shape) *shape="text, part"; return 2; }
- }
- if(strcmp(kind,"math")==0){
-  if(strcmp(fn,"abs")==0){ if(shape) *shape="value"; return 1; }
-  if(strcmp(fn,"clamp")==0){ if(shape) *shape="value, lower, upper"; return 3; }
- }
- if(strcmp(kind,"random")==0){
-  if(strcmp(fn,"seed")==0){ if(shape) *shape="value"; return 1; }
-  if(strcmp(fn,"int")==0){ if(shape) *shape="lower, upper"; return 2; }
- }
- if(strcmp(kind,"csv")==0){
-  if(strcmp(fn,"read")==0){ if(shape) *shape="text"; return 1; }
-  if(strcmp(fn,"write")==0){ if(shape) *shape="rows"; return 1; }
- }
- if(strcmp(kind,"path")==0){
-  if(strcmp(fn,"join")==0){ if(shape) *shape="folder, name"; return 2; }
-  if(strcmp(fn,"basename")==0||strcmp(fn,"dirname")==0||strcmp(fn,"ext")==0||strcmp(fn,"stem")==0||strcmp(fn,"absolute")==0){ if(shape) *shape="path"; return 1; }
- }
- if(strcmp(kind,"collections")==0){
-  if(strcmp(fn,"length")==0||strcmp(fn,"reversed")==0||strcmp(fn,"keys")==0||strcmp(fn,"values")==0){ if(shape) *shape="collection"; return 1; }
-  if(strcmp(fn,"contains")==0||strcmp(fn,"index")==0||strcmp(fn,"has_key")==0){ if(shape) *shape="collection, value"; return 2; }
-  if(strcmp(fn,"join")==0){ if(shape) *shape="collection, separator"; return 2; }
-  if(strcmp(fn,"get")==0){ if(shape) *shape="map, key"; return 2; }
- }
- return 0;
+static int builtin_required_args(const char *kind, const char *fn, const char **shape) {
+    if (strcmp(kind, "text") == 0) {
+        if (strcmp(fn, "upper") == 0 || strcmp(fn, "lower") == 0) {
+            if (shape)
+                *shape = "value";
+            return 1;
+        }
+        if (strcmp(fn, "contains") == 0 || strcmp(fn, "endswith") == 0 ||
+            strcmp(fn, "split2") == 0) {
+            if (shape)
+                *shape = "text, part";
+            return 2;
+        }
+    }
+    if (strcmp(kind, "math") == 0) {
+        if (strcmp(fn, "abs") == 0) {
+            if (shape)
+                *shape = "value";
+            return 1;
+        }
+        if (strcmp(fn, "clamp") == 0) {
+            if (shape)
+                *shape = "value, lower, upper";
+            return 3;
+        }
+    }
+    if (strcmp(kind, "random") == 0) {
+        if (strcmp(fn, "seed") == 0) {
+            if (shape)
+                *shape = "value";
+            return 1;
+        }
+        if (strcmp(fn, "int") == 0) {
+            if (shape)
+                *shape = "lower, upper";
+            return 2;
+        }
+    }
+    if (strcmp(kind, "csv") == 0) {
+        if (strcmp(fn, "read") == 0) {
+            if (shape)
+                *shape = "text";
+            return 1;
+        }
+        if (strcmp(fn, "write") == 0) {
+            if (shape)
+                *shape = "rows";
+            return 1;
+        }
+    }
+    if (strcmp(kind, "path") == 0) {
+        if (strcmp(fn, "join") == 0) {
+            if (shape)
+                *shape = "folder, name";
+            return 2;
+        }
+        if (strcmp(fn, "basename") == 0 || strcmp(fn, "dirname") == 0 || strcmp(fn, "ext") == 0 ||
+            strcmp(fn, "stem") == 0 || strcmp(fn, "absolute") == 0) {
+            if (shape)
+                *shape = "path";
+            return 1;
+        }
+    }
+    if (strcmp(kind, "collections") == 0) {
+        if (strcmp(fn, "length") == 0 || strcmp(fn, "reversed") == 0 || strcmp(fn, "keys") == 0 ||
+            strcmp(fn, "values") == 0) {
+            if (shape)
+                *shape = "collection";
+            return 1;
+        }
+        if (strcmp(fn, "contains") == 0 || strcmp(fn, "index") == 0 || strcmp(fn, "has_key") == 0) {
+            if (shape)
+                *shape = "collection, value";
+            return 2;
+        }
+        if (strcmp(fn, "join") == 0) {
+            if (shape)
+                *shape = "collection, separator";
+            return 2;
+        }
+        if (strcmp(fn, "get") == 0) {
+            if (shape)
+                *shape = "map, key";
+            return 2;
+        }
+    }
+    return 0;
 }
-static Value builtin_call(Runtime *rt,const char *name,Value *args,int argc,int *handled){ char ns[128], fn[128]; const char *dot=strrchr(name,'.'); const char *kind=NULL; const char *shape=NULL; int required; *handled=0; if(!dot) return v_none(); snprintf(ns,sizeof(ns),"%.*s",(int)(dot-name),name); snprintf(fn,sizeof(fn),"%s",dot+1); kind=module_kind(rt,ns); if(!kind) return v_none(); *handled=1; required=builtin_required_args(kind,fn,&shape); if(required>argc){ rt_error(rt,"",0,"%s.%s needs %d argument%s, but got %d. Try: CALL %s.%s WITH %s.",ns,fn,required,required==1?"":"s",argc,ns,fn,shape?shape:"the required values"); return v_none(); }
- if(strcmp(kind,"text")==0){ char *a=argc>0?v_to_string(args[0]):xstrdup(""); char *b=argc>1?v_to_string(args[1]):xstrdup(""); int i; if(strcmp(fn,"upper")==0){ for(i=0;a[i];i++) a[i]=(char)toupper((unsigned char)a[i]); Value r=v_str(a); free(a); free(b); return r; } if(strcmp(fn,"lower")==0){ for(i=0;a[i];i++) a[i]=(char)tolower((unsigned char)a[i]); Value r=v_str(a); free(a); free(b); return r; } if(strcmp(fn,"contains")==0){ Value r=v_bool(strstr(a,b)!=NULL); free(a); free(b); return r; } if(strcmp(fn,"endswith")==0){ size_t la=strlen(a), lb=strlen(b); Value r=v_bool(lb<=la && strcmp(a+la-lb,b)==0); free(a); free(b); return r; } if(strcmp(fn,"split2")==0){ char *pos=strstr(a,b); Value arr=v_list(); if(pos){ char *left=substr(a,pos); list_add(arr.list,v_str(left)); list_add(arr.list,v_str(pos+strlen(b))); free(left); } else list_add(arr.list,v_str(a)); free(a); free(b); return arr; } free(a); free(b); }
- if(strcmp(kind,"math")==0){ if(strcmp(fn,"abs")==0) return v_num(fabs(v_number(args[0]))); if(strcmp(fn,"clamp")==0){ double x=v_number(args[0]), lo=v_number(args[1]), hi=v_number(args[2]); if(x<lo)x=lo; if(x>hi)x=hi; return v_num(x); } }
- if(strcmp(kind,"random")==0){ if(strcmp(fn,"seed")==0){ srand((unsigned)v_number(args[0])); return v_none(); } if(strcmp(fn,"int")==0){ int a=(int)v_number(args[0]), b=(int)v_number(args[1]); long long span, r; if(a>b){ rt_error(rt,"",0,"random.int needs the lower bound to be less than or equal to the upper bound."); return v_none(); } span=(long long)b-(long long)a+1; r=(long long)a + ((long long)rand() % span); return v_num((double)r); } }
- if(strcmp(kind,"csv")==0){ if(strcmp(fn,"read")==0){ char *txt=argc>0?v_to_string(args[0]):xstrdup(""); char *del=argc>1?v_to_string(args[1]):xstrdup(","); char d=del[0]?del[0]:','; Value rows=v_list(); const char *p=txt; while(*p){ Value row=v_list(); Str field; str_init(&field); int inq=0; while(*p&&*p!='\n'&&*p!='\r'){ if(*p=='"'){ if(inq&&p[1]=='"'){ str_ch(&field,'"'); p+=2; continue;} inq=!inq; p++; continue;} if(!inq&&*p==d){ list_add(row.list,v_str(field.s?field.s:"")); field.len=0; if(field.s) field.s[0]=0; p++; continue;} str_ch(&field,*p++); } list_add(row.list,v_str(field.s?field.s:"")); free(field.s); list_add(rows.list,row); while(*p=='\r'||*p=='\n') p++; } free(txt); free(del); return rows; }
-  if(strcmp(fn,"write")==0){ char *del=argc>1?v_to_string(args[1]):xstrdup(","); char d=del[0]?del[0]:','; Str out; str_init(&out); int i,j; if(argc>0&&args[0].type==V_LIST){ for(i=0;i<args[0].list->count;i++){ Value row=args[0].list->items[i]; if(row.type==V_LIST){ for(j=0;j<row.list->count;j++){ char *f=v_to_string(row.list->items[j]); int quote=strchr(f,d)||strchr(f,'\n')||strchr(f,'"'); if(j) str_ch(&out,d); if(quote){ const char *q=f; str_ch(&out,'"'); while(*q){ if(*q=='"') str_add(&out,"\"\""); else str_ch(&out,*q); q++; } str_ch(&out,'"'); } else str_add(&out,f); free(f); } } str_ch(&out,'\n'); } } free(del); return v_str(out.s?out.s:""); } }
- if(strcmp(kind,"path")==0){
-  char *a=argc>0?v_to_string(args[0]):xstrdup("");
-  if(strcmp(fn,"join")==0){ char *b=argc>1?v_to_string(args[1]):xstrdup(""); Str out; size_t n=strlen(a); str_init(&out); str_add(&out,a); if(a[0]&&b[0]&&a[n-1]!='/'&&a[n-1]!='\\') str_ch(&out,'/'); while(*b=='/'||*b=='\\') b++; str_add(&out,b); free(a); return v_str(out.s?out.s:""); }
-  if(strcmp(fn,"basename")==0){ char *slash=strrchr(a,'/'), *back=strrchr(a,'\\'), *cut=slash; if(back&&(!cut||back>cut)) cut=back; Value r=v_str(cut?cut+1:a); free(a); return r; }
-  if(strcmp(fn,"dirname")==0){ char *slash=strrchr(a,'/'), *back=strrchr(a,'\\'), *cut=slash; if(back&&(!cut||back>cut)) cut=back; if(!cut){ free(a); return v_str(""); } if(cut==a){ free(a); return v_str("/"); } *cut=0; { Value r=v_str(a); free(a); return r; } }
-  if(strcmp(fn,"ext")==0||strcmp(fn,"stem")==0){ char *slash=strrchr(a,'/'), *back=strrchr(a,'\\'), *base=slash; char *dot; if(back&&(!base||back>base)) base=back; base=base?base+1:a; dot=strrchr(base,'.'); if(!dot||dot==base){ Value r=v_str(strcmp(fn,"stem")==0?base:""); free(a); return r; } if(strcmp(fn,"ext")==0){ Value r=v_str(dot+1); free(a); return r; } *dot=0; { Value r=v_str(base); free(a); return r; } }
-  if(strcmp(fn,"absolute")==0){ int yes=(a[0]=='/'||a[0]=='\\'||((isalpha((unsigned char)a[0]))&&a[1]==':')); free(a); return v_bool(yes); }
-  free(a);
- }
- if(strcmp(kind,"collections")==0){
-  Value source=argc>0?args[0]:v_none();
-  if(strcmp(fn,"length")==0){ if(source.type==V_LIST&&source.list) return v_num(source.list->count); if(source.type==V_MAP&&source.map) return v_num(source.map->count); return v_num(0); }
-  if(strcmp(fn,"contains")==0&&source.type==V_LIST&&source.list){ int i; Value needle=argc>1?args[1]:v_none(); for(i=0;i<source.list->count;i++) if(value_compare(source.list->items[i],needle)==0) return v_bool(1); return v_bool(0); }
-  if(strcmp(fn,"index")==0&&source.type==V_LIST&&source.list){ int i; Value needle=argc>1?args[1]:v_none(); for(i=0;i<source.list->count;i++) if(value_compare(source.list->items[i],needle)==0) return v_num(i+1); return v_num(0); }
-  if(strcmp(fn,"join")==0&&source.type==V_LIST&&source.list){ char *separator=argc>1?v_to_string(args[1]):xstrdup(""); Str out; int i; str_init(&out); for(i=0;i<source.list->count;i++){ char *part=v_to_string(source.list->items[i]); if(i) str_add(&out,separator); str_add(&out,part); free(part); } free(separator); return v_str(out.s?out.s:""); }
-  if(strcmp(fn,"reversed")==0&&source.type==V_LIST&&source.list){ Value out=v_list(); int i; for(i=source.list->count-1;i>=0;i--) list_add(out.list,source.list->items[i]); return out; }
-  if(strcmp(fn,"has_key")==0&&source.type==V_MAP&&source.map){ char *key=argc>1?v_to_string(args[1]):xstrdup(""); int found=map_index(source.map,key)>=0; free(key); return v_bool(found); }
-  if(strcmp(fn,"get")==0&&source.type==V_MAP&&source.map){ char *key=argc>1?v_to_string(args[1]):xstrdup(""); int index=map_index(source.map,key); Value fallback=argc>2?args[2]:v_none(); Value r=index>=0?v_copy(source.map->vals[index]):v_copy(fallback); free(key); return r; }
-  if(strcmp(fn,"keys")==0&&source.type==V_MAP&&source.map){ Value out=v_list(); int i; for(i=0;i<source.map->count;i++) list_add(out.list,v_str(source.map->keys[i])); return out; }
-  if(strcmp(fn,"values")==0&&source.type==V_MAP&&source.map){ Value out=v_list(); int i; for(i=0;i<source.map->count;i++) list_add(out.list,source.map->vals[i]); return out; }
- }
- return v_none(); }
+static Value builtin_call(Runtime *rt, const char *name, Value *args, int argc, int *handled) {
+    char ns[128], fn[128];
+    const char *dot = strrchr(name, '.');
+    const char *kind = NULL;
+    const char *shape = NULL;
+    int required;
+    *handled = 0;
+    if (!dot)
+        return v_none();
+    claro_snprintf(ns, sizeof(ns), "%.*s", (int)(dot - name), name);
+    claro_snprintf(fn, sizeof(fn), "%s", dot + 1);
+    kind = module_kind(rt, ns);
+    if (!kind)
+        return v_none();
+    *handled = 1;
+    required = builtin_required_args(kind, fn, &shape);
+    if (required > argc) {
+        rt_error(rt, "", 0, "%s.%s needs %d argument%s, but got %d. Try: CALL %s.%s WITH %s.", ns,
+                 fn, required, required == 1 ? "" : "s", argc, ns, fn,
+                 shape ? shape : "the required values");
+        return v_none();
+    }
+    if (strcmp(kind, "text") == 0) {
+        char *a = argc > 0 ? v_to_string(args[0]) : xstrdup("");
+        char *b = argc > 1 ? v_to_string(args[1]) : xstrdup("");
+        int i;
+        if (strcmp(fn, "upper") == 0) {
+            Value r;
+            for (i = 0; a[i]; i++)
+                a[i] = (char)toupper((unsigned char)a[i]);
+            r = v_str(a);
+            free(a);
+            free(b);
+            return r;
+        }
+        if (strcmp(fn, "lower") == 0) {
+            Value r;
+            for (i = 0; a[i]; i++)
+                a[i] = (char)tolower((unsigned char)a[i]);
+            r = v_str(a);
+            free(a);
+            free(b);
+            return r;
+        }
+        if (strcmp(fn, "contains") == 0) {
+            Value r = v_bool(strstr(a, b) != NULL);
+            free(a);
+            free(b);
+            return r;
+        }
+        if (strcmp(fn, "endswith") == 0) {
+            size_t la = strlen(a), lb = strlen(b);
+            Value r = v_bool(lb <= la && strcmp(a + la - lb, b) == 0);
+            free(a);
+            free(b);
+            return r;
+        }
+        if (strcmp(fn, "split2") == 0) {
+            char *pos = strstr(a, b);
+            Value arr = v_list();
+            if (pos) {
+                char *left = substr(a, pos);
+                list_add(arr.list, v_str(left));
+                list_add(arr.list, v_str(pos + strlen(b)));
+                free(left);
+            } else
+                list_add(arr.list, v_str(a));
+            free(a);
+            free(b);
+            return arr;
+        }
+        free(a);
+        free(b);
+    }
+    if (strcmp(kind, "math") == 0) {
+        if (strcmp(fn, "abs") == 0)
+            return v_num(fabs(v_number(args[0])));
+        if (strcmp(fn, "clamp") == 0) {
+            double x = v_number(args[0]), lo = v_number(args[1]), hi = v_number(args[2]);
+            if (x < lo)
+                x = lo;
+            if (x > hi)
+                x = hi;
+            return v_num(x);
+        }
+    }
+    if (strcmp(kind, "random") == 0) {
+        if (strcmp(fn, "seed") == 0) {
+            srand((unsigned)v_number(args[0]));
+            return v_none();
+        }
+        if (strcmp(fn, "int") == 0) {
+            int a = (int)v_number(args[0]), b = (int)v_number(args[1]);
+            double span, r;
+            if (a > b) {
+                rt_error(rt, "", 0,
+                         "random.int needs the lower bound to be less than or equal to the upper "
+                         "bound.");
+                return v_none();
+            }
+            span = (double)b - (double)a + 1.0;
+            r = (double)a + fmod((double)rand(), span);
+            return v_num((double)r);
+        }
+    }
+    if (strcmp(kind, "csv") == 0) {
+        if (strcmp(fn, "read") == 0) {
+            char *txt = argc > 0 ? v_to_string(args[0]) : xstrdup("");
+            char *del = argc > 1 ? v_to_string(args[1]) : xstrdup(",");
+            char d = del[0] ? del[0] : ',';
+            Value rows = v_list();
+            const char *p = txt;
+            while (*p) {
+                Value row = v_list();
+                Str field;
+                int inq = 0;
+                str_init(&field);
+                while (*p && *p != '\n' && *p != '\r') {
+                    if (*p == '"') {
+                        if (inq && p[1] == '"') {
+                            str_ch(&field, '"');
+                            p += 2;
+                            continue;
+                        }
+                        inq = !inq;
+                        p++;
+                        continue;
+                    }
+                    if (!inq && *p == d) {
+                        list_add(row.list, v_str(field.s ? field.s : ""));
+                        field.len = 0;
+                        if (field.s)
+                            field.s[0] = 0;
+                        p++;
+                        continue;
+                    }
+                    str_ch(&field, *p++);
+                }
+                list_add(row.list, v_str(field.s ? field.s : ""));
+                free(field.s);
+                list_add(rows.list, row);
+                while (*p == '\r' || *p == '\n')
+                    p++;
+            }
+            free(txt);
+            free(del);
+            return rows;
+        }
+        if (strcmp(fn, "write") == 0) {
+            char *del = argc > 1 ? v_to_string(args[1]) : xstrdup(",");
+            char d = del[0] ? del[0] : ',';
+            Str out;
+            int i, j;
+            str_init(&out);
+            if (argc > 0 && args[0].type == V_LIST) {
+                for (i = 0; i < args[0].list->count; i++) {
+                    Value row = args[0].list->items[i];
+                    if (row.type == V_LIST) {
+                        for (j = 0; j < row.list->count; j++) {
+                            char *f = v_to_string(row.list->items[j]);
+                            int quote = strchr(f, d) || strchr(f, '\n') || strchr(f, '"');
+                            if (j)
+                                str_ch(&out, d);
+                            if (quote) {
+                                const char *q = f;
+                                str_ch(&out, '"');
+                                while (*q) {
+                                    if (*q == '"')
+                                        str_add(&out, "\"\"");
+                                    else
+                                        str_ch(&out, *q);
+                                    q++;
+                                }
+                                str_ch(&out, '"');
+                            } else
+                                str_add(&out, f);
+                            free(f);
+                        }
+                    }
+                    str_ch(&out, '\n');
+                }
+            }
+            free(del);
+            return v_str(out.s ? out.s : "");
+        }
+    }
+    if (strcmp(kind, "path") == 0) {
+        char *a = argc > 0 ? v_to_string(args[0]) : xstrdup("");
+        if (strcmp(fn, "join") == 0) {
+            char *b = argc > 1 ? v_to_string(args[1]) : xstrdup("");
+            Str out;
+            size_t n = strlen(a);
+            str_init(&out);
+            str_add(&out, a);
+            if (a[0] && b[0] && a[n - 1] != '/' && a[n - 1] != '\\')
+                str_ch(&out, '/');
+            while (*b == '/' || *b == '\\')
+                b++;
+            str_add(&out, b);
+            free(a);
+            return v_str(out.s ? out.s : "");
+        }
+        if (strcmp(fn, "basename") == 0) {
+            char *slash = strrchr(a, '/'), *back = strrchr(a, '\\'), *cut = slash;
+            Value r;
+            if (back && (!cut || back > cut))
+                cut = back;
+            r = v_str(cut ? cut + 1 : a);
+            free(a);
+            return r;
+        }
+        if (strcmp(fn, "dirname") == 0) {
+            char *slash = strrchr(a, '/'), *back = strrchr(a, '\\'), *cut = slash;
+            if (back && (!cut || back > cut))
+                cut = back;
+            if (!cut) {
+                free(a);
+                return v_str("");
+            }
+            if (cut == a) {
+                free(a);
+                return v_str("/");
+            }
+            *cut = 0;
+            {
+                Value r = v_str(a);
+                free(a);
+                return r;
+            }
+        }
+        if (strcmp(fn, "ext") == 0 || strcmp(fn, "stem") == 0) {
+            char *slash = strrchr(a, '/'), *back = strrchr(a, '\\'), *base = slash;
+            char *dot;
+            if (back && (!base || back > base))
+                base = back;
+            base = base ? base + 1 : a;
+            dot = strrchr(base, '.');
+            if (!dot || dot == base) {
+                Value r = v_str(strcmp(fn, "stem") == 0 ? base : "");
+                free(a);
+                return r;
+            }
+            if (strcmp(fn, "ext") == 0) {
+                Value r = v_str(dot + 1);
+                free(a);
+                return r;
+            }
+            *dot = 0;
+            {
+                Value r = v_str(base);
+                free(a);
+                return r;
+            }
+        }
+        if (strcmp(fn, "absolute") == 0) {
+            int yes =
+                (a[0] == '/' || a[0] == '\\' || ((isalpha((unsigned char)a[0])) && a[1] == ':'));
+            free(a);
+            return v_bool(yes);
+        }
+        free(a);
+    }
+    if (strcmp(kind, "collections") == 0) {
+        Value source = argc > 0 ? args[0] : v_none();
+        if (strcmp(fn, "length") == 0) {
+            if (source.type == V_LIST && source.list)
+                return v_num(source.list->count);
+            if (source.type == V_MAP && source.map)
+                return v_num(source.map->count);
+            return v_num(0);
+        }
+        if (strcmp(fn, "contains") == 0 && source.type == V_LIST && source.list) {
+            int i;
+            Value needle = argc > 1 ? args[1] : v_none();
+            for (i = 0; i < source.list->count; i++)
+                if (value_compare(source.list->items[i], needle) == 0)
+                    return v_bool(1);
+            return v_bool(0);
+        }
+        if (strcmp(fn, "index") == 0 && source.type == V_LIST && source.list) {
+            int i;
+            Value needle = argc > 1 ? args[1] : v_none();
+            for (i = 0; i < source.list->count; i++)
+                if (value_compare(source.list->items[i], needle) == 0)
+                    return v_num(i + 1);
+            return v_num(0);
+        }
+        if (strcmp(fn, "join") == 0 && source.type == V_LIST && source.list) {
+            char *separator = argc > 1 ? v_to_string(args[1]) : xstrdup("");
+            Str out;
+            int i;
+            str_init(&out);
+            for (i = 0; i < source.list->count; i++) {
+                char *part = v_to_string(source.list->items[i]);
+                if (i)
+                    str_add(&out, separator);
+                str_add(&out, part);
+                free(part);
+            }
+            free(separator);
+            return v_str(out.s ? out.s : "");
+        }
+        if (strcmp(fn, "reversed") == 0 && source.type == V_LIST && source.list) {
+            Value out = v_list();
+            int i;
+            for (i = source.list->count - 1; i >= 0; i--)
+                list_add(out.list, source.list->items[i]);
+            return out;
+        }
+        if (strcmp(fn, "has_key") == 0 && source.type == V_MAP && source.map) {
+            char *key = argc > 1 ? v_to_string(args[1]) : xstrdup("");
+            int found = map_index(source.map, key) >= 0;
+            free(key);
+            return v_bool(found);
+        }
+        if (strcmp(fn, "get") == 0 && source.type == V_MAP && source.map) {
+            char *key = argc > 1 ? v_to_string(args[1]) : xstrdup("");
+            int index = map_index(source.map, key);
+            Value fallback = argc > 2 ? args[2] : v_none();
+            Value r = index >= 0 ? v_copy(source.map->vals[index]) : v_copy(fallback);
+            free(key);
+            return r;
+        }
+        if (strcmp(fn, "keys") == 0 && source.type == V_MAP && source.map) {
+            Value out = v_list();
+            int i;
+            for (i = 0; i < source.map->count; i++)
+                list_add(out.list, v_str(source.map->keys[i]));
+            return out;
+        }
+        if (strcmp(fn, "values") == 0 && source.type == V_MAP && source.map) {
+            Value out = v_list();
+            int i;
+            for (i = 0; i < source.map->count; i++)
+                list_add(out.list, source.map->vals[i]);
+            return out;
+        }
+    }
+    return v_none();
+}
 
 /* ---------- execution ---------- */
-static void exec_range(Runtime *rt,Program *p,int start,int end);
-static int parse_params(char *s,char ***out){ char **arr=NULL; int cnt=0,cap=0; char *tok=strtok(s,","); while(tok){ char *t=trim_inplace(tok); if(*t){ if(cnt>=cap){cap=cap?cap*2:4; arr=(char**)xrealloc(arr,sizeof(char*)*cap);} arr[cnt++]=xstrdup(t);} tok=strtok(NULL,","); } *out=arr; return cnt; }
-static void parse_teach_parts(char *t,char **name_out,char ***params_out,int *pcnt_out){ char *name,*takes,*returns; char **params=NULL; int pcnt=0; t+=5; while(*t&&isspace((unsigned char)*t)) t++; name=t; while(*t&&!isspace((unsigned char)*t)) t++; if(*t) *t++=0; returns=(char*)find_word_ci(t,"RETURNS"); if(returns) *returns=0; takes=(char*)find_word_ci(t,"TAKES"); if(takes){ takes+=5; pcnt=parse_params(takes,&params); } else { char *simple=trim_inplace(t); if(*simple) pcnt=parse_params(simple,&params); } *name_out=name; *params_out=params; *pcnt_out=pcnt; }
-static void scan_functions(Runtime *rt,Program *p,const char *prefix){ int i; for(i=0;i<p->count;i++){ char tmp[1024],up[64],w[128]; char *t; strncpy(tmp,p->lines[i],sizeof(tmp)-1); tmp[sizeof(tmp)-1]=0; t=trim_inplace(tmp); first_word(t,w,sizeof(w)); upper_copy(up,w,sizeof(up));
- if(strcmp(up,"CLASS")==0){ const char *pcur=t+5; char *cls=unquote_token(&pcur); char *cn=trim_inplace(cls); int end=match_block(p,i,"CLASS","ENDCLASS",NULL,NULL); ClassDef *c=NULL; int j; if(*cn) c=add_class(rt,cn); for(j=i+1;j<(end<0?p->count:end);j++){ char itmp[1024],iup[64],iw[128]; char *it; strncpy(itmp,p->lines[j],sizeof(itmp)-1); itmp[sizeof(itmp)-1]=0; it=trim_inplace(itmp); first_word(it,iw,sizeof(iw)); upper_copy(iup,iw,sizeof(iup)); if(strcmp(iup,"HAS")==0){ const char *fp=it+3; char *fn=unquote_token(&fp); char *ft=unquote_token(&fp); char *ftt=trim_inplace(ft); if(c) class_add_field(c,trim_inplace(fn),*ftt?ftt:"ANY"); free(fn); free(ft); } else if(strcmp(iup,"TEACH")==0){ char *mname; char **params=NULL; int pcnt=0; char fname[256]; int mend=match_block(p,j,"TEACH","LEARNED",NULL,NULL); parse_teach_parts(it,&mname,&params,&pcnt); if(c&&*mname){ snprintf(fname,sizeof(fname),"%s.%s",c->name,mname); if(!find_function(rt,fname)) add_function(rt,fname,params,pcnt,p,j+1,mend<0?(end<0?p->count:end):mend); } if(mend>=0) j=mend; } } free(cls); if(end>=0) i=end; continue; }
- if(strcmp(up,"TEACH")==0){ char *name; char **params=NULL; int pcnt=0; char fname[256]; int end=match_block(p,i,"TEACH","LEARNED",NULL,NULL); parse_teach_parts(t,&name,&params,&pcnt); snprintf(fname,sizeof(fname),"%s%s",prefix?prefix:"",name); if(!find_function(rt,fname)) add_function(rt,fname,params,pcnt,p,i+1,end<0?p->count:end); if(end>=0) i=end; } } }
-static int call_object_method(Runtime *rt,const char *name,Value *args,int argc){ const char *dot=strchr(name,'.'); char objname[128],method[128],fname[256],fieldname[256]; Value obj,cv; ClassDef *c; Function *f; Var *old; FieldDef *fd; int i; if(!dot) return 0; snprintf(objname,sizeof(objname),"%.*s",(int)(dot-name),name); snprintf(method,sizeof(method),"%s",dot+1); obj=rt_get(rt,objname); if(obj.type!=V_MAP || !obj.map) return 0; cv=map_get(obj.map,"class"); if(cv.type!=V_STR || !cv.str || !cv.str[0]) return 0; snprintf(fname,sizeof(fname),"%s.%s",cv.str,method); f=find_function(rt,fname); if(!f){ rt_error(rt,"",0,"%s does not know how to do %s yet.",cv.str,method); return 1; } c=find_class(rt,cv.str); old=rt->locals; rt->locals=NULL; rt_set(rt,"self",obj); if(c){ for(fd=c->fields;fd;fd=fd->next){ Value fv=map_get(obj.map,fd->name); rt_set(rt,fd->name,fv); snprintf(fieldname,sizeof(fieldname),"__type_%s",fd->name); rt_set(rt,fieldname,v_str(fd->type)); } }
- for(i=0;i<f->pcnt;i++) rt_set(rt,f->params[i], i<argc?args[i]:v_none()); rt->returning=0; exec_range(rt,f->prog,f->start,f->end); if(c){ for(fd=c->fields;fd;fd=fd->next){ Value fv=rt_get(rt,fd->name); map_put(obj.map,fd->name,fv); } }
- if(rt->returning){ rt_set(rt,"RESULT",rt->ret); rt->returning=0; }
- rt->locals=old; rt_set(rt,objname,obj); if(c){ for(fd=c->fields;fd;fd=fd->next){ Value fv=map_get(obj.map,fd->name); snprintf(fieldname,sizeof(fieldname),"%s.%s",objname,fd->name); rt_set_checked(rt,"",0,fieldname,fd->type,fv); } }
- return 1; }
-static void call_function(Runtime *rt,const char *name,Value *args,int argc){ int handled=0,i; Value br=builtin_call(rt,name,args,argc,&handled); if(handled){ rt_set(rt,"RESULT",br); return; } if(rt->call_depth>=CLARO_MAX_CALL_DEPTH){ rt_error(rt,"",0,"Claro function call depth exceeded the safe limit of %d. Simplify the recursion or add a stopping condition.",CLARO_MAX_CALL_DEPTH); return; } rt->call_depth++; if(call_object_method(rt,name,args,argc)){ rt->call_depth--; return; } { Function *f=find_function(rt,name); if(!f){ rt_error(rt,"",0,"Unknown function: %s",name); rt->call_depth--; return;} { Var *old=rt->locals; rt->locals=NULL; for(i=0;i<f->pcnt;i++) rt_set(rt,f->params[i], i<argc?args[i]:v_none()); rt->returning=0; exec_range(rt,f->prog,f->start,f->end); if(rt->returning){ rt_set(rt,"RESULT",rt->ret); rt->returning=0; } rt->locals=old; } } rt->call_depth--; }
-static int stack_has(Runtime *rt,const char *path){ int i; for(i=0;i<rt->import_depth;i++) if(strcmp(rt->import_stack[i],path)==0) return 1; return 0; }
-static int export_allows(char **exports,int ec,const char *name){ int i; if(ec==0) return 1; for(i=0;i<ec;i++) if(strcmp(exports[i],name)==0) return 1; return 0; }
-static void do_import(Runtime *rt,const char *path,const char *ns,const char *curfile,int line){ Program *p; char *prefix=NULL; char **exports=NULL; int ec=0,i; if(stack_has(rt,path)){ rt_error(rt,curfile,line,"Import cycle detected at: %s",path); return;} if(strstr(path,"lib/text.claro")&&ns){ add_module(rt,ns,"text"); return;} if(strstr(path,"lib/math.claro")&&ns){ add_module(rt,ns,"math"); return;} if(strstr(path,"lib/random.claro")&&ns){ add_module(rt,ns,"random"); return;} if(strstr(path,"lib/csv.claro")&&ns){ add_module(rt,ns,"csv"); return;} if(strstr(path,"lib/path.claro")&&ns){ add_module(rt,ns,"path"); return;} if(strstr(path,"lib/collections.claro")&&ns){ add_module(rt,ns,"collections"); return;} if(strstr(path,"lib/time.claro")&&ns){ add_module(rt,ns,"time"); return;}
- p=load_program(rt,path); if(!p){ rt_error(rt,curfile,line,"Could not import file: %s",path); return;} rt->import_stack=(char**)xrealloc(rt->import_stack,sizeof(char*)*(rt->import_depth+1)); rt->import_stack[rt->import_depth++]=xstrdup(path);
- for(i=0;i<p->count;i++){ char tmp[1024],up[64],w[64]; char *t; strncpy(tmp,p->lines[i],sizeof(tmp)-1); tmp[sizeof(tmp)-1]=0; t=trim_inplace(tmp); first_word(t,w,sizeof(w)); upper_copy(up,w,sizeof(up)); if(strcmp(up,"EXPORT")==0){ t+=6; t=trim_inplace(t); if(ci_eq(t,"ALL")){ ec=0; break;} ec=parse_params(t,&exports); break; } }
- if(ns){ Str pr; str_init(&pr); str_add(&pr,ns); str_ch(&pr,'.'); prefix=str_take(&pr); scan_functions(rt,p,prefix); exec_range(rt,p,0,p->count); /* copy exported vars */ for(Var *v=rt->globals; v; v=v->next){ if(strncmp(v->name,prefix,strlen(prefix))!=0 && export_allows(exports,ec,v->name)){ char nn[256]; snprintf(nn,sizeof(nn),"%s%s",prefix,v->name); if(!rt_has(rt,nn)) rt_set_global(rt,nn,v->val); } } } else { scan_functions(rt,p,""); exec_range(rt,p,0,p->count); }
- rt->import_depth--; free(prefix); }
-static void create_object_value(Runtime *rt,const char *file,int line,const char *cls,const char *var){ Value obj=v_map(); ClassDef *c=find_class(rt,cls); FieldDef *fd; char fullname[256]; if(!cls||!*cls||!var||!*var){ rt_error(rt,file,line,"NEW needs a class and a name. Try: NEW Player player"); return; } map_put(obj.map,"class",v_str(cls)); rt_set_checked(rt,file,line,var,"OBJECT",obj); if(c){ for(fd=c->fields;fd;fd=fd->next){ Value def=claro_default_for_type(fd->type); snprintf(fullname,sizeof(fullname),"%s.%s",var,fd->name); rt_set_checked(rt,file,line,fullname,fd->type,def); } } }
-static void exec_line(Runtime *rt,Program *p,int *pcp,const char *raw){ char buf[4096],up[64],w[128]; char *t; int pc=*pcp; strncpy(buf,raw,sizeof(buf)-1); buf[sizeof(buf)-1]=0; t=trim_inplace(buf); if(is_blank_or_comment(t)) return; first_word(t,w,sizeof(w)); upper_copy(up,w,sizeof(up)); if(strcmp(up,"COMMENT")==0){ int end=match_block(p,pc,"COMMENT","ENDCOMMENT",NULL,NULL); *pcp=end<0?pc:end; return; }
- if(strcmp(up,"SAY")==0){ char *e=expr_after_word(t,"SAY"); Value v=eval_expr(rt,e); if(!rt->error) out_line(rt,v); value_free(v); free(e); return; }
- if(strcmp(up,"CLASS")==0){ int end=match_block(p,pc,"CLASS","ENDCLASS",NULL,NULL); *pcp=end<0?pc:end; return; }
- if(strcmp(up,"NEW")==0){ const char *as=find_word_ci(t,"AS"); if(as){ char *cls=substr(t+3,as); char *var=xstrdup(trim_inplace((char*)as+2)); create_object_value(rt,p->path,pc+1,trim_inplace(cls),trim_inplace(var)); free(cls); free(var); } else { const char *pcur=t+3; char *cls=unquote_token(&pcur); char *var=xstrdup(trim_inplace((char*)pcur)); create_object_value(rt,p->path,pc+1,trim_inplace(cls),trim_inplace(var)); free(cls); free(var); } return; }
- if(strcmp(up,"START")==0){ if(starts_ci(t+5," TASK")){ const char *pcur=t+10; char *name=unquote_token(&pcur); int end=match_block(p,pc,"START","ENDTASK",NULL,NULL); exec_range(rt,p,pc+1,end); if(name&&*name){ char done[256]; snprintf(done,sizeof(done),"TASK_%s_DONE",trim_inplace(name)); rt_set(rt,done,v_bool(1)); } *pcp=end<0?pc:end; free(name); return; } }
- if(strcmp(up,"YIELD")==0){ return; }
- if(strcmp(up,"WAIT")==0){ return; }
- if(strcmp(up,"TASK")==0){ if(starts_ci(t+4," STATUS")){ const char *as=find_word_ci(t,"AS"); if(as){ char *name=substr(t+11,as); char *var=xstrdup(trim_inplace((char*)as+2)); char key[256]; Value done; snprintf(key,sizeof(key),"TASK_%s_DONE",trim_inplace(name)); done=rt_get(rt,key); rt_set(rt,var,v_str(v_truth(done)?"DONE":"PENDING")); free(name); free(var); } else rt_error(rt,p->path,pc+1,"TASK STATUS needs AS. Try: TASK STATUS helloTask AS status"); return; } }
- if(strcmp(up,"OPEN")==0||strcmp(up,"CLEAR")==0||strcmp(up,"DRAW")==0||strcmp(up,"UPDATE")==0||strcmp(up,"CLOSE")==0){ graphics_note(rt,up); return; }
- if(strcmp(up,"HTTP")==0){
-  const char *as=find_word_ci(t,"AS");
-  if(as&&starts_ci(t+4," GET")){
-   char *ue=substr(t+8,as); char *after=xstrdup(trim_inplace((char*)as+2)); const char *status_word=find_word_ci(after,"STATUS"); char *var=status_word?substr(after,status_word):xstrdup(after); char *status_var=status_word?xstrdup(trim_inplace((char*)status_word+6)):NULL; Value uv=eval_expr(rt,ue); char *url=v_to_string(uv); int code=0,http=0; char *out;
-   if(!claro_url_is_safe(url)){ rt_error(rt,p->path,pc+1,"HTTP GET needs a safe http://, https://, or claro:// URL."); free(ue); free(after); free(var); free(status_var); free(url); return; }
-   out=claro_http_get_text(url,&http,&code); if(code==-2){ rt_error(rt,p->path,pc+1,"HTTP response exceeds the safe size limit of 1048576 bytes."); free(out); free(url); free(ue); free(after); free(var); free(status_var); return; } rt_set(rt,trim_inplace(var),v_str(out)); rt_set(rt,"LASTEXIT",v_num(code)); rt_set(rt,"LASTHTTP",v_num(http)); if(status_var&&*status_var) rt_set(rt,status_var,v_num(http)); free(out); free(url); free(ue); free(after); free(var); free(status_var); return;
-  }
-  if(as&&starts_ci(t+4," STATUS")){
-   char *ue=substr(t+11,as); char *var=xstrdup(trim_inplace((char*)as+2)); Value uv=eval_expr(rt,ue); char *url=v_to_string(uv); int code=0,http=0; char *out;
-   if(!claro_url_is_safe(url)){ rt_error(rt,p->path,pc+1,"HTTP STATUS needs a safe http://, https://, or claro:// URL."); free(ue); free(var); free(url); return; }
-   out=claro_http_get_text(url,&http,&code); if(code==-2){ rt_error(rt,p->path,pc+1,"HTTP response exceeds the safe size limit of 1048576 bytes."); free(out); free(url); free(ue); free(var); return; } rt_set(rt,trim_inplace(var),v_num(http)); rt_set(rt,"LASTEXIT",v_num(code)); rt_set(rt,"LASTHTTP",v_num(http)); free(out); free(url); free(ue); free(var); return;
-  }
-  if(starts_ci(t+4," SAVE")){
-   const char *to=find_word_ci(t,"TO"); const char *as2=find_word_ci(t,"AS"); if(to){ char *ue=substr(t+9,to); char *pe=as2?substr(to+2,as2):xstrdup(to+2); char *status_var=as2?xstrdup(trim_inplace((char*)as2+2)):NULL; Value uv=eval_expr(rt,ue), pv=eval_expr(rt,pe); char *url=v_to_string(uv), *path=v_to_string(pv); int code=0,http=0; char *out;
-    if(!claro_url_is_safe(url)){ rt_error(rt,p->path,pc+1,"HTTP SAVE needs a safe http://, https://, or claro:// URL."); free(ue); free(pe); free(status_var); free(url); free(path); return; }
-    out=claro_http_get_text(url,&http,&code); if(code==-2){ rt_error(rt,p->path,pc+1,"HTTP response exceeds the safe size limit of 1048576 bytes."); free(out); free(url); free(path); free(ue); free(pe); free(status_var); return; } if(!write_text_bytes(path,out)) rt_error(rt,p->path,pc+1,"Could not save HTTP response to file."); if(status_var&&*status_var) rt_set(rt,status_var,v_num(http)); rt_set(rt,"LASTEXIT",v_num(code)); rt_set(rt,"LASTHTTP",v_num(http)); free(out); free(url); free(path); free(ue); free(pe); free(status_var); return; }
-  }
-  if(as&&starts_ci(t+4," CHECK")){
-   char *ue=substr(t+10,as); char *var=xstrdup(trim_inplace((char*)as+2)); Value uv=eval_expr(rt,ue); char *url=v_to_string(uv); rt_set(rt,var,v_bool(claro_url_is_safe(url))); free(url); free(ue); free(var); return;
-  }
-  rt_error(rt,p->path,pc+1,"HTTP needs GET, STATUS, SAVE, or CHECK. Try: HTTP GET \"claro://hello\" AS page"); return; }
- if(strcmp(up,"OBJECT")==0){ const char *as=find_word_ci(t,"AS"); if(as && starts_ci(t+6," CLASS")){ char *oe=substr(t+12,as); char *var=xstrdup(trim_inplace((char*)as+2)); Value ov=eval_expr(rt,oe); const char *cn=object_class_name(ov); rt_set_checked(rt,p->path,pc+1,var,"TEXT",v_str(cn?cn:"")); free(oe); free(var); } else if(as && starts_ci(t+6," FIELDS")){ char *oe=substr(t+13,as); char *var=xstrdup(trim_inplace((char*)as+2)); Value ov=eval_expr(rt,oe); Value arr=v_list(); int i; if(ov.type==V_MAP&&ov.map){ for(i=0;i<ov.map->count;i++){ if(strcmp(ov.map->keys[i],"class")!=0 && !starts_ci(ov.map->keys[i],"__type_")) list_add(arr.list,v_str(ov.map->keys[i])); } } rt_set_checked(rt,p->path,pc+1,var,"LIST",arr); free(oe); free(var); } else rt_error(rt,p->path,pc+1,"OBJECT needs CLASS or FIELDS. Try: OBJECT CLASS player AS kind"); return; }
- if(strcmp(up,"TYPE")==0 && starts_ci(t,"TYPE OF")){ const char *as=find_word_ci(t,"AS"); if(as){ char *expr=substr(t+7,as); const char *pcur=as+2; char *var=unquote_token(&pcur); char *extra=xstrdup(trim_inplace((char *)pcur)); if(extra&&*extra) rt_error(rt,p->path,pc+1,"TYPE OF %s has extra text after result name %s. Keep only the expression, AS, and one result name.",trim_inplace(expr),trim_inplace(var)); else { char dbuf[320]; const char *decl=declared_type_for_expr(rt,expr,dbuf,sizeof(dbuf)); Value v=eval_expr(rt,expr); rt_set_checked(rt,p->path,pc+1,var,"TEXT",v_str(decl?decl:claro_value_type(v))); } free(expr); free(var); free(extra); } else rt_error(rt,p->path,pc+1,"TYPE OF needs AS. Try: TYPE OF score AS kind"); return; }
- if(strcmp(up,"CHECK")==0 && starts_ci(t,"CHECK TYPE")){ const char *is=find_word_ci(t,"IS"); if(is){ char *expr=substr(t+10,is); char *ty=xstrdup(trim_inplace((char*)is+2)); char dbuf[320]; const char *decl=declared_type_for_expr(rt,expr,dbuf,sizeof(dbuf)); Value v=eval_expr(rt,expr); if(decl && !ci_eq(decl,ty) && !ci_eq(ty,"ANY")){ rt_error(rt,p->path,pc+1,"Type check failed: expected %s, but %s is %s.",ty,trim_inplace(expr),decl); } else if(!decl && !claro_type_matches(ty,v)){ rt_error(rt,p->path,pc+1,"Type check failed: expected %s, but got %s.",ty,claro_value_type(v)); } free(expr); free(ty); } else rt_error(rt,p->path,pc+1,"CHECK TYPE needs IS. Try: CHECK TYPE score IS NUMBER."); return; }
- if(strcmp(up,"SET")==0){ char *rest=t+3; const char *to=find_word_ci(rest,"TO"); const char *as=find_word_ci(rest,"AS"); if(as&&to&&as<to){ char *name=substr(rest,as); char *type=substr(as+2,to); char *n=trim_inplace(name); char *ty=trim_inplace(type); Value v=eval_expr(rt,to+2); rt_set_checked(rt,p->path,pc+1,n,ty,v); value_free(v); free(name); free(type); }
-  else if(to){ char *name=substr(rest,to); char *n=trim_inplace(name); char *space=strchr(n,' '); const char *type=NULL; if(space){ *space=0; if(claro_is_type_word(trim_inplace(space+1))) type=trim_inplace(space+1); else { *space=' '; } } { Value v=eval_expr(rt,to+2); rt_set_checked(rt,p->path,pc+1,n,type,v); value_free(v); } free(name); }
-  else { const char *pcur=rest; char *name=unquote_token(&pcur); char *n=trim_inplace(name); const char *save=pcur; char *maybe=unquote_token(&pcur); char *ty=trim_inplace(maybe); if(claro_is_type_word(ty)){ char *after=trim_inplace((char*)pcur); Value v=*after?eval_expr(rt,after):claro_default_for_type(ty); if(*n) rt_set_checked(rt,p->path,pc+1,n,ty,v); value_free(v); } else { Value v=eval_expr(rt,save); if(*n) rt_set_checked(rt,p->path,pc+1,n,NULL,v); value_free(v); } free(maybe); free(name); } return; }
- if(strcmp(up,"ASK")==0){ const char *as=find_word_ci(t,"AS"); char input[1024]; char *prompt_text=NULL; char *var=NULL; char *type=NULL; if(as){ char *prompt_expr=substr(t+3,as); const char *pcur=as+2; var=unquote_token(&pcur); { char *rest=xstrdup(trim_inplace((char*)pcur)); if(claro_is_type_word(rest)) type=rest; else free(rest); } { Value prompt=eval_expr(rt,prompt_expr); prompt_text=v_to_string(prompt); value_free(prompt); } free(prompt_expr); } else { const char *pcur=t+3; prompt_text=unquote_token(&pcur); var=unquote_token(&pcur); { char *rest=xstrdup(trim_inplace((char*)pcur)); if(claro_is_type_word(rest)) type=rest; else free(rest); } } if(prompt_text&&prompt_text[0]){ if(rt->capture){ str_add(&rt->captured,prompt_text); str_ch(&rt->captured,'\n'); } else { printf("%s\n",prompt_text); fflush(stdout); } } if(var&&*trim_inplace(var)){ Value val=v_none(); if(fgets(input,sizeof(input),stdin)){ size_t n=strlen(input); while(n&&(input[n-1]=='\n'||input[n-1]=='\r')) input[--n]=0; } else input[0]=0; if(type&&*type){ if(!claro_value_from_text(type,input,&val)){ rt_error(rt,p->path,pc+1,"%s needs %s input. Try a value like %s.",trim_inplace(var),type,ci_eq(type,"NUMBER")?"5":(ci_eq(type,"YESNO")?"YES":"text")); } else rt_set_checked(rt,p->path,pc+1,trim_inplace(var),type,val); } else { val=v_str(input); rt_set_checked(rt,p->path,pc+1,trim_inplace(var),NULL,val); } value_free(val); } else rt_error(rt,p->path,pc+1,"ASK needs a variable name. Try: ASK \"What is your name?\" name"); free(prompt_text); free(var); free(type); return; }
- if(strcmp(up,"IF")==0){ int elsepos=-1; int end=match_block(p,pc,"IF","ENDIF","ELSE",&elsepos); char *e=expr_after_word(t,"IF"); Value cond=eval_expr(rt,e); free(e); if(v_truth(cond)) exec_range(rt,p,pc+1,elsepos>=0?elsepos:end); else if(elsepos>=0) exec_range(rt,p,elsepos+1,end); value_free(cond); *pcp=end<0?pc:end; return; }
- if(strcmp(up,"DO")==0){ int end=find_done(p,pc); const char *times=find_word_ci(t,"TIMES"); if(!times){ const char *pcur=t+2; char *name=unquote_token(&pcur); char **parts=NULL; int ac=0,i; Value *args=NULL; char *n=trim_inplace(name); if(*trim_inplace((char*)pcur)) ac=split_args(pcur,&parts); args=(Value*)xmalloc(sizeof(Value)*(ac?ac:1)); for(i=0;i<ac;i++) args[i]=eval_expr(rt,parts[i]); call_function(rt,n,args,ac); split_args_free(parts,ac); call_args_free(args,ac); free(name); return; } else { char *e=substr(t+2,times); Value times_value=eval_expr(rt,e); int n=(int)v_number(times_value); int i; value_free(times_value); free(e); for(i=0;i<n && !rt->error && !rt->returning;i++) exec_range(rt,p,pc+1,end); *pcp=end<0?pc:end; return; } }
- if(strcmp(up,"FOR")==0){ int end=find_done(p,pc); if(starts_ci(t,"FOR EACH")){ char *r=t+8; const char *in=find_word_ci(r,"IN"); char *vars=substr(r,in?in:r); char *expr=xstrdup(in?in+2:""); Value col=eval_expr(rt,expr); char *comma=strchr(vars,','); if(comma&&col.type==V_MAP){ *comma=0; char *k=trim_inplace(vars), *v=trim_inplace(comma+1); int i; for(i=0;i<col.map->count&&!rt->error&&!rt->returning;i++){ rt_set(rt,k,v_str(col.map->keys[i])); rt_set(rt,v,col.map->vals[i]); exec_range(rt,p,pc+1,end); } } else if(col.type==V_LIST){ char *v=trim_inplace(vars); int i; for(i=0;i<col.list->count&&!rt->error&&!rt->returning;i++){ rt_set(rt,v,col.list->items[i]); exec_range(rt,p,pc+1,end); } } value_free(col); free(vars); free(expr); } else { char var[128]; const char *from=find_word_ci(t,"FROM"), *to=find_word_ci(t,"TO"), *step=find_word_ci(t,"STEP"); double a,b,s=1; if(from&&to){ snprintf(var,sizeof(var),"%.*s",(int)(from-(t+3)),t+3); { char *vt=trim_inplace(var); memmove(var,vt,strlen(vt)+1); } { char *ea=substr(from+4,to); char *eb=step?substr(to+2,step):xstrdup(to+2); a=v_number(eval_expr(rt,ea)); b=v_number(eval_expr(rt,eb)); if(step) s=v_number(eval_expr(rt,step+4)); free(ea); free(eb); } if(s==0) s=1; if(s>0){ for(;a<=b&&!rt->error&&!rt->returning;a+=s){ rt_set(rt,var,v_num(a)); exec_range(rt,p,pc+1,end);} } else { for(;a>=b&&!rt->error&&!rt->returning;a+=s){ rt_set(rt,var,v_num(a)); exec_range(rt,p,pc+1,end);} } } } *pcp=end<0?pc:end; return; }
- if(strcmp(up,"REPEAT")==0){ int end=match_block(p,pc,"REPEAT","UNTIL",NULL,NULL); char *cond=p->lines[end]+5; do{ exec_range(rt,p,pc+1,end); if(rt->error||rt->returning) break; }while(!v_truth(eval_expr(rt,cond))); *pcp=end<0?pc:end; return; }
- if(strcmp(up,"TEACH")==0){ int end=match_block(p,pc,"TEACH","LEARNED",NULL,NULL); *pcp=end<0?pc:end; return; }
- if(strcmp(up,"RETURN")==0){ char *e=expr_after_word(t,"RETURN"); rt->ret=eval_expr(rt,e); rt->returning=1; free(e); return; }
- if(strcmp(up,"CALL")==0){ char *rest=t+4; const char *with=find_word_ci(rest,"WITH"); char *name=with?substr(rest,with):xstrdup(rest); char **parts=NULL; int ac=0,i; Value *args=NULL; char *n=trim_inplace(name); if(with) ac=split_args(with+4,&parts); args=(Value*)xmalloc(sizeof(Value)*(ac?ac:1)); for(i=0;i<ac;i++) args[i]=eval_expr(rt,parts[i]); call_function(rt,n,args,ac); split_args_free(parts,ac); call_args_free(args,ac); free(name); return; }
- if(strcmp(up,"IMPORT")==0){ const char *pcur=t+6; char *path=unquote_token(&pcur); char *ns=NULL; while(*pcur&&isspace((unsigned char)*pcur)) pcur++; if(starts_ci(pcur,"AS")){ pcur+=2; ns=xstrdup(trim_inplace((char*)pcur)); } do_import(rt,path,ns,p->path,pc+1); free(path); free(ns); return; }
- if(strcmp(up,"ADD")==0){ const char *to=find_word_ci(t,"TO"); if(to){ char *ex=substr(t+3,to); char *var=xstrdup(trim_inplace((char*)to+2)); Value v=eval_expr(rt,ex); Value l=rt_get(rt,var); if(l.type==V_LIST){ list_add(l.list,v); rt_set(rt,var,l); } free(ex); free(var); value_free(v); value_free(l);} return; }
- if(strcmp(up,"COUNT")==0){ const char *as=find_word_ci(t,"AS"); if(as){ if(starts_ci(t+5," ARGUMENTS")){ char *var=xstrdup(trim_inplace((char*)as+2)); rt_set(rt,var,v_num(rt->script_argc)); free(var); } else { char *ex=substr(t+5,as); char *var=xstrdup(trim_inplace((char*)as+2)); Value v=eval_expr(rt,ex); rt_set(rt,var,v_num(v.type==V_LIST?v.list->count:(v.type==V_MAP?v.map->count:0))); value_free(v); free(ex); free(var); } } return; }
- if(strcmp(up,"GET")==0){ const char *at=find_word_ci(t,"AT"), *key=find_word_ci(t,"KEY"), *as=find_word_ci(t,"AS"); if(as&&starts_ci(t+3," ALL ARGUMENTS")){ char *var=xstrdup(trim_inplace((char*)as+2)); Value arr=v_list(); int i; for(i=0;i<rt->script_argc;i++) list_add(arr.list,v_str(rt->script_argv[i])); rt_set(rt,var,arr); free(var); } else if(as&&starts_ci(t+3," ARGUMENT")){ char *ie=substr(t+12,as); char *var=xstrdup(trim_inplace((char*)as+2)); Value index_value=eval_expr(rt,ie); int idx=(int)v_number(index_value); Value argument_value; value_free(index_value); argument_value=v_str(idx>=1&&idx<=rt->script_argc?rt->script_argv[idx-1]:""); rt_set(rt,var,argument_value); value_free(argument_value); free(ie); free(var); } else if(as&&starts_ci(t+3," ENV")){ const char *pcur=t+7; char *name=substr(pcur,as); char *var=xstrdup(trim_inplace((char*)as+2)); Value nv=eval_expr(rt,name); char *ns=v_to_string(nv); const char *ev=getenv(ns); Value result=v_str(ev?ev:""); rt_set(rt,var,result); value_free(result); free(ns); value_free(nv); free(name); free(var); } else if(as&&at){ char *ce=substr(t+3,at); char *ie=substr(at+2,as); char *var=xstrdup(trim_inplace((char*)as+2)); Value c=eval_expr(rt,ce), iv=eval_expr(rt,ie); int idx=(int)v_number(iv); value_free(iv); if(c.type==V_LIST && idx>=1 && idx<=c.list->count) rt_set(rt,var,c.list->items[idx-1]); else { Value empty=v_str(""); rt_set(rt,var,empty); value_free(empty); } value_free(c); free(ce); free(ie); free(var); } else if(as&&key){ char *ce=substr(t+3,key); char *ke=substr(key+3,as); char *var=xstrdup(trim_inplace((char*)as+2)); Value c=eval_expr(rt,ce); Value kv=eval_expr(rt,ke); char *ks=v_to_string(kv); if(c.type==V_MAP){ Value got=map_get(c.map,ks); rt_set(rt,var,got); value_free(got); } else rt_set(rt,var,v_str("")); free(ks); value_free(c); value_free(kv); free(ce); free(ke); free(var); } return; }
- if(strcmp(up,"PUT")==0){ const char *key=find_word_ci(t,"KEY"), *val=find_word_ci(t,"VALUE"), *as=find_word_ci(t,"AS"), *into=find_word_ci(t,"INTO"); if(key&&val){ char *me=substr(t+3,key); char *ke=substr(key+3,val); char *ve=xstrdup(val+5); Value m=eval_expr(rt,me); Value k=eval_expr(rt,ke); Value v=eval_expr(rt,ve); char *ks=v_to_string(k); if(m.type==V_MAP){ char *mn=trim_inplace(me); map_put(m.map,ks,v); rt_set(rt,mn,m); } free(ks); free(me); free(ke); free(ve); value_free(m); value_free(k); value_free(v); } else if(as&&into){ char *ke=substr(t+3,as); char *ve=substr(as+2,into); char *mn=xstrdup(trim_inplace((char*)into+4)); Value m=rt_get(rt,mn); Value k=eval_expr(rt,ke); Value v=eval_expr(rt,ve); char *ks=v_to_string(k); if(m.type==V_MAP){ map_put(m.map,ks,v); rt_set(rt,mn,m); } free(ks); free(ke); free(ve); free(mn); } return; }
- if(strcmp(up,"WRITE")==0||strcmp(up,"APPEND")==0){ if(starts_ci(t+strlen(w)," FILE")){ const char *pcur=t+strlen(w)+5; const char *with=find_word_ci(pcur,"WITH"); if(with){ char *pe=substr(pcur,with); char *ve=xstrdup(with+4); Value pv=eval_expr(rt,pe); Value vv=eval_expr(rt,ve); char *path=v_to_string(pv), *text=v_to_string(vv); FILE *f=fopen(path,strcmp(up,"APPEND")==0?"ab":"wb"); if(!f) rt_error(rt,p->path,pc+1,"Could not write file: %s",strerror(errno)); else { fwrite(text,1,strlen(text),f); fclose(f);} free(path); free(text); value_free(pv); value_free(vv); free(pe); free(ve); } } return; }
- if(strcmp(up,"READ")==0){ const char *pcur=t+4; const char *as=find_word_ci(pcur,"AS"); if(as&&starts_ci(pcur," FILE")){ char *pe=substr(pcur+5,as); char *var=xstrdup(trim_inplace((char*)as+2)); Value pv=eval_expr(rt,pe); char *path=v_to_string(pv); FILE *f=fopen(path,"rb"); if(!f) rt_error(rt,p->path,pc+1,"Could not read file: %s",strerror(errno)); else { Str b; int c; Value contents; str_init(&b); while((c=fgetc(f))!=EOF) str_ch(&b,(char)c); fclose(f); contents=v_str(b.s?b.s:""); rt_set(rt,var,contents); value_free(contents); free(b.s);} free(path); value_free(pv); free(pe); free(var); } return; }
- if(strcmp(up,"EXISTS")==0){ const char *pcur=t+6; const char *as=find_word_ci(pcur,"AS"); if(as&&starts_ci(pcur," FILE")){ char *pe=substr(pcur+5,as); char *var=xstrdup(trim_inplace((char*)as+2)); Value pv=eval_expr(rt,pe); char *path=v_to_string(pv); rt_set(rt,var,v_bool(access(path,F_OK)==0)); free(path); value_free(pv); free(pe); free(var);} return; }
- if(strcmp(up,"CREATE")==0){ const char *pcur=t+6; if(starts_ci(pcur," FOLDER")){ char *pe=xstrdup(pcur+7); Value pv=eval_expr(rt,pe); char *path=v_to_string(pv); if(!make_folder(path)) rt_error(rt,p->path,pc+1,"Could not create folder: %s",strerror(errno)); free(path); value_free(pv); free(pe); } return; }
- if(strcmp(up,"COPY")==0){ const char *to=find_word_ci(t,"TO"); if(starts_ci(t+4," FILE")&&to){ char *se=substr(t+9,to); char *de=xstrdup(to+2); Value sv=eval_expr(rt,se), dv=eval_expr(rt,de); char *src=v_to_string(sv), *dst=v_to_string(dv); if(!copy_file_bytes(src,dst)) rt_error(rt,p->path,pc+1,"Could not copy file"); free(src); free(dst); free(se); free(de); value_free(sv); value_free(dv); } return; }
- if(strcmp(up,"MOVE")==0){ const char *to=find_word_ci(t,"TO"); if(starts_ci(t+4," FILE")&&to){ char *se=substr(t+9,to); char *de=xstrdup(to+2); Value sv=eval_expr(rt,se), dv=eval_expr(rt,de); char *src=v_to_string(sv), *dst=v_to_string(dv); if(rename(src,dst)!=0) rt_error(rt,p->path,pc+1,"Could not move file: %s",strerror(errno)); free(src); free(dst); free(se); free(de); value_free(sv); value_free(dv); } return; }
- if(strcmp(up,"LIST")==0){ const char *as=find_word_ci(t,"AS"); if(starts_ci(t+4," FOLDER")&&as){ char *pe=substr(t+11,as); char *var=xstrdup(trim_inplace((char*)as+2)); Value pv=eval_expr(rt,pe); char *path=v_to_string(pv); Value entries=list_folder_value(path); rt_set(rt,var,entries); value_free(entries); value_free(pv); free(path); free(pe); free(var); } return; }
- if(strcmp(up,"DELETE")==0){ const char *pcur=t+6; if(starts_ci(pcur," FILE")){ char *pe=xstrdup(pcur+5); Value pv=eval_expr(rt,pe); char *path=v_to_string(pv); remove(path); free(path); value_free(pv); free(pe);} else if(starts_ci(pcur," FOLDER")){ char *pe=xstrdup(pcur+7); Value pv=eval_expr(rt,pe); char *path=v_to_string(pv); remove_folder(path); free(path); value_free(pv); free(pe);} return; }
- if(strcmp(up,"PARSE")==0){ const char *as=find_word_ci(t,"AS"); if(as){ char *ex=substr(t+10,as); char *var=xstrdup(trim_inplace((char*)as+2)); Value s=eval_expr(rt,ex); char *txt=v_to_string(s); rt_set(rt,var,parse_json_text(txt)); free(txt); free(ex); free(var);} return; }
- if(strcmp(up,"MAKE")==0){ int pretty=strstr(t,"JSON PRETTY")!=NULL; const char *as=find_word_ci(t,"AS"); if(as){ const char *st=strstr(t,pretty?"JSON PRETTY":"JSON"); char *ex=substr(st+(pretty?11:4),as); char *var=xstrdup(trim_inplace((char*)as+2)); Value v=eval_expr(rt,ex); char *js=make_json(v,pretty); rt_set(rt,var,v_str(js)); free(js); free(ex); free(var);} return; }
- if(strcmp(up,"TEXT")==0){ char restup[64],op[64]; const char *as=find_word_ci(t,"AS"); const char *pcur=t+4; first_word(pcur,op,sizeof(op)); upper_copy(restup,op,sizeof(restup)); while(*pcur&&isspace((unsigned char)*pcur)) pcur++; while(*pcur&&!isspace((unsigned char)*pcur)) pcur++; if(as){ char *var=xstrdup(trim_inplace((char*)as+2));
-  if(!strcmp(restup,"STARTS")||!strcmp(restup,"ENDS")){ const char *with=find_word_ci(pcur,"WITH"); if(with){ char *left=substr(pcur,with); char *right=substr(with+4,as); Value lv=eval_expr(rt,left), rv=eval_expr(rt,right); char *ls=v_to_string(lv), *rs=v_to_string(rv); size_t ll=strlen(ls), rl=strlen(rs); int ok=!strcmp(restup,"STARTS")?(rl<=ll&&strncmp(ls,rs,rl)==0):(rl<=ll&&strcmp(ls+ll-rl,rs)==0); rt_set(rt,var,v_bool(ok)); free(left); free(right); free(ls); free(rs); } }
-  else if(!strcmp(restup,"REPLACE")){ const char *from=find_word_ci(pcur,"FROM"); const char *to=from?find_word_ci(from+4,"TO"):NULL; if(from&&to){ char *src=substr(pcur,from); char *old=substr(from+4,to); char *neu=substr(to+2,as); Value sv=eval_expr(rt,src), ov=eval_expr(rt,old), nv=eval_expr(rt,neu); char *ss=v_to_string(sv), *os=v_to_string(ov), *ns=v_to_string(nv); Str b; char *pos; str_init(&b); if(os[0]){ char *cur=ss; while((pos=strstr(cur,os))){ str_addn(&b,cur,(size_t)(pos-cur)); str_add(&b,ns); cur=pos+strlen(os); } str_add(&b,cur); rt_set(rt,var,v_str(b.s?b.s:"")); } else rt_set(rt,var,v_str(ss)); free(b.s); free(src); free(old); free(neu); free(ss); free(os); free(ns); } }
-  else { char *ex=substr(pcur,as); Value v=eval_expr(rt,ex); char *txt=v_to_string(v); if(!strcmp(restup,"UPPER")){ char *r=text_upper_copy(txt); rt_set(rt,var,v_str(r)); free(r); } else if(!strcmp(restup,"LOWER")){ char *r=text_lower_copy(txt); rt_set(rt,var,v_str(r)); free(r); } else if(!strcmp(restup,"TRIM")){ char *r=text_trim_copy(txt); rt_set(rt,var,v_str(r)); free(r); } else if(!strcmp(restup,"LENGTH")){ rt_set(rt,var,v_num((double)strlen(txt))); } else if(!strcmp(restup,"CONTAINS")){ char *left=NULL,*right=NULL; const char *needle=find_word_ci(pcur,"NEEDLE"); if(!needle) needle=find_word_ci(pcur,"TEXT"); if(needle){ left=substr(pcur,needle); right=substr(needle+6,as); } else { char **args=NULL; int n=split_args(pcur,&args); if(n>=2){ left=xstrdup(args[0]); right=substr(args[1],as); } split_args_free(args,n); } if(left&&right){ Value lv=eval_expr(rt,left), rv=eval_expr(rt,right); char *ls=v_to_string(lv), *rs=v_to_string(rv); rt_set(rt,var,v_bool(strstr(ls,rs)!=NULL)); free(ls); free(rs); } free(left); free(right); } free(txt); free(ex); }
-  free(var); } return; }
- if(strcmp(up,"RANDOM")==0){ const char *as=find_word_ci(t,"AS"); if(as&&starts_ci(t+6," NUMBER")){ char *range=substr(t+13,as); char *var=xstrdup(trim_inplace((char*)as+2)); char **args=NULL; int n=split_args(range,&args); double a=1,b=100; if(n>=2){ a=v_number(eval_expr(rt,args[0])); b=v_number(eval_expr(rt,args[1])); } else { char *tmp=range; char *one=unquote_token((const char**)&tmp); char *two=unquote_token((const char**)&tmp); if(*one) a=v_number(eval_expr(rt,one)); if(*two) b=v_number(eval_expr(rt,two)); free(one); free(two); } split_args_free(args,n); if(b<a){ double c=a; a=b; b=c; } rt_set(rt,var,v_num((int)a + (rand()%((int)(b-a+1))))); free(range); free(var); } return; }
- if(strcmp(up,"RUN")==0){ const char *as=find_word_ci(t,"AS"); if(as&&starts_ci(t+3," COMMAND")){ char *ex=substr(t+11,as); char *var=xstrdup(trim_inplace((char*)as+2)); Value cv=eval_expr(rt,ex); char *cmd=v_to_string(cv); int code=0; char *out=capture_command_output(cmd,&code,0); Value output=v_str(out); rt_set(rt,var,output); value_free(output); rt_set(rt,"LASTEXIT",v_num(code)); value_free(cv); free(out); free(cmd); free(ex); free(var); } return; }
- if(strcmp(up,"SORT")==0){ char *name=xstrdup(trim_inplace(t+4)); Value v=rt_get(rt,name); value_list_sort(v); rt_set(rt,name,v); free(name); return; }
- if(strcmp(up,"REVERSE")==0){ char *name=xstrdup(trim_inplace(t+7)); Value v=rt_get(rt,name); value_list_reverse(v); rt_set(rt,name,v); free(name); return; }
- if(strcmp(up,"FIND")==0){ const char *in=find_word_ci(t,"IN"), *as=find_word_ci(t,"AS"); if(in&&as){ char *needle=substr(t+4,in); char *listname=substr(in+2,as); char *var=xstrdup(trim_inplace((char*)as+2)); Value nv=eval_expr(rt,needle), lv=eval_expr(rt,listname); int found=0,i; if(lv.type==V_LIST){ for(i=0;i<lv.list->count;i++) if(value_compare(nv,lv.list->items[i])==0){ found=i+1; break; } } rt_set(rt,var,v_num(found)); free(needle); free(listname); free(var); value_free(nv); value_free(lv); } return; }
- if(strcmp(up,"REMOVE")==0){ const char *from=find_word_ci(t,"FROM"); if(from){ char *needle=substr(t+6,from); char *listname=xstrdup(trim_inplace((char*)from+4)); Value nv=eval_expr(rt,needle), lv=rt_get(rt,listname); int i,j; if(lv.type==V_LIST){ for(i=0;i<lv.list->count;i++) if(value_compare(nv,lv.list->items[i])==0){ value_free(lv.list->items[i]); for(j=i;j<lv.list->count-1;j++) lv.list->items[j]=lv.list->items[j+1]; lv.list->count--; break; } rt_set(rt,listname,lv); } free(needle); free(listname); value_free(nv); value_free(lv); } return; }
- if(strcmp(up,"TRY")==0){ int catchpos=-1,end=match_block(p,pc,"TRY","ENDTRY","CATCH",&catchpos); exec_range(rt,p,pc+1,catchpos>=0?catchpos:end); if(rt->error){ rt_clear_error(rt); if(catchpos>=0) exec_range(rt,p,catchpos+1,end); } *pcp=end<0?pc:end; return; }
- if(strcmp(up,"RAISE")==0){ char *e=expr_after_word(t,"RAISE"); Value v=eval_expr(rt,e); char *s=v_to_string(v); rt_error(rt,p->path,pc+1,"%s",s); free(s); free(e); return; }
- if(strcmp(up,"CREATE")==0||strcmp(up,"MOVE")==0||strcmp(up,"SHOW")==0||strcmp(up,"HIDE")==0||strcmp(up,"EXPORT")==0||strcmp(up,"LEARNED")==0||strcmp(up,"ENDIF")==0||strcmp(up,"ELSE")==0||strcmp(up,"DONE")==0||strcmp(up,"ENDTRY")==0||strcmp(up,"CATCH")==0||strcmp(up,"ENDCOMMENT")==0||strcmp(up,"END")==0||strcmp(up,"WAIT")==0){ return; }
- rt_error(rt,p->path,pc+1,"Unknown command: %s",w); }
-static void exec_range(Runtime *rt,Program *p,int start,int end){ int pc; if(end<0||end>p->count) end=p->count; for(pc=start; pc<end && !rt->error && !rt->returning; pc++) exec_line(rt,p,&pc,p->lines[pc]); }
-static int run_file(Runtime *rt,const char *path){ Program *p=load_program(rt,path); int rc; if(!p){ fprintf(stderr,"Could not open %s: %s\n",path,strerror(errno)); return 1;} scan_functions(rt,p,""); exec_range(rt,p,0,p->count); rc=rt->error?1:0; if(rt->error&&!rt->capture) fprintf(stderr,"%s:%d: %s\n",rt->err_file?rt->err_file:path,rt->err_line,rt->err_msg?rt->err_msg:"error"); runtime_programs_free(rt); return rc; }
+static void exec_range(Runtime *rt, Program *p, int start, int end);
+static int parse_params(char *s, char ***out) {
+    char **arr = NULL;
+    int cnt = 0, cap = 0;
+    char *tok = strtok(s, ",");
+    while (tok) {
+        char *t = trim_inplace(tok);
+        if (*t) {
+            if (cnt >= cap) {
+                cap = cap ? cap * 2 : 4;
+                arr = (char **)xrealloc(arr, sizeof(char *) * cap);
+            }
+            arr[cnt++] = xstrdup(t);
+        }
+        tok = strtok(NULL, ",");
+    }
+    *out = arr;
+    return cnt;
+}
+static int parse_simple_params(char *s, char ***out) {
+    char **arr = NULL;
+    int cnt = 0, cap = 0;
+    char *tok = strtok(s, " \t\r\n");
+    while (tok) {
+        if (cnt >= cap) {
+            cap = cap ? cap * 2 : 4;
+            arr = (char **)xrealloc(arr, sizeof(char *) * cap);
+        }
+        arr[cnt++] = xstrdup(tok);
+        tok = strtok(NULL, " \t\r\n");
+    }
+    *out = arr;
+    return cnt;
+}
+static void parse_teach_parts(char *t, char **name_out, char ***params_out, int *pcnt_out) {
+    char *name, *takes, *returns;
+    char **params = NULL;
+    int pcnt = 0;
+    t += 5;
+    while (*t && isspace((unsigned char)*t))
+        t++;
+    name = t;
+    while (*t && !isspace((unsigned char)*t))
+        t++;
+    if (*t)
+        *t++ = 0;
+    returns = (char *)find_word_ci(t, "RETURNS");
+    if (returns)
+        *returns = 0;
+    takes = (char *)find_word_ci(t, "TAKES");
+    if (takes) {
+        takes += 5;
+        pcnt = parse_params(takes, &params);
+    } else {
+        char *simple = trim_inplace(t);
+        if (*simple)
+            pcnt = strchr(simple, ',') ? parse_params(simple, &params)
+                                       : parse_simple_params(simple, &params);
+    }
+    *name_out = name;
+    *params_out = params;
+    *pcnt_out = pcnt;
+}
+static void scan_functions(Runtime *rt, Program *p, const char *prefix) {
+    int i;
+    for (i = 0; i < p->count; i++) {
+        char tmp[1024], up[64], w[128];
+        char *t;
+        strncpy(tmp, p->lines[i], sizeof(tmp) - 1);
+        tmp[sizeof(tmp) - 1] = 0;
+        t = trim_inplace(tmp);
+        first_word(t, w, sizeof(w));
+        upper_copy(up, w, sizeof(up));
+        if (strcmp(up, "CLASS") == 0) {
+            const char *pcur = t + 5;
+            char *cls = unquote_token(&pcur);
+            char *cn = trim_inplace(cls);
+            int end = match_block(p, i, "CLASS", "ENDCLASS", NULL, NULL);
+            ClassDef *c = NULL;
+            int j;
+            if (*cn)
+                c = add_class(rt, cn);
+            for (j = i + 1; j < (end < 0 ? p->count : end); j++) {
+                char itmp[1024], iup[64], iw[128];
+                char *it;
+                strncpy(itmp, p->lines[j], sizeof(itmp) - 1);
+                itmp[sizeof(itmp) - 1] = 0;
+                it = trim_inplace(itmp);
+                first_word(it, iw, sizeof(iw));
+                upper_copy(iup, iw, sizeof(iup));
+                if (strcmp(iup, "HAS") == 0) {
+                    const char *fp = it + 3;
+                    char *fn = unquote_token(&fp);
+                    char *ft = unquote_token(&fp);
+                    char *ftt = trim_inplace(ft);
+                    if (c)
+                        class_add_field(c, trim_inplace(fn), *ftt ? ftt : "ANY");
+                    free(fn);
+                    free(ft);
+                } else if (strcmp(iup, "TEACH") == 0) {
+                    char *mname;
+                    char **params = NULL;
+                    int pcnt = 0;
+                    char fname[256];
+                    int mend = match_block(p, j, "TEACH", "LEARNED", NULL, NULL);
+                    parse_teach_parts(it, &mname, &params, &pcnt);
+                    if (c && *mname) {
+                        claro_snprintf(fname, sizeof(fname), "%s.%s", c->name, mname);
+                        if (!find_function(rt, fname))
+                            add_function(rt, fname, params, pcnt, p, j + 1,
+                                         mend < 0 ? (end < 0 ? p->count : end) : mend);
+                    }
+                    if (mend >= 0)
+                        j = mend;
+                }
+            }
+            free(cls);
+            if (end >= 0)
+                i = end;
+            continue;
+        }
+        if (strcmp(up, "TEACH") == 0) {
+            char *name;
+            char **params = NULL;
+            int pcnt = 0;
+            char fname[256];
+            int end = match_block(p, i, "TEACH", "LEARNED", NULL, NULL);
+            parse_teach_parts(t, &name, &params, &pcnt);
+            claro_snprintf(fname, sizeof(fname), "%s%s", prefix ? prefix : "", name);
+            if (!find_function(rt, fname))
+                add_function(rt, fname, params, pcnt, p, i + 1, end < 0 ? p->count : end);
+            if (end >= 0)
+                i = end;
+        }
+    }
+}
+static int call_object_method(Runtime *rt, const char *name, Value *args, int argc) {
+    const char *dot = strchr(name, '.');
+    char objname[128], method[128], fname[256], fieldname[256];
+    Value obj, cv;
+    ClassDef *c;
+    Function *f;
+    Var *old;
+    FieldDef *fd;
+    int i;
+    if (!dot)
+        return 0;
+    claro_snprintf(objname, sizeof(objname), "%.*s", (int)(dot - name), name);
+    claro_snprintf(method, sizeof(method), "%s", dot + 1);
+    obj = rt_get(rt, objname);
+    if (obj.type != V_MAP || !obj.map)
+        return 0;
+    cv = map_get(obj.map, "class");
+    if (cv.type != V_STR || !cv.str || !cv.str[0])
+        return 0;
+    claro_snprintf(fname, sizeof(fname), "%s.%s", cv.str, method);
+    f = find_function(rt, fname);
+    if (!f) {
+        rt_error(rt, "", 0, "%s does not know how to do %s yet.", cv.str, method);
+        return 1;
+    }
+    c = find_class(rt, cv.str);
+    old = rt->locals;
+    rt->locals = NULL;
+    rt_set(rt, "self", obj);
+    if (c) {
+        for (fd = c->fields; fd; fd = fd->next) {
+            Value fv = map_get(obj.map, fd->name);
+            rt_set(rt, fd->name, fv);
+            claro_snprintf(fieldname, sizeof(fieldname), "__type_%s", fd->name);
+            rt_set(rt, fieldname, v_str(fd->type));
+        }
+    }
+    for (i = 0; i < f->pcnt; i++)
+        rt_set(rt, f->params[i], i < argc ? args[i] : v_none());
+    rt->returning = 0;
+    exec_range(rt, f->prog, f->start, f->end);
+    if (c) {
+        for (fd = c->fields; fd; fd = fd->next) {
+            Value fv = rt_get(rt, fd->name);
+            map_put(obj.map, fd->name, fv);
+        }
+    }
+    if (rt->returning) {
+        rt_set(rt, "RESULT", rt->ret);
+        rt->returning = 0;
+    }
+    rt->locals = old;
+    rt_set(rt, objname, obj);
+    if (c) {
+        for (fd = c->fields; fd; fd = fd->next) {
+            Value fv = map_get(obj.map, fd->name);
+            claro_snprintf(fieldname, sizeof(fieldname), "%s.%s", objname, fd->name);
+            rt_set_checked(rt, "", 0, fieldname, fd->type, fv);
+        }
+    }
+    return 1;
+}
+static void call_function(Runtime *rt, const char *name, Value *args, int argc) {
+    int handled = 0, i;
+    Value br = builtin_call(rt, name, args, argc, &handled);
+    if (handled) {
+        rt_set(rt, "RESULT", br);
+        return;
+    }
+    if (rt->call_depth >= CLARO_MAX_CALL_DEPTH) {
+        rt_error(rt, "", 0,
+                 "Claro function call depth exceeded the safe limit of %d. Simplify the recursion "
+                 "or add a stopping condition.",
+                 CLARO_MAX_CALL_DEPTH);
+        return;
+    }
+    rt->call_depth++;
+    if (call_object_method(rt, name, args, argc)) {
+        rt->call_depth--;
+        return;
+    }
+    {
+        Function *f = find_function(rt, name);
+        if (!f) {
+            rt_error(rt, "", 0, "Unknown function: %s", name);
+            rt->call_depth--;
+            return;
+        }
+        {
+            Var *old = rt->locals;
+            rt->locals = NULL;
+            for (i = 0; i < f->pcnt; i++)
+                rt_set(rt, f->params[i], i < argc ? args[i] : v_none());
+            rt->returning = 0;
+            exec_range(rt, f->prog, f->start, f->end);
+            if (rt->returning) {
+                rt_set(rt, "RESULT", rt->ret);
+                rt->returning = 0;
+            }
+            rt->locals = old;
+        }
+    }
+    rt->call_depth--;
+}
+static int stack_has(Runtime *rt, const char *path) {
+    int i;
+    for (i = 0; i < rt->import_depth; i++)
+        if (strcmp(rt->import_stack[i], path) == 0)
+            return 1;
+    return 0;
+}
+static int export_allows(char **exports, int ec, const char *name) {
+    int i;
+    if (ec == 0)
+        return 1;
+    for (i = 0; i < ec; i++)
+        if (strcmp(exports[i], name) == 0)
+            return 1;
+    return 0;
+}
+static void do_import(Runtime *rt, const char *path, const char *ns, const char *curfile,
+                      int line) {
+    Program *p;
+    char *prefix = NULL;
+    char **exports = NULL;
+    int ec = 0, i;
+    if (stack_has(rt, path)) {
+        rt_error(rt, curfile, line, "Import cycle detected at: %s", path);
+        return;
+    }
+    if (strstr(path, "lib/text.claro") && ns) {
+        add_module(rt, ns, "text");
+        return;
+    }
+    if (strstr(path, "lib/math.claro") && ns) {
+        add_module(rt, ns, "math");
+        return;
+    }
+    if (strstr(path, "lib/random.claro") && ns) {
+        add_module(rt, ns, "random");
+        return;
+    }
+    if (strstr(path, "lib/csv.claro") && ns) {
+        add_module(rt, ns, "csv");
+        return;
+    }
+    if (strstr(path, "lib/path.claro") && ns) {
+        add_module(rt, ns, "path");
+        return;
+    }
+    if (strstr(path, "lib/collections.claro") && ns) {
+        add_module(rt, ns, "collections");
+        return;
+    }
+    if (strstr(path, "lib/time.claro") && ns) {
+        add_module(rt, ns, "time");
+        return;
+    }
+    p = load_program(rt, path);
+    if (!p) {
+        rt_error(rt, curfile, line, "Could not import file: %s", path);
+        return;
+    }
+    rt->import_stack = (char **)xrealloc(rt->import_stack, sizeof(char *) * (rt->import_depth + 1));
+    rt->import_stack[rt->import_depth++] = xstrdup(path);
+    for (i = 0; i < p->count; i++) {
+        char tmp[1024], up[64], w[64];
+        char *t;
+        strncpy(tmp, p->lines[i], sizeof(tmp) - 1);
+        tmp[sizeof(tmp) - 1] = 0;
+        t = trim_inplace(tmp);
+        first_word(t, w, sizeof(w));
+        upper_copy(up, w, sizeof(up));
+        if (strcmp(up, "EXPORT") == 0) {
+            t += 6;
+            t = trim_inplace(t);
+            if (ci_eq(t, "ALL")) {
+                ec = 0;
+                break;
+            }
+            ec = parse_params(t, &exports);
+            break;
+        }
+    }
+    if (ns) {
+        Str pr;
+        Var *v;
+        str_init(&pr);
+        str_add(&pr, ns);
+        str_ch(&pr, '.');
+        prefix = str_take(&pr);
+        scan_functions(rt, p, prefix);
+        exec_range(rt, p, 0, p->count); /* copy exported vars */
+        for (v = rt->globals; v; v = v->next) {
+            if (strncmp(v->name, prefix, strlen(prefix)) != 0 &&
+                export_allows(exports, ec, v->name)) {
+                char nn[256];
+                claro_snprintf(nn, sizeof(nn), "%s%s", prefix, v->name);
+                if (!rt_has(rt, nn))
+                    rt_set_global(rt, nn, v->val);
+            }
+        }
+    } else {
+        scan_functions(rt, p, "");
+        exec_range(rt, p, 0, p->count);
+    }
+    rt->import_depth--;
+    free(prefix);
+}
+static void create_object_value(Runtime *rt, const char *file, int line, const char *cls,
+                                const char *var) {
+    Value obj = v_map();
+    ClassDef *c = find_class(rt, cls);
+    FieldDef *fd;
+    char fullname[256];
+    if (!cls || !*cls || !var || !*var) {
+        rt_error(rt, file, line, "NEW needs a class and a name. Try: NEW Player player");
+        return;
+    }
+    map_put(obj.map, "class", v_str(cls));
+    rt_set_checked(rt, file, line, var, "OBJECT", obj);
+    if (c) {
+        for (fd = c->fields; fd; fd = fd->next) {
+            Value def = claro_default_for_type(fd->type);
+            claro_snprintf(fullname, sizeof(fullname), "%s.%s", var, fd->name);
+            rt_set_checked(rt, file, line, fullname, fd->type, def);
+        }
+    }
+}
+static void exec_line(Runtime *rt, Program *p, int *pcp, const char *raw) {
+    char buf[4096], up[64], w[128];
+    char *t;
+    int pc = *pcp;
+    strncpy(buf, raw, sizeof(buf) - 1);
+    buf[sizeof(buf) - 1] = 0;
+    t = trim_inplace(buf);
+    if (is_blank_or_comment(t))
+        return;
+    first_word(t, w, sizeof(w));
+    upper_copy(up, w, sizeof(up));
+    if (strcmp(up, "COMMENT") == 0) {
+        int end = match_block(p, pc, "COMMENT", "ENDCOMMENT", NULL, NULL);
+        *pcp = end < 0 ? pc : end;
+        return;
+    }
+    if (strcmp(up, "SAY") == 0) {
+        char *e = expr_after_word(t, "SAY");
+        Value v = eval_expr(rt, e);
+        if (!rt->error)
+            out_line(rt, v);
+        value_free(v);
+        free(e);
+        return;
+    }
+    if (strcmp(up, "CLASS") == 0) {
+        int end = match_block(p, pc, "CLASS", "ENDCLASS", NULL, NULL);
+        *pcp = end < 0 ? pc : end;
+        return;
+    }
+    if (strcmp(up, "NEW") == 0) {
+        const char *as = find_word_ci(t, "AS");
+        if (as) {
+            char *cls = substr(t + 3, as);
+            char *var = xstrdup(trim_inplace((char *)as + 2));
+            create_object_value(rt, p->path, pc + 1, trim_inplace(cls), trim_inplace(var));
+            free(cls);
+            free(var);
+        } else {
+            const char *pcur = t + 3;
+            char *cls = unquote_token(&pcur);
+            char *var = xstrdup(trim_inplace((char *)pcur));
+            create_object_value(rt, p->path, pc + 1, trim_inplace(cls), trim_inplace(var));
+            free(cls);
+            free(var);
+        }
+        return;
+    }
+    if (strcmp(up, "START") == 0) {
+        if (starts_ci(t + 5, " TASK")) {
+            const char *pcur = t + 10;
+            char *name = unquote_token(&pcur);
+            int end = match_block(p, pc, "START", "ENDTASK", NULL, NULL);
+            exec_range(rt, p, pc + 1, end);
+            if (name && *name) {
+                char done[256];
+                claro_snprintf(done, sizeof(done), "TASK_%s_DONE", trim_inplace(name));
+                rt_set(rt, done, v_bool(1));
+            }
+            *pcp = end < 0 ? pc : end;
+            free(name);
+            return;
+        }
+    }
+    if (strcmp(up, "YIELD") == 0) {
+        return;
+    }
+    if (strcmp(up, "WAIT") == 0) {
+        return;
+    }
+    if (strcmp(up, "TASK") == 0) {
+        if (starts_ci(t + 4, " STATUS")) {
+            const char *as = find_word_ci(t, "AS");
+            if (as) {
+                char *name = substr(t + 11, as);
+                char *var = xstrdup(trim_inplace((char *)as + 2));
+                char key[256];
+                Value done;
+                claro_snprintf(key, sizeof(key), "TASK_%s_DONE", trim_inplace(name));
+                done = rt_get(rt, key);
+                rt_set(rt, var, v_str(v_truth(done) ? "DONE" : "PENDING"));
+                free(name);
+                free(var);
+            } else
+                rt_error(rt, p->path, pc + 1,
+                         "TASK STATUS needs AS. Try: TASK STATUS helloTask AS status");
+            return;
+        }
+    }
+    if (strcmp(up, "OPEN") == 0 || strcmp(up, "CLEAR") == 0 || strcmp(up, "DRAW") == 0 ||
+        strcmp(up, "UPDATE") == 0 || strcmp(up, "CLOSE") == 0) {
+        graphics_note(rt, up);
+        return;
+    }
+    if (strcmp(up, "HTTP") == 0) {
+        const char *as = find_word_ci(t, "AS");
+        if (as && starts_ci(t + 4, " GET")) {
+            char *ue = substr(t + 8, as);
+            char *after = xstrdup(trim_inplace((char *)as + 2));
+            const char *status_word = find_word_ci(after, "STATUS");
+            char *var = status_word ? substr(after, status_word) : xstrdup(after);
+            char *status_var = status_word ? xstrdup(trim_inplace((char *)status_word + 6)) : NULL;
+            Value uv = eval_expr(rt, ue);
+            char *url = v_to_string(uv);
+            int code = 0, http = 0;
+            char *out;
+            if (!claro_url_is_safe(url)) {
+                rt_error(rt, p->path, pc + 1,
+                         "HTTP GET needs a safe http://, https://, or claro:// URL.");
+                free(ue);
+                free(after);
+                free(var);
+                free(status_var);
+                free(url);
+                return;
+            }
+            out = claro_http_get_text(url, &http, &code);
+            if (code == -2) {
+                rt_error(rt, p->path, pc + 1,
+                         "HTTP response exceeds the safe size limit of 1048576 bytes.");
+                free(out);
+                free(url);
+                free(ue);
+                free(after);
+                free(var);
+                free(status_var);
+                return;
+            }
+            rt_set(rt, trim_inplace(var), v_str(out));
+            rt_set(rt, "LASTEXIT", v_num(code));
+            rt_set(rt, "LASTHTTP", v_num(http));
+            if (status_var && *status_var)
+                rt_set(rt, status_var, v_num(http));
+            free(out);
+            free(url);
+            free(ue);
+            free(after);
+            free(var);
+            free(status_var);
+            return;
+        }
+        if (as && starts_ci(t + 4, " STATUS")) {
+            char *ue = substr(t + 11, as);
+            char *var = xstrdup(trim_inplace((char *)as + 2));
+            Value uv = eval_expr(rt, ue);
+            char *url = v_to_string(uv);
+            int code = 0, http = 0;
+            char *out;
+            if (!claro_url_is_safe(url)) {
+                rt_error(rt, p->path, pc + 1,
+                         "HTTP STATUS needs a safe http://, https://, or claro:// URL.");
+                free(ue);
+                free(var);
+                free(url);
+                return;
+            }
+            out = claro_http_get_text(url, &http, &code);
+            if (code == -2) {
+                rt_error(rt, p->path, pc + 1,
+                         "HTTP response exceeds the safe size limit of 1048576 bytes.");
+                free(out);
+                free(url);
+                free(ue);
+                free(var);
+                return;
+            }
+            rt_set(rt, trim_inplace(var), v_num(http));
+            rt_set(rt, "LASTEXIT", v_num(code));
+            rt_set(rt, "LASTHTTP", v_num(http));
+            free(out);
+            free(url);
+            free(ue);
+            free(var);
+            return;
+        }
+        if (starts_ci(t + 4, " SAVE")) {
+            const char *to = find_word_ci(t, "TO");
+            const char *as2 = find_word_ci(t, "AS");
+            if (to) {
+                char *ue = substr(t + 9, to);
+                char *pe = as2 ? substr(to + 2, as2) : xstrdup(to + 2);
+                char *status_var = as2 ? xstrdup(trim_inplace((char *)as2 + 2)) : NULL;
+                Value uv = eval_expr(rt, ue), pv = eval_expr(rt, pe);
+                char *url = v_to_string(uv), *path = v_to_string(pv);
+                int code = 0, http = 0;
+                char *out;
+                if (!claro_url_is_safe(url)) {
+                    rt_error(rt, p->path, pc + 1,
+                             "HTTP SAVE needs a safe http://, https://, or claro:// URL.");
+                    free(ue);
+                    free(pe);
+                    free(status_var);
+                    free(url);
+                    free(path);
+                    return;
+                }
+                out = claro_http_get_text(url, &http, &code);
+                if (code == -2) {
+                    rt_error(rt, p->path, pc + 1,
+                             "HTTP response exceeds the safe size limit of 1048576 bytes.");
+                    free(out);
+                    free(url);
+                    free(path);
+                    free(ue);
+                    free(pe);
+                    free(status_var);
+                    return;
+                }
+                if (!write_text_bytes(path, out))
+                    rt_error(rt, p->path, pc + 1, "Could not save HTTP response to file.");
+                if (status_var && *status_var)
+                    rt_set(rt, status_var, v_num(http));
+                rt_set(rt, "LASTEXIT", v_num(code));
+                rt_set(rt, "LASTHTTP", v_num(http));
+                free(out);
+                free(url);
+                free(path);
+                free(ue);
+                free(pe);
+                free(status_var);
+                return;
+            }
+        }
+        if (as && starts_ci(t + 4, " CHECK")) {
+            char *ue = substr(t + 10, as);
+            char *var = xstrdup(trim_inplace((char *)as + 2));
+            Value uv = eval_expr(rt, ue);
+            char *url = v_to_string(uv);
+            rt_set(rt, var, v_bool(claro_url_is_safe(url)));
+            free(url);
+            free(ue);
+            free(var);
+            return;
+        }
+        rt_error(rt, p->path, pc + 1,
+                 "HTTP needs GET, STATUS, SAVE, or CHECK. Try: HTTP GET \"claro://hello\" AS page");
+        return;
+    }
+    if (strcmp(up, "OBJECT") == 0) {
+        const char *as = find_word_ci(t, "AS");
+        if (as && starts_ci(t + 6, " CLASS")) {
+            char *oe = substr(t + 12, as);
+            char *var = xstrdup(trim_inplace((char *)as + 2));
+            Value ov = eval_expr(rt, oe);
+            const char *cn = object_class_name(ov);
+            rt_set_checked(rt, p->path, pc + 1, var, "TEXT", v_str(cn ? cn : ""));
+            free(oe);
+            free(var);
+        } else if (as && starts_ci(t + 6, " FIELDS")) {
+            char *oe = substr(t + 13, as);
+            char *var = xstrdup(trim_inplace((char *)as + 2));
+            Value ov = eval_expr(rt, oe);
+            Value arr = v_list();
+            int i;
+            if (ov.type == V_MAP && ov.map) {
+                for (i = 0; i < ov.map->count; i++) {
+                    if (strcmp(ov.map->keys[i], "class") != 0 &&
+                        !starts_ci(ov.map->keys[i], "__type_"))
+                        list_add(arr.list, v_str(ov.map->keys[i]));
+                }
+            }
+            rt_set_checked(rt, p->path, pc + 1, var, "LIST", arr);
+            free(oe);
+            free(var);
+        } else
+            rt_error(rt, p->path, pc + 1,
+                     "OBJECT needs CLASS or FIELDS. Try: OBJECT CLASS player AS kind");
+        return;
+    }
+    if (strcmp(up, "TYPE") == 0 && starts_ci(t, "TYPE OF")) {
+        const char *as = find_word_ci(t, "AS");
+        if (as) {
+            char *expr = substr(t + 7, as);
+            const char *pcur = as + 2;
+            char *var = unquote_token(&pcur);
+            char *extra = xstrdup(trim_inplace((char *)pcur));
+            if (extra && *extra)
+                rt_error(rt, p->path, pc + 1,
+                         "TYPE OF %s has extra text after result name %s. Keep only the "
+                         "expression, AS, and one result name.",
+                         trim_inplace(expr), trim_inplace(var));
+            else {
+                char dbuf[320];
+                const char *decl = declared_type_for_expr(rt, expr, dbuf, sizeof(dbuf));
+                Value v = eval_expr(rt, expr);
+                rt_set_checked(rt, p->path, pc + 1, var, "TEXT",
+                               v_str(decl ? decl : claro_value_type(v)));
+            }
+            free(expr);
+            free(var);
+            free(extra);
+        } else
+            rt_error(rt, p->path, pc + 1, "TYPE OF needs AS. Try: TYPE OF score AS kind");
+        return;
+    }
+    if (strcmp(up, "CHECK") == 0 && starts_ci(t, "CHECK TYPE")) {
+        const char *is = find_word_ci(t, "IS");
+        if (is) {
+            char *expr = substr(t + 10, is);
+            char *ty = xstrdup(trim_inplace((char *)is + 2));
+            char dbuf[320];
+            const char *decl = declared_type_for_expr(rt, expr, dbuf, sizeof(dbuf));
+            Value v = eval_expr(rt, expr);
+            if (decl && !ci_eq(decl, ty) && !ci_eq(ty, "ANY")) {
+                rt_error(rt, p->path, pc + 1, "Type check failed: expected %s, but %s is %s.", ty,
+                         trim_inplace(expr), decl);
+            } else if (!decl && !claro_type_matches(ty, v)) {
+                rt_error(rt, p->path, pc + 1, "Type check failed: expected %s, but got %s.", ty,
+                         claro_value_type(v));
+            }
+            free(expr);
+            free(ty);
+        } else
+            rt_error(rt, p->path, pc + 1, "CHECK TYPE needs IS. Try: CHECK TYPE score IS NUMBER.");
+        return;
+    }
+    if (strcmp(up, "SET") == 0) {
+        char *rest = t + 3;
+        const char *to = find_word_ci(rest, "TO");
+        const char *as = find_word_ci(rest, "AS");
+        if (as && to && as < to) {
+            char *name = substr(rest, as);
+            char *type = substr(as + 2, to);
+            char *n = trim_inplace(name);
+            char *ty = trim_inplace(type);
+            Value v = eval_expr(rt, to + 2);
+            rt_set_checked(rt, p->path, pc + 1, n, ty, v);
+            value_free(v);
+            free(name);
+            free(type);
+        } else if (to) {
+            char *name = substr(rest, to);
+            char *n = trim_inplace(name);
+            char *space = strchr(n, ' ');
+            const char *type = NULL;
+            if (space) {
+                *space = 0;
+                if (claro_is_type_word(trim_inplace(space + 1)))
+                    type = trim_inplace(space + 1);
+                else {
+                    *space = ' ';
+                }
+            }
+            {
+                Value v = eval_expr(rt, to + 2);
+                rt_set_checked(rt, p->path, pc + 1, n, type, v);
+                value_free(v);
+            }
+            free(name);
+        } else {
+            const char *pcur = rest;
+            char *name = unquote_token(&pcur);
+            char *n = trim_inplace(name);
+            const char *save = pcur;
+            char *maybe = unquote_token(&pcur);
+            char *ty = trim_inplace(maybe);
+            if (claro_is_type_word(ty)) {
+                char *after = trim_inplace((char *)pcur);
+                Value v = *after ? eval_expr(rt, after) : claro_default_for_type(ty);
+                if (*n)
+                    rt_set_checked(rt, p->path, pc + 1, n, ty, v);
+                value_free(v);
+            } else {
+                Value v = eval_expr(rt, save);
+                if (*n)
+                    rt_set_checked(rt, p->path, pc + 1, n, NULL, v);
+                value_free(v);
+            }
+            free(maybe);
+            free(name);
+        }
+        return;
+    }
+    if (strcmp(up, "ASK") == 0) {
+        const char *as = find_word_ci(t, "AS");
+        char input[1024];
+        char *prompt_text = NULL;
+        char *var = NULL;
+        char *type = NULL;
+        if (as) {
+            char *prompt_expr = substr(t + 3, as);
+            const char *pcur = as + 2;
+            var = unquote_token(&pcur);
+            {
+                char *rest = xstrdup(trim_inplace((char *)pcur));
+                if (claro_is_type_word(rest))
+                    type = rest;
+                else
+                    free(rest);
+            }
+            {
+                Value prompt = eval_expr(rt, prompt_expr);
+                prompt_text = v_to_string(prompt);
+                value_free(prompt);
+            }
+            free(prompt_expr);
+        } else {
+            const char *pcur = t + 3;
+            prompt_text = unquote_token(&pcur);
+            var = unquote_token(&pcur);
+            {
+                char *rest = xstrdup(trim_inplace((char *)pcur));
+                if (claro_is_type_word(rest))
+                    type = rest;
+                else
+                    free(rest);
+            }
+        }
+        if (prompt_text && prompt_text[0]) {
+            if (rt->capture) {
+                str_add(&rt->captured, prompt_text);
+                str_ch(&rt->captured, '\n');
+            } else {
+                printf("%s\n", prompt_text);
+                fflush(stdout);
+            }
+        }
+        if (var && *trim_inplace(var)) {
+            Value val = v_none();
+            if (fgets(input, sizeof(input), stdin)) {
+                size_t n = strlen(input);
+                while (n && (input[n - 1] == '\n' || input[n - 1] == '\r'))
+                    input[--n] = 0;
+            } else
+                input[0] = 0;
+            if (type && *type) {
+                if (!claro_value_from_text(type, input, &val)) {
+                    rt_error(rt, p->path, pc + 1, "%s needs %s input. Try a value like %s.",
+                             trim_inplace(var), type,
+                             ci_eq(type, "NUMBER") ? "5" : (ci_eq(type, "YESNO") ? "YES" : "text"));
+                } else
+                    rt_set_checked(rt, p->path, pc + 1, trim_inplace(var), type, val);
+            } else {
+                val = v_str(input);
+                rt_set_checked(rt, p->path, pc + 1, trim_inplace(var), NULL, val);
+            }
+            value_free(val);
+        } else
+            rt_error(rt, p->path, pc + 1,
+                     "ASK needs a variable name. Try: ASK \"What is your name?\" name");
+        free(prompt_text);
+        free(var);
+        free(type);
+        return;
+    }
+    if (strcmp(up, "IF") == 0) {
+        int elsepos = -1;
+        int end = match_block(p, pc, "IF", "ENDIF", "ELSE", &elsepos);
+        char *e = expr_after_word(t, "IF");
+        Value cond = eval_expr(rt, e);
+        free(e);
+        if (v_truth(cond))
+            exec_range(rt, p, pc + 1, elsepos >= 0 ? elsepos : end);
+        else if (elsepos >= 0)
+            exec_range(rt, p, elsepos + 1, end);
+        value_free(cond);
+        *pcp = end < 0 ? pc : end;
+        return;
+    }
+    if (strcmp(up, "DO") == 0) {
+        int end = find_done(p, pc);
+        const char *times = find_word_ci(t, "TIMES");
+        if (!times) {
+            const char *pcur = t + 2;
+            char *name = unquote_token(&pcur);
+            char **parts = NULL;
+            int ac = 0, i;
+            Value *args = NULL;
+            char *n = trim_inplace(name);
+            if (*trim_inplace((char *)pcur))
+                ac = split_simple_args(pcur, &parts);
+            args = (Value *)xmalloc(sizeof(Value) * (ac ? ac : 1));
+            for (i = 0; i < ac; i++)
+                args[i] = eval_expr(rt, parts[i]);
+            call_function(rt, n, args, ac);
+            split_args_free(parts, ac);
+            call_args_free(args, ac);
+            free(name);
+            return;
+        } else {
+            char *e = substr(t + 2, times);
+            Value times_value = eval_expr(rt, e);
+            int n = (int)v_number(times_value);
+            int i;
+            value_free(times_value);
+            free(e);
+            for (i = 0; i < n && !rt->error && !rt->returning; i++)
+                exec_range(rt, p, pc + 1, end);
+            *pcp = end < 0 ? pc : end;
+            return;
+        }
+    }
+    if (strcmp(up, "FOR") == 0) {
+        int end = find_done(p, pc);
+        if (starts_ci(t, "FOR EACH")) {
+            char *r = t + 8;
+            const char *in = find_word_ci(r, "IN");
+            char *vars = substr(r, in ? in : r);
+            char *expr = xstrdup(in ? in + 2 : "");
+            Value col = eval_expr(rt, expr);
+            char *comma = strchr(vars, ',');
+            if (comma && col.type == V_MAP) {
+                char *k, *v;
+                int i;
+                *comma = 0;
+                k = trim_inplace(vars);
+                v = trim_inplace(comma + 1);
+                for (i = 0; i < col.map->count && !rt->error && !rt->returning; i++) {
+                    rt_set(rt, k, v_str(col.map->keys[i]));
+                    rt_set(rt, v, col.map->vals[i]);
+                    exec_range(rt, p, pc + 1, end);
+                }
+            } else if (col.type == V_LIST) {
+                char *v = trim_inplace(vars);
+                int i;
+                for (i = 0; i < col.list->count && !rt->error && !rt->returning; i++) {
+                    rt_set(rt, v, col.list->items[i]);
+                    exec_range(rt, p, pc + 1, end);
+                }
+            }
+            value_free(col);
+            free(vars);
+            free(expr);
+        } else {
+            char var[128];
+            const char *from = find_word_ci(t, "FROM"), *to = find_word_ci(t, "TO"),
+                       *step = find_word_ci(t, "STEP");
+            double a, b, s = 1;
+            if (from && to) {
+                claro_snprintf(var, sizeof(var), "%.*s", (int)(from - (t + 3)), t + 3);
+                {
+                    char *vt = trim_inplace(var);
+                    memmove(var, vt, strlen(vt) + 1);
+                }
+                {
+                    char *ea = substr(from + 4, to);
+                    char *eb = step ? substr(to + 2, step) : xstrdup(to + 2);
+                    a = v_number(eval_expr(rt, ea));
+                    b = v_number(eval_expr(rt, eb));
+                    if (step)
+                        s = v_number(eval_expr(rt, step + 4));
+                    free(ea);
+                    free(eb);
+                }
+                if (s == 0)
+                    s = 1;
+                if (s > 0) {
+                    for (; a <= b && !rt->error && !rt->returning; a += s) {
+                        rt_set(rt, var, v_num(a));
+                        exec_range(rt, p, pc + 1, end);
+                    }
+                } else {
+                    for (; a >= b && !rt->error && !rt->returning; a += s) {
+                        rt_set(rt, var, v_num(a));
+                        exec_range(rt, p, pc + 1, end);
+                    }
+                }
+            }
+        }
+        *pcp = end < 0 ? pc : end;
+        return;
+    }
+    if (strcmp(up, "REPEAT") == 0) {
+        int end = match_block(p, pc, "REPEAT", "UNTIL", NULL, NULL);
+        char *cond = p->lines[end] + 5;
+        do {
+            exec_range(rt, p, pc + 1, end);
+            if (rt->error || rt->returning)
+                break;
+        } while (!v_truth(eval_expr(rt, cond)));
+        *pcp = end < 0 ? pc : end;
+        return;
+    }
+    if (strcmp(up, "TEACH") == 0) {
+        int end = match_block(p, pc, "TEACH", "LEARNED", NULL, NULL);
+        *pcp = end < 0 ? pc : end;
+        return;
+    }
+    if (strcmp(up, "RETURN") == 0) {
+        char *e = expr_after_word(t, "RETURN");
+        rt->ret = eval_expr(rt, e);
+        rt->returning = 1;
+        free(e);
+        return;
+    }
+    if (strcmp(up, "CALL") == 0) {
+        char *rest = t + 4;
+        const char *with = find_word_ci(rest, "WITH");
+        char *name = with ? substr(rest, with) : xstrdup(rest);
+        char **parts = NULL;
+        int ac = 0, i;
+        Value *args = NULL;
+        char *n = trim_inplace(name);
+        if (with)
+            ac = split_args(with + 4, &parts);
+        args = (Value *)xmalloc(sizeof(Value) * (ac ? ac : 1));
+        for (i = 0; i < ac; i++)
+            args[i] = eval_expr(rt, parts[i]);
+        call_function(rt, n, args, ac);
+        split_args_free(parts, ac);
+        call_args_free(args, ac);
+        free(name);
+        return;
+    }
+    if (strcmp(up, "IMPORT") == 0) {
+        const char *pcur = t + 6;
+        char *path = unquote_token(&pcur);
+        char *ns = NULL;
+        while (*pcur && isspace((unsigned char)*pcur))
+            pcur++;
+        if (starts_ci(pcur, "AS")) {
+            pcur += 2;
+            ns = xstrdup(trim_inplace((char *)pcur));
+        }
+        do_import(rt, path, ns, p->path, pc + 1);
+        free(path);
+        free(ns);
+        return;
+    }
+    if (strcmp(up, "ADD") == 0) {
+        const char *to = find_word_ci(t, "TO");
+        if (to) {
+            char *ex = substr(t + 3, to);
+            char *var = xstrdup(trim_inplace((char *)to + 2));
+            Value v = eval_expr(rt, ex);
+            Value l = rt_get(rt, var);
+            if (l.type == V_LIST) {
+                list_add(l.list, v);
+                rt_set(rt, var, l);
+            }
+            free(ex);
+            free(var);
+            value_free(v);
+            value_free(l);
+        }
+        return;
+    }
+    if (strcmp(up, "COUNT") == 0) {
+        const char *as = find_word_ci(t, "AS");
+        if (as) {
+            if (starts_ci(t + 5, " ARGUMENTS")) {
+                char *var = xstrdup(trim_inplace((char *)as + 2));
+                rt_set(rt, var, v_num(rt->script_argc));
+                free(var);
+            } else {
+                char *ex = substr(t + 5, as);
+                char *var = xstrdup(trim_inplace((char *)as + 2));
+                Value v = eval_expr(rt, ex);
+                rt_set(
+                    rt, var,
+                    v_num(v.type == V_LIST ? v.list->count : (v.type == V_MAP ? v.map->count : 0)));
+                value_free(v);
+                free(ex);
+                free(var);
+            }
+        }
+        return;
+    }
+    if (strcmp(up, "GET") == 0) {
+        const char *at = find_word_ci(t, "AT"), *key = find_word_ci(t, "KEY"),
+                   *as = find_word_ci(t, "AS");
+        if (as && starts_ci(t + 3, " ALL ARGUMENTS")) {
+            char *var = xstrdup(trim_inplace((char *)as + 2));
+            Value arr = v_list();
+            int i;
+            for (i = 0; i < rt->script_argc; i++)
+                list_add(arr.list, v_str(rt->script_argv[i]));
+            rt_set(rt, var, arr);
+            free(var);
+        } else if (as && starts_ci(t + 3, " ARGUMENT")) {
+            char *ie = substr(t + 12, as);
+            char *var = xstrdup(trim_inplace((char *)as + 2));
+            Value index_value = eval_expr(rt, ie);
+            int idx = (int)v_number(index_value);
+            Value argument_value;
+            value_free(index_value);
+            argument_value =
+                v_str(idx >= 1 && idx <= rt->script_argc ? rt->script_argv[idx - 1] : "");
+            rt_set(rt, var, argument_value);
+            value_free(argument_value);
+            free(ie);
+            free(var);
+        } else if (as && starts_ci(t + 3, " ENV")) {
+            const char *pcur = t + 7;
+            char *name = substr(pcur, as);
+            char *var = xstrdup(trim_inplace((char *)as + 2));
+            Value nv = eval_expr(rt, name);
+            char *ns = v_to_string(nv);
+            const char *ev = getenv(ns);
+            Value result = v_str(ev ? ev : "");
+            rt_set(rt, var, result);
+            value_free(result);
+            free(ns);
+            value_free(nv);
+            free(name);
+            free(var);
+        } else if (as && at) {
+            char *ce = substr(t + 3, at);
+            char *ie = substr(at + 2, as);
+            char *var = xstrdup(trim_inplace((char *)as + 2));
+            Value c = eval_expr(rt, ce), iv = eval_expr(rt, ie);
+            int idx = (int)v_number(iv);
+            value_free(iv);
+            if (c.type == V_LIST && idx >= 1 && idx <= c.list->count)
+                rt_set(rt, var, c.list->items[idx - 1]);
+            else {
+                Value empty = v_str("");
+                rt_set(rt, var, empty);
+                value_free(empty);
+            }
+            value_free(c);
+            free(ce);
+            free(ie);
+            free(var);
+        } else if (as && key) {
+            char *ce = substr(t + 3, key);
+            char *ke = substr(key + 3, as);
+            char *var = xstrdup(trim_inplace((char *)as + 2));
+            Value c = eval_expr(rt, ce);
+            Value kv = eval_expr(rt, ke);
+            char *ks = v_to_string(kv);
+            if (c.type == V_MAP) {
+                Value got = map_get(c.map, ks);
+                rt_set(rt, var, got);
+                value_free(got);
+            } else
+                rt_set(rt, var, v_str(""));
+            free(ks);
+            value_free(c);
+            value_free(kv);
+            free(ce);
+            free(ke);
+            free(var);
+        }
+        return;
+    }
+    if (strcmp(up, "PUT") == 0) {
+        const char *key = find_word_ci(t, "KEY"), *val = find_word_ci(t, "VALUE"),
+                   *as = find_word_ci(t, "AS"), *into = find_word_ci(t, "INTO");
+        if (key && val) {
+            char *me = substr(t + 3, key);
+            char *ke = substr(key + 3, val);
+            char *ve = xstrdup(val + 5);
+            Value m = eval_expr(rt, me);
+            Value k = eval_expr(rt, ke);
+            Value v = eval_expr(rt, ve);
+            char *ks = v_to_string(k);
+            if (m.type == V_MAP) {
+                char *mn = trim_inplace(me);
+                map_put(m.map, ks, v);
+                rt_set(rt, mn, m);
+            }
+            free(ks);
+            free(me);
+            free(ke);
+            free(ve);
+            value_free(m);
+            value_free(k);
+            value_free(v);
+        } else if (as && into) {
+            char *ke = substr(t + 3, as);
+            char *ve = substr(as + 2, into);
+            char *mn = xstrdup(trim_inplace((char *)into + 4));
+            Value m = rt_get(rt, mn);
+            Value k = eval_expr(rt, ke);
+            Value v = eval_expr(rt, ve);
+            char *ks = v_to_string(k);
+            if (m.type == V_MAP) {
+                map_put(m.map, ks, v);
+                rt_set(rt, mn, m);
+            }
+            free(ks);
+            free(ke);
+            free(ve);
+            free(mn);
+        }
+        return;
+    }
+    if (strcmp(up, "WRITE") == 0 || strcmp(up, "APPEND") == 0) {
+        if (starts_ci(t + strlen(w), " FILE")) {
+            const char *pcur = t + strlen(w) + 5;
+            const char *with = find_word_ci(pcur, "WITH");
+            if (with) {
+                char *pe = substr(pcur, with);
+                char *ve = xstrdup(with + 4);
+                Value pv = eval_expr(rt, pe);
+                Value vv = eval_expr(rt, ve);
+                char *path = v_to_string(pv), *text = v_to_string(vv);
+                FILE *f = fopen(path, strcmp(up, "APPEND") == 0 ? "ab" : "wb");
+                if (!f)
+                    rt_error(rt, p->path, pc + 1, "Could not write file: %s", strerror(errno));
+                else {
+                    fwrite(text, 1, strlen(text), f);
+                    fclose(f);
+                }
+                free(path);
+                free(text);
+                value_free(pv);
+                value_free(vv);
+                free(pe);
+                free(ve);
+            }
+        }
+        return;
+    }
+    if (strcmp(up, "READ") == 0) {
+        const char *pcur = t + 4;
+        const char *as = find_word_ci(pcur, "AS");
+        if (as && starts_ci(pcur, " FILE")) {
+            char *pe = substr(pcur + 5, as);
+            char *var = xstrdup(trim_inplace((char *)as + 2));
+            Value pv = eval_expr(rt, pe);
+            char *path = v_to_string(pv);
+            FILE *f = fopen(path, "rb");
+            if (!f)
+                rt_error(rt, p->path, pc + 1, "Could not read file: %s", strerror(errno));
+            else {
+                Str b;
+                int c;
+                Value contents;
+                str_init(&b);
+                while ((c = fgetc(f)) != EOF)
+                    str_ch(&b, (char)c);
+                fclose(f);
+                contents = v_str(b.s ? b.s : "");
+                rt_set(rt, var, contents);
+                value_free(contents);
+                free(b.s);
+            }
+            free(path);
+            value_free(pv);
+            free(pe);
+            free(var);
+        }
+        return;
+    }
+    if (strcmp(up, "EXISTS") == 0) {
+        const char *pcur = t + 6;
+        const char *as = find_word_ci(pcur, "AS");
+        if (as && starts_ci(pcur, " FILE")) {
+            char *pe = substr(pcur + 5, as);
+            char *var = xstrdup(trim_inplace((char *)as + 2));
+            Value pv = eval_expr(rt, pe);
+            char *path = v_to_string(pv);
+            rt_set(rt, var, v_bool(access(path, F_OK) == 0));
+            free(path);
+            value_free(pv);
+            free(pe);
+            free(var);
+        }
+        return;
+    }
+    if (strcmp(up, "CREATE") == 0) {
+        const char *pcur = t + 6;
+        if (starts_ci(pcur, " FOLDER")) {
+            char *pe = xstrdup(pcur + 7);
+            Value pv = eval_expr(rt, pe);
+            char *path = v_to_string(pv);
+            if (!make_folder(path))
+                rt_error(rt, p->path, pc + 1, "Could not create folder: %s", strerror(errno));
+            free(path);
+            value_free(pv);
+            free(pe);
+        }
+        return;
+    }
+    if (strcmp(up, "COPY") == 0) {
+        const char *to = find_word_ci(t, "TO");
+        if (starts_ci(t + 4, " FILE") && to) {
+            char *se = substr(t + 9, to);
+            char *de = xstrdup(to + 2);
+            Value sv = eval_expr(rt, se), dv = eval_expr(rt, de);
+            char *src = v_to_string(sv), *dst = v_to_string(dv);
+            if (!copy_file_bytes(src, dst))
+                rt_error(rt, p->path, pc + 1, "Could not copy file");
+            free(src);
+            free(dst);
+            free(se);
+            free(de);
+            value_free(sv);
+            value_free(dv);
+        }
+        return;
+    }
+    if (strcmp(up, "MOVE") == 0) {
+        const char *to = find_word_ci(t, "TO");
+        if (starts_ci(t + 4, " FILE") && to) {
+            char *se = substr(t + 9, to);
+            char *de = xstrdup(to + 2);
+            Value sv = eval_expr(rt, se), dv = eval_expr(rt, de);
+            char *src = v_to_string(sv), *dst = v_to_string(dv);
+            if (rename(src, dst) != 0)
+                rt_error(rt, p->path, pc + 1, "Could not move file: %s", strerror(errno));
+            free(src);
+            free(dst);
+            free(se);
+            free(de);
+            value_free(sv);
+            value_free(dv);
+        }
+        return;
+    }
+    if (strcmp(up, "LIST") == 0) {
+        const char *as = find_word_ci(t, "AS");
+        if (starts_ci(t + 4, " FOLDER") && as) {
+            char *pe = substr(t + 11, as);
+            char *var = xstrdup(trim_inplace((char *)as + 2));
+            Value pv = eval_expr(rt, pe);
+            char *path = v_to_string(pv);
+            Value entries = list_folder_value(path);
+            rt_set(rt, var, entries);
+            value_free(entries);
+            value_free(pv);
+            free(path);
+            free(pe);
+            free(var);
+        }
+        return;
+    }
+    if (strcmp(up, "DELETE") == 0) {
+        const char *pcur = t + 6;
+        if (starts_ci(pcur, " FILE")) {
+            char *pe = xstrdup(pcur + 5);
+            Value pv = eval_expr(rt, pe);
+            char *path = v_to_string(pv);
+            remove(path);
+            free(path);
+            value_free(pv);
+            free(pe);
+        } else if (starts_ci(pcur, " FOLDER")) {
+            char *pe = xstrdup(pcur + 7);
+            Value pv = eval_expr(rt, pe);
+            char *path = v_to_string(pv);
+            remove_folder(path);
+            free(path);
+            value_free(pv);
+            free(pe);
+        }
+        return;
+    }
+    if (strcmp(up, "PARSE") == 0) {
+        const char *as = find_word_ci(t, "AS");
+        if (as) {
+            char *ex = substr(t + 10, as);
+            char *var = xstrdup(trim_inplace((char *)as + 2));
+            Value s = eval_expr(rt, ex);
+            char *txt = v_to_string(s);
+            rt_set(rt, var, parse_json_text(txt));
+            free(txt);
+            free(ex);
+            free(var);
+        }
+        return;
+    }
+    if (strcmp(up, "MAKE") == 0) {
+        int pretty = strstr(t, "JSON PRETTY") != NULL;
+        const char *as = find_word_ci(t, "AS");
+        if (as) {
+            const char *st = strstr(t, pretty ? "JSON PRETTY" : "JSON");
+            char *ex = substr(st + (pretty ? 11 : 4), as);
+            char *var = xstrdup(trim_inplace((char *)as + 2));
+            Value v = eval_expr(rt, ex);
+            char *js = make_json(v, pretty);
+            rt_set(rt, var, v_str(js));
+            free(js);
+            free(ex);
+            free(var);
+        }
+        return;
+    }
+    if (strcmp(up, "TEXT") == 0) {
+        char restup[64], op[64];
+        const char *as = find_word_ci(t, "AS");
+        const char *pcur = t + 4;
+        first_word(pcur, op, sizeof(op));
+        upper_copy(restup, op, sizeof(restup));
+        while (*pcur && isspace((unsigned char)*pcur))
+            pcur++;
+        while (*pcur && !isspace((unsigned char)*pcur))
+            pcur++;
+        if (as) {
+            char *var = xstrdup(trim_inplace((char *)as + 2));
+            if (!strcmp(restup, "STARTS") || !strcmp(restup, "ENDS")) {
+                const char *with = find_word_ci(pcur, "WITH");
+                if (with) {
+                    char *left = substr(pcur, with);
+                    char *right = substr(with + 4, as);
+                    Value lv = eval_expr(rt, left), rv = eval_expr(rt, right);
+                    char *ls = v_to_string(lv), *rs = v_to_string(rv);
+                    size_t ll = strlen(ls), rl = strlen(rs);
+                    int ok = !strcmp(restup, "STARTS")
+                                 ? (rl <= ll && strncmp(ls, rs, rl) == 0)
+                                 : (rl <= ll && strcmp(ls + ll - rl, rs) == 0);
+                    rt_set(rt, var, v_bool(ok));
+                    free(left);
+                    free(right);
+                    free(ls);
+                    free(rs);
+                }
+            } else if (!strcmp(restup, "REPLACE")) {
+                const char *from = find_word_ci(pcur, "FROM");
+                const char *to = from ? find_word_ci(from + 4, "TO") : NULL;
+                if (from && to) {
+                    char *src = substr(pcur, from);
+                    char *old = substr(from + 4, to);
+                    char *neu = substr(to + 2, as);
+                    Value sv = eval_expr(rt, src), ov = eval_expr(rt, old), nv = eval_expr(rt, neu);
+                    char *ss = v_to_string(sv), *os = v_to_string(ov), *ns = v_to_string(nv);
+                    Str b;
+                    char *pos;
+                    str_init(&b);
+                    if (os[0]) {
+                        char *cur = ss;
+                        while ((pos = strstr(cur, os))) {
+                            str_addn(&b, cur, (size_t)(pos - cur));
+                            str_add(&b, ns);
+                            cur = pos + strlen(os);
+                        }
+                        str_add(&b, cur);
+                        rt_set(rt, var, v_str(b.s ? b.s : ""));
+                    } else
+                        rt_set(rt, var, v_str(ss));
+                    free(b.s);
+                    free(src);
+                    free(old);
+                    free(neu);
+                    free(ss);
+                    free(os);
+                    free(ns);
+                }
+            } else {
+                char *ex = substr(pcur, as);
+                Value v = eval_expr(rt, ex);
+                char *txt = v_to_string(v);
+                if (!strcmp(restup, "UPPER")) {
+                    char *r = text_upper_copy(txt);
+                    rt_set(rt, var, v_str(r));
+                    free(r);
+                } else if (!strcmp(restup, "LOWER")) {
+                    char *r = text_lower_copy(txt);
+                    rt_set(rt, var, v_str(r));
+                    free(r);
+                } else if (!strcmp(restup, "TRIM")) {
+                    char *r = text_trim_copy(txt);
+                    rt_set(rt, var, v_str(r));
+                    free(r);
+                } else if (!strcmp(restup, "LENGTH")) {
+                    rt_set(rt, var, v_num((double)strlen(txt)));
+                } else if (!strcmp(restup, "CONTAINS")) {
+                    char *left = NULL, *right = NULL;
+                    const char *needle = find_word_ci(pcur, "NEEDLE");
+                    if (!needle)
+                        needle = find_word_ci(pcur, "TEXT");
+                    if (needle) {
+                        left = substr(pcur, needle);
+                        right = substr(needle + 6, as);
+                    } else {
+                        char **args = NULL;
+                        int n = split_args(pcur, &args);
+                        if (n >= 2) {
+                            left = xstrdup(args[0]);
+                            right = substr(args[1], as);
+                        }
+                        split_args_free(args, n);
+                    }
+                    if (left && right) {
+                        Value lv = eval_expr(rt, left), rv = eval_expr(rt, right);
+                        char *ls = v_to_string(lv), *rs = v_to_string(rv);
+                        rt_set(rt, var, v_bool(strstr(ls, rs) != NULL));
+                        free(ls);
+                        free(rs);
+                    }
+                    free(left);
+                    free(right);
+                }
+                free(txt);
+                free(ex);
+            }
+            free(var);
+        }
+        return;
+    }
+    if (strcmp(up, "RANDOM") == 0) {
+        const char *as = find_word_ci(t, "AS");
+        if (as && starts_ci(t + 6, " NUMBER")) {
+            char *range = substr(t + 13, as);
+            char *var = xstrdup(trim_inplace((char *)as + 2));
+            char **args = NULL;
+            int n = split_args(range, &args);
+            double a = 1, b = 100;
+            if (n >= 2) {
+                a = v_number(eval_expr(rt, args[0]));
+                b = v_number(eval_expr(rt, args[1]));
+            } else {
+                char *tmp = range;
+                char *one = unquote_token((const char **)&tmp);
+                char *two = unquote_token((const char **)&tmp);
+                if (*one)
+                    a = v_number(eval_expr(rt, one));
+                if (*two)
+                    b = v_number(eval_expr(rt, two));
+                free(one);
+                free(two);
+            }
+            split_args_free(args, n);
+            if (b < a) {
+                double c = a;
+                a = b;
+                b = c;
+            }
+            rt_set(rt, var, v_num((int)a + (rand() % ((int)(b - a + 1)))));
+            free(range);
+            free(var);
+        }
+        return;
+    }
+    if (strcmp(up, "RUN") == 0) {
+        const char *as = find_word_ci(t, "AS");
+        if (as && starts_ci(t + 3, " COMMAND")) {
+            char *ex = substr(t + 11, as);
+            char *var = xstrdup(trim_inplace((char *)as + 2));
+            Value cv = eval_expr(rt, ex);
+            char *cmd = v_to_string(cv);
+            int code = 0;
+            char *out = capture_command_output(cmd, &code, 0);
+            Value output = v_str(out);
+            rt_set(rt, var, output);
+            value_free(output);
+            rt_set(rt, "LASTEXIT", v_num(code));
+            value_free(cv);
+            free(out);
+            free(cmd);
+            free(ex);
+            free(var);
+        }
+        return;
+    }
+    if (strcmp(up, "SORT") == 0) {
+        char *name = xstrdup(trim_inplace(t + 4));
+        Value v = rt_get(rt, name);
+        value_list_sort(v);
+        rt_set(rt, name, v);
+        free(name);
+        return;
+    }
+    if (strcmp(up, "REVERSE") == 0) {
+        char *name = xstrdup(trim_inplace(t + 7));
+        Value v = rt_get(rt, name);
+        value_list_reverse(v);
+        rt_set(rt, name, v);
+        free(name);
+        return;
+    }
+    if (strcmp(up, "FIND") == 0) {
+        const char *in = find_word_ci(t, "IN"), *as = find_word_ci(t, "AS");
+        if (in && as) {
+            char *needle = substr(t + 4, in);
+            char *listname = substr(in + 2, as);
+            char *var = xstrdup(trim_inplace((char *)as + 2));
+            Value nv = eval_expr(rt, needle), lv = eval_expr(rt, listname);
+            int found = 0, i;
+            if (lv.type == V_LIST) {
+                for (i = 0; i < lv.list->count; i++)
+                    if (value_compare(nv, lv.list->items[i]) == 0) {
+                        found = i + 1;
+                        break;
+                    }
+            }
+            rt_set(rt, var, v_num(found));
+            free(needle);
+            free(listname);
+            free(var);
+            value_free(nv);
+            value_free(lv);
+        }
+        return;
+    }
+    if (strcmp(up, "REMOVE") == 0) {
+        const char *from = find_word_ci(t, "FROM");
+        if (from) {
+            char *needle = substr(t + 6, from);
+            char *listname = xstrdup(trim_inplace((char *)from + 4));
+            Value nv = eval_expr(rt, needle), lv = rt_get(rt, listname);
+            int i, j;
+            if (lv.type == V_LIST) {
+                for (i = 0; i < lv.list->count; i++)
+                    if (value_compare(nv, lv.list->items[i]) == 0) {
+                        value_free(lv.list->items[i]);
+                        for (j = i; j < lv.list->count - 1; j++)
+                            lv.list->items[j] = lv.list->items[j + 1];
+                        lv.list->count--;
+                        break;
+                    }
+                rt_set(rt, listname, lv);
+            }
+            free(needle);
+            free(listname);
+            value_free(nv);
+            value_free(lv);
+        }
+        return;
+    }
+    if (strcmp(up, "TRY") == 0) {
+        int catchpos = -1, end = match_block(p, pc, "TRY", "ENDTRY", "CATCH", &catchpos);
+        exec_range(rt, p, pc + 1, catchpos >= 0 ? catchpos : end);
+        if (rt->error) {
+            rt_clear_error(rt);
+            if (catchpos >= 0)
+                exec_range(rt, p, catchpos + 1, end);
+        }
+        *pcp = end < 0 ? pc : end;
+        return;
+    }
+    if (strcmp(up, "RAISE") == 0) {
+        char *e = expr_after_word(t, "RAISE");
+        Value v = eval_expr(rt, e);
+        char *s = v_to_string(v);
+        rt_error(rt, p->path, pc + 1, "%s", s);
+        free(s);
+        free(e);
+        return;
+    }
+    if (strcmp(up, "CREATE") == 0 || strcmp(up, "MOVE") == 0 || strcmp(up, "SHOW") == 0 ||
+        strcmp(up, "HIDE") == 0 || strcmp(up, "EXPORT") == 0 || strcmp(up, "LEARNED") == 0 ||
+        strcmp(up, "ENDIF") == 0 || strcmp(up, "ELSE") == 0 || strcmp(up, "DONE") == 0 ||
+        strcmp(up, "ENDTRY") == 0 || strcmp(up, "CATCH") == 0 || strcmp(up, "ENDCOMMENT") == 0 ||
+        strcmp(up, "END") == 0 || strcmp(up, "WAIT") == 0) {
+        return;
+    }
+    rt_error(rt, p->path, pc + 1, "Unknown command: %s", w);
+}
+static void exec_range(Runtime *rt, Program *p, int start, int end) {
+    int pc;
+    if (end < 0 || end > p->count)
+        end = p->count;
+    for (pc = start; pc < end && !rt->error && !rt->returning; pc++)
+        exec_line(rt, p, &pc, p->lines[pc]);
+}
+static int run_file(Runtime *rt, const char *path) {
+    Program *p = load_program(rt, path);
+    int rc;
+    if (!p) {
+        fprintf(stderr, "Could not open %s: %s\n", path, strerror(errno));
+        return 1;
+    }
+    scan_functions(rt, p, "");
+    exec_range(rt, p, 0, p->count);
+    rc = rt->error ? 1 : 0;
+    if (rt->error && !rt->capture)
+        fprintf(stderr, "%s:%d: %s\n", rt->err_file ? rt->err_file : path, rt->err_line,
+                rt->err_msg ? rt->err_msg : "error");
+    runtime_programs_free(rt);
+    return rc;
+}
 
 /* ---------- formatter/check/test runner ---------- */
-static int fmt_file(const char *path){ FILE *f=fopen(path,"rb"); char line[4096]; int indent=0; if(!f){ fprintf(stderr,"Could not open %s\n",path); return 1;} while(fgets(line,sizeof(line),f)){ char *t=trim_inplace(line),w[64],up[64]; int opens=0; first_word(t,w,sizeof(w)); upper_copy(up,w,sizeof(up)); if(!strcmp(up,"ENDIF")||!strcmp(up,"LEARNED")||!strcmp(up,"DONE")||!strcmp(up,"ENDTRY")||!strcmp(up,"ELSE")||!strcmp(up,"CATCH")||!strcmp(up,"ENDCOMMENT")||!strcmp(up,"ENDCLASS")||!strcmp(up,"ENDTASK")||!strcmp(up,"END")) indent-=4; if(indent<0) indent=0; for(int i=0;i<indent;i++) putchar(' '); puts(t); opens=!strcmp(up,"TEACH")||!strcmp(up,"IF")||!strcmp(up,"FOR")||!strcmp(up,"TRY")||!strcmp(up,"CLASS")||!strcmp(up,"START")||!strcmp(up,"COMMENT")||!strcmp(up,"REPEAT")||!strcmp(up,"ELSE")||!strcmp(up,"CATCH")||(!strcmp(up,"DO")&&find_word_ci(t,"TIMES")); if(opens) indent+=4; } fclose(f); return 0; }
-static const char *check_commands[]={"SAY","SET","ASK","IF","ELSE","ENDIF","DO","DONE","FOR","REPEAT","UNTIL","TEACH","LEARNED","RETURN","CALL","IMPORT","ADD","COUNT","GET","PUT","WRITE","APPEND","READ","EXISTS","DELETE","PARSE","MAKE","TRY","CATCH","ENDTRY","RAISE","CREATE","COPY","MOVE","LIST","TEXT","RANDOM","RUN","SORT","REVERSE","FIND","REMOVE","SHOW","HIDE","EXPORT","COMMENT","ENDCOMMENT","END","WAIT","YIELD","TASK","CLASS","HAS","ENDCLASS","NEW","START","ENDTASK","OPEN","CLEAR","DRAW","UPDATE","CLOSE","HTTP","OBJECT","TYPE","CHECK",NULL};
-static int known_command(const char *up){ int i; for(i=0;check_commands[i];i++) if(strcmp(up,check_commands[i])==0) return 1; return 0; }
-static int levenshtein(const char *a,const char *b){ int la=(int)strlen(a), lb=(int)strlen(b), i,j; int *dp=(int*)xmalloc(sizeof(int)*(la+1)*(lb+1)); for(i=0;i<=la;i++) dp[i*(lb+1)]=i; for(j=0;j<=lb;j++) dp[j]=j; for(i=1;i<=la;i++) for(j=1;j<=lb;j++){ int c=tolower((unsigned char)a[i-1])==tolower((unsigned char)b[j-1])?0:1; int x=dp[(i-1)*(lb+1)+j]+1, y=dp[i*(lb+1)+j-1]+1, z=dp[(i-1)*(lb+1)+j-1]+c; int m=x<y?x:y; if(z<m)m=z; dp[i*(lb+1)+j]=m; } i=dp[la*(lb+1)+lb]; free(dp); return i; }
-
-static const char *suggest_command_name(const char *up){ const char *best=NULL; int bd=999,i; if(strcmp(up,"PRINT")==0||strcmp(up,"PRNT")==0||strcmp(up,"ECHO")==0||strcmp(up,"SAI")==0) return "SAY"; for(i=0;check_commands[i];i++){ int d=levenshtein(up,check_commands[i]); if(d<bd){ bd=d; best=check_commands[i]; } } return (best&&bd<=2)?best:NULL; }
-static void check_add_var(Var **vars,const char *name){ char tmp[256]; char *t; Var *v; if(!name) return; strncpy(tmp,name,sizeof(tmp)-1); tmp[sizeof(tmp)-1]=0; t=trim_inplace(tmp); if(!*t) return; if(env_find(*vars,t)) return; v=(Var*)xmalloc(sizeof(Var)); memset(v,0,sizeof(Var)); v->name=xstrdup(t); v->next=*vars; *vars=v; }
-static char *check_var_after_as(const char *line){ const char *as=find_word_ci(line,"AS"); if(!as) return NULL; return xstrdup(trim_inplace((char*)as+2)); }
-static char *check_between_words(const char *line,const char *a,const char *b){ const char *pa=find_word_ci(line,a); const char *pb; if(!pa) return NULL; pa+=strlen(a); pb=find_word_ci(pa,b); if(!pb) return NULL; return substr(pa,pb); }
-typedef struct CheckBlock { const char *expect; const char *open; int line; } CheckBlock;
-
-static void check_vars_free(Var **vars){ Var *v,*next; if(!vars) return; for(v=*vars;v;v=next){ next=v->next; free(v->name); value_free(v->val); free(v); } *vars=NULL; }
-static int check_file(const char *path){
- FILE *f=fopen(path,"rb"); char line[4096]; int line_no=0,errs=0,sp=0; CheckBlock stack[256]; Var *vars=NULL;
- check_add_var(&vars,"RESULT"); check_add_var(&vars,"LASTERROR"); check_add_var(&vars,"LASTERRORFILE"); check_add_var(&vars,"LASTERRORLINE"); check_add_var(&vars,"LASTEXIT"); check_add_var(&vars,"LASTHTTP");
- if(!f){ fprintf(stderr,"Could not open %s\n",path); return 1;}
- while(fgets(line,sizeof(line),f)){
-  char tmp[4096],up[64],w[128]; char *t; line_no++;
-  strncpy(tmp,line,sizeof(tmp)-1); tmp[sizeof(tmp)-1]=0; t=trim_inplace(tmp);
-  if(is_blank_or_comment(t)) continue;
-  first_word(t,w,sizeof(w)); upper_copy(up,w,sizeof(up));
-  if(!known_command(up)){
-   const char *sug=suggest_command_name(up);
-   printf("%s:%d: I do not know the command \"%s\".",path,line_no,w);
-   if(sug) printf(" Did you mean \"%s\"?",sug);
-   printf("\n"); errs++; continue;
-  }
-
-  if(!strcmp(up,"IF")){ if(!*trim_inplace(t+2)){ printf("%s:%d: IF needs a condition. Try: IF score = 10\n",path,line_no); errs++; } stack[sp++]=(CheckBlock){"ENDIF","IF",line_no}; }
-  else if(!strcmp(up,"CLASS")){ stack[sp++]=(CheckBlock){"ENDCLASS","CLASS",line_no}; }
-  else if(!strcmp(up,"START")){ if(starts_ci(t+5," TASK")) stack[sp++]=(CheckBlock){"ENDTASK","START",line_no}; }
-  else if(!strcmp(up,"NEW")){ char *name=check_var_after_as(t); if(name){ check_add_var(&vars,name); free(name); } else { const char *pcur=t+3; char *cls=unquote_token(&pcur); name=unquote_token(&pcur); if(name&&*trim_inplace(name)) check_add_var(&vars,name); else { printf("%s:%d: NEW needs a class and a name. Try: NEW Player player\n",path,line_no); errs++; } free(cls); free(name); } }
-  else if(!strcmp(up,"TEACH")){ if(!*trim_inplace(t+5)){ printf("%s:%d: TEACH needs a function name. Try: TEACH greet name\n",path,line_no); errs++; } else { const char *takes=find_word_ci(t,"TAKES"); const char *usingw=find_word_ci(t,"USING"); const char *params=takes?takes+5:(usingw?usingw+5:NULL); if(!params){ char *after=t+5; while(*after&&isspace((unsigned char)*after)) after++; while(*after&&!isspace((unsigned char)*after)) after++; params=after; } if(params){ char *pc=xstrdup(params); char *pp=pc; while(pp&&*pp){ char *comma=strchr(pp,','); if(comma){ *comma=0; check_add_var(&vars,pp); pp=comma+1; } else { check_add_var(&vars,pp); break; } } free(pc); } } stack[sp++]=(CheckBlock){"LEARNED","TEACH",line_no}; }
-  else if(!strcmp(up,"DO")){ if(find_word_ci(t,"TIMES")){ stack[sp++]=(CheckBlock){"DONE","DO",line_no}; } }
-  else if(!strcmp(up,"FOR")){
-   char *name=NULL;
-   if(find_word_ci(t,"EACH")){
-    const char *each=find_word_ci(t,"EACH"); const char *in=find_word_ci(t,"IN");
-    if(!in){ printf("%s:%d: FOR EACH needs IN. Try: FOR EACH item IN list\n",path,line_no); errs++; }
-    else { name=substr(each+4,in); char *comma=strchr(name,','); if(comma){ *comma=0; check_add_var(&vars,name); check_add_var(&vars,comma+1); } else check_add_var(&vars,name); free(name); }
-   } else {
-    const char *from=find_word_ci(t,"FROM");
-    if(!from){ printf("%s:%d: FOR needs FROM. Try: FOR i FROM 1 TO 5\n",path,line_no); errs++; }
-    else { name=substr(t+3,from); check_add_var(&vars,name); free(name); if(!find_word_ci(t,"TO")){ printf("%s:%d: FOR needs TO. Try: FOR i FROM 1 TO 5\n",path,line_no); errs++; } }
-   }
-   stack[sp++]=(CheckBlock){"DONE","FOR",line_no};
-  }
-  else if(!strcmp(up,"TRY")){ stack[sp++]=(CheckBlock){"ENDTRY","TRY",line_no}; }
-  else if(!strcmp(up,"COMMENT")){ stack[sp++]=(CheckBlock){"ENDCOMMENT","COMMENT",line_no}; }
-  else if(!strcmp(up,"REPEAT")){ stack[sp++]=(CheckBlock){"UNTIL","REPEAT",line_no}; }
-  else if(!strcmp(up,"ELSE")){ if(sp==0 || strcmp(stack[sp-1].expect,"ENDIF")!=0){ printf("%s:%d: ELSE must be inside an IF block.\n",path,line_no); errs++; } }
-  else if(!strcmp(up,"CATCH")){ if(sp==0 || strcmp(stack[sp-1].expect,"ENDTRY")!=0){ printf("%s:%d: CATCH must be inside a TRY block.\n",path,line_no); errs++; } }
-  else if(!strcmp(up,"ENDIF")||!strcmp(up,"LEARNED")||!strcmp(up,"DONE")||!strcmp(up,"ENDTRY")||!strcmp(up,"ENDCOMMENT")||!strcmp(up,"ENDCLASS")||!strcmp(up,"ENDTASK")||!strcmp(up,"UNTIL")||!strcmp(up,"END")){
-   if(!strcmp(up,"END")){ if(sp==0){ printf("%s:%d: unexpected END\n",path,line_no); errs++; } else sp--; }
-   else if(sp==0 || strcmp(stack[sp-1].expect,up)!=0){ printf("%s:%d: unexpected %s\n",path,line_no,up); errs++; } else sp--;
-  }
-
-  if(!strcmp(up,"HAS")){ const char *pcur=t+3; char *name=unquote_token(&pcur); if(name&&*trim_inplace(name)) check_add_var(&vars,name); free(name); }
-
-  if(!strcmp(up,"SET")){
-   const char *to=find_word_ci(t,"TO");
-   if(!to){ const char *pcur=t+3; char *name=unquote_token(&pcur); if(!*trim_inplace(name)||!*trim_inplace((char*)pcur)){ printf("%s:%d: SET needs a name and a value. Try: SET name TO \"Alex\" or SET name \"Alex\"\n",path,line_no); errs++; } else check_add_var(&vars,name); free(name); }
-   else { char *name=substr(t+3,to); if(!*trim_inplace(name)){ printf("%s:%d: SET needs a variable name. Try: SET score TO 0\n",path,line_no); errs++; } else check_add_var(&vars,name); free(name); }
-  }
-  if(!strcmp(up,"ASK")){
-   char *name=NULL; const char *as=find_word_ci(t,"AS");
-   if(as){ const char *pcur=as+2; name=unquote_token(&pcur); }
-   else { const char *pcur=t+3; char *prompt=unquote_token(&pcur); free(prompt); name=unquote_token(&pcur); }
-   if(!name||!*trim_inplace(name)){ printf("%s:%d: ASK needs a variable name. Try: ASK \"What is your name?\" name\n",path,line_no); errs++; } else check_add_var(&vars,name); free(name);
-  }
-  if(!strcmp(up,"COUNT")||!strcmp(up,"READ")||!strcmp(up,"EXISTS")||!strcmp(up,"PARSE")||!strcmp(up,"MAKE")){
-   char *name=check_var_after_as(t); if(name){ check_add_var(&vars,name); free(name); }
-   else if(!strcmp(up,"COUNT")){ printf("%s:%d: COUNT needs AS. Try: COUNT items AS total\n",path,line_no); errs++; }
-  }
-  if(!strcmp(up,"GET")){
-   char *name=check_var_after_as(t); if(name){ check_add_var(&vars,name); free(name); }
-   else { printf("%s:%d: GET needs AS. Try: GET items AT 1 AS item\n",path,line_no); errs++; }
-  }
-  if(!strcmp(up,"HTTP")){
-   const char *as=find_word_ci(t,"AS");
-   if(as){ char *name=xstrdup(trim_inplace((char*)as+2)); const char *status=find_word_ci(name,"STATUS"); if(status){ char *primary=substr(name,status); check_add_var(&vars,primary); check_add_var(&vars,trim_inplace((char*)status+6)); free(primary); } else check_add_var(&vars,name); free(name); }
-  }
-  if(!strcmp(up,"TASK")){
-   char *name=check_var_after_as(t); if(name){ check_add_var(&vars,name); free(name); }
-  }
-  if(!strcmp(up,"CALL")){
-   char *name=check_var_after_as(t); if(name){ check_add_var(&vars,name); free(name); }
-  }
-  if(!strcmp(up,"TEXT")||!strcmp(up,"TYPE")||!strcmp(up,"OBJECT")||!strcmp(up,"RANDOM")||!strcmp(up,"RUN")||!strcmp(up,"LIST")||!strcmp(up,"FIND")||(!strcmp(up,"GET")&&find_word_ci(t,"AS"))){
-   char *name=check_var_after_as(t); if(name){ check_add_var(&vars,name); free(name); }
-  }
-  if(!strcmp(up,"SAY")||!strcmp(up,"IF")||!strcmp(up,"RETURN")){
-   const char *expr=t+strlen(w);
-   Tokens ts=tokenize(expr); int i; for(i=0;i<ts.n;i++){
-    char *tok=ts.t[i];
-    if(isalpha((unsigned char)tok[0]) && !ci_eq(tok,"YES")&&!ci_eq(tok,"NO")&&!ci_eq(tok,"AND")&&!ci_eq(tok,"OR")&&!ci_eq(tok,"NOT")&&!ci_eq(tok,"IS")&&!ci_eq(tok,"LIST")&&!ci_eq(tok,"MAP")&&!env_find(vars,tok)){
-     Var *v=vars; char *best=NULL; int bd=999; while(v){ int d=levenshtein(tok,v->name); if(d<bd){bd=d; best=v->name;} v=v->next; }
-     if(best&&bd<=2) printf("%s:%d: I do not know the variable \"%s\" yet. Did you mean \"%s\"?\n",path,line_no,tok,best);
-     else printf("%s:%d: I do not know the variable \"%s\" yet.\n",path,line_no,tok);
-     errs++;
+static int fmt_file(const char *path) {
+    FILE *f = fopen(path, "rb");
+    char line[4096];
+    int indent = 0;
+    if (!f) {
+        fprintf(stderr, "Could not open %s\n", path);
+        return 1;
     }
-   }
-   tokens_free(&ts);
-  }
- }
- fclose(f);
- while(sp>0){ CheckBlock b=stack[--sp]; printf("%s:%d: %s block opened here needs %s\n",path,b.line,b.open,b.expect); errs++; }
- if(errs==0) printf("OK\n");
- check_vars_free(&vars);
- return errs?1:0;
+    while (fgets(line, sizeof(line), f)) {
+        char *t = trim_inplace(line), w[64], up[64];
+        int opens = 0, i;
+        first_word(t, w, sizeof(w));
+        upper_copy(up, w, sizeof(up));
+        if (!strcmp(up, "ENDIF") || !strcmp(up, "LEARNED") || !strcmp(up, "DONE") ||
+            !strcmp(up, "ENDTRY") || !strcmp(up, "ELSE") || !strcmp(up, "CATCH") ||
+            !strcmp(up, "ENDCOMMENT") || !strcmp(up, "ENDCLASS") || !strcmp(up, "ENDTASK") ||
+            !strcmp(up, "END"))
+            indent -= 4;
+        if (indent < 0)
+            indent = 0;
+        for (i = 0; i < indent; i++)
+            putchar(' ');
+        puts(t);
+        opens = !strcmp(up, "TEACH") || !strcmp(up, "IF") || !strcmp(up, "FOR") ||
+                !strcmp(up, "TRY") || !strcmp(up, "CLASS") || !strcmp(up, "START") ||
+                !strcmp(up, "COMMENT") || !strcmp(up, "REPEAT") || !strcmp(up, "ELSE") ||
+                !strcmp(up, "CATCH") || (!strcmp(up, "DO") && find_word_ci(t, "TIMES"));
+        if (opens)
+            indent += 4;
+    }
+    fclose(f);
+    return 0;
+}
+static const char *check_commands[] = {
+    "SAY",     "SET",    "ASK",   "IF",    "ELSE",    "ENDIF",    "DO",         "DONE",
+    "FOR",     "REPEAT", "UNTIL", "TEACH", "LEARNED", "RETURN",   "CALL",       "IMPORT",
+    "ADD",     "COUNT",  "GET",   "PUT",   "WRITE",   "APPEND",   "READ",       "EXISTS",
+    "DELETE",  "PARSE",  "MAKE",  "TRY",   "CATCH",   "ENDTRY",   "RAISE",      "CREATE",
+    "COPY",    "MOVE",   "LIST",  "TEXT",  "RANDOM",  "RUN",      "SORT",       "REVERSE",
+    "FIND",    "REMOVE", "SHOW",  "HIDE",  "EXPORT",  "COMMENT",  "ENDCOMMENT", "END",
+    "WAIT",    "YIELD",  "TASK",  "CLASS", "HAS",     "ENDCLASS", "NEW",        "START",
+    "ENDTASK", "OPEN",   "CLEAR", "DRAW",  "UPDATE",  "CLOSE",    "HTTP",       "OBJECT",
+    "TYPE",    "CHECK",  NULL};
+static int known_command(const char *up) {
+    int i;
+    for (i = 0; check_commands[i]; i++)
+        if (strcmp(up, check_commands[i]) == 0)
+            return 1;
+    return 0;
+}
+static int levenshtein(const char *a, const char *b) {
+    int la = (int)strlen(a), lb = (int)strlen(b), i, j;
+    int *dp = (int *)xmalloc(sizeof(int) * (la + 1) * (lb + 1));
+    for (i = 0; i <= la; i++)
+        dp[i * (lb + 1)] = i;
+    for (j = 0; j <= lb; j++)
+        dp[j] = j;
+    for (i = 1; i <= la; i++)
+        for (j = 1; j <= lb; j++) {
+            int c = tolower((unsigned char)a[i - 1]) == tolower((unsigned char)b[j - 1]) ? 0 : 1;
+            int x = dp[(i - 1) * (lb + 1) + j] + 1, y = dp[i * (lb + 1) + j - 1] + 1,
+                z = dp[(i - 1) * (lb + 1) + j - 1] + c;
+            int m = x < y ? x : y;
+            if (z < m)
+                m = z;
+            dp[i * (lb + 1) + j] = m;
+        }
+    i = dp[la * (lb + 1) + lb];
+    free(dp);
+    return i;
 }
 
-static const char *type_env_get(Var *types,const char *name){ Var *v=env_find(types,name); if(v&&v->val.type==V_STR) return v->val.str; return NULL; }
-static void type_env_free(Var **types){ Var *v,*next; if(!types) return; for(v=*types;v;v=next){ next=v->next; free(v->name); value_free(v->val); free(v); } *types=NULL; }
-static void type_env_set(Var **types,const char *name,const char *type){ Var *v; char tmp[256]; char *t; if(!name||!type||!*type) return; strncpy(tmp,name,sizeof(tmp)-1); tmp[sizeof(tmp)-1]=0; t=trim_inplace(tmp); if(!*t) return; v=env_find(*types,t); if(v){ value_free(v->val); v->val=v_str(type); return; } v=(Var*)xmalloc(sizeof(Var)); memset(v,0,sizeof(Var)); v->name=xstrdup(t); v->val=v_str(type); v->next=*types; *types=v; }
-static const char *simple_expr_type(Var *types,const char *expr){
- char tmp[512]; char *t; double d; size_t i=0; int in_string=0;
- if(!expr) return NULL;
- strncpy(tmp,expr,sizeof(tmp)-1); tmp[sizeof(tmp)-1]=0;
- t=trim_inplace(tmp); if(!*t) return NULL;
- if(*t=='"') return "TEXT";
- if(parse_number_strict(t,&d)) return "NUMBER";
- if(ci_eq(t,"YES")||ci_eq(t,"NO")||ci_eq(t,"TRUE")||ci_eq(t,"FALSE")) return "YESNO";
- if(ci_eq(t,"LIST")) return "LIST";
- if(ci_eq(t,"MAP")) return "MAP";
- if(starts_ci(t,"NEW ")) return "OBJECT";
- for(i=0;t[i];i++){
-  if(t[i]=='"') in_string=!in_string;
-  if(!in_string&&strchr("+-*/",t[i])){
-   char *left=substr(t,t+i), *right=xstrdup(t+i+1); const char *lt,*rt;
-   lt=simple_expr_type(types,left); rt=simple_expr_type(types,right);
-   free(left); free(right);
-   if((lt&&ci_eq(lt,"TEXT"))||(rt&&ci_eq(rt,"TEXT"))) return "TEXT";
-   if(lt&&rt&&ci_eq(lt,"NUMBER")&&ci_eq(rt,"NUMBER")) return "NUMBER";
-   return NULL;
-  }
- }
- i=0; while(t[i]&&(isalnum((unsigned char)t[i])||t[i]=='_'||t[i]=='.')) i++;
- if(i>0 && t[i]==0) return type_env_get(types,t);
- return NULL;
+static const char *suggest_command_name(const char *up) {
+    const char *best = NULL;
+    int bd = 999, i;
+    if (strcmp(up, "PRINT") == 0 || strcmp(up, "PRNT") == 0 || strcmp(up, "ECHO") == 0 ||
+        strcmp(up, "SAI") == 0)
+        return "SAY";
+    for (i = 0; check_commands[i]; i++) {
+        int d = levenshtein(up, check_commands[i]);
+        if (d < bd) {
+            bd = d;
+            best = check_commands[i];
+        }
+    }
+    return (best && bd <= 2) ? best : NULL;
 }
-static int return_value_extra_tokens(const char *expr,char *value,size_t value_size){
- char tmp[512],*t,*p;
- if(!expr||!value||value_size==0) return 0;
- strncpy(tmp,expr,sizeof(tmp)-1); tmp[sizeof(tmp)-1]=0;
- t=trim_inplace(tmp);
- if(!*t||strpbrk(t,"+-*/\"")!=NULL) return 0;
- p=t;
- while(*p&&!isspace((unsigned char)*p)) p++;
- if(!*p) return 0;
- *p++=0;
- while(*p&&isspace((unsigned char)*p)) p++;
- if(!*p) return 0;
- snprintf(value,value_size,"%s",t);
- return 1;
+static void check_add_var(Var **vars, const char *name) {
+    char tmp[256];
+    char *t;
+    Var *v;
+    if (!name)
+        return;
+    strncpy(tmp, name, sizeof(tmp) - 1);
+    tmp[sizeof(tmp) - 1] = 0;
+    t = trim_inplace(tmp);
+    if (!*t)
+        return;
+    if (env_find(*vars, t))
+        return;
+    v = (Var *)xmalloc(sizeof(Var));
+    memset(v, 0, sizeof(Var));
+    v->name = xstrdup(t);
+    v->next = *vars;
+    *vars = v;
 }
-static const char *text_operand_for_operator(Var *types,const char *expr,char wanted){ static char operand[256]; char tmp[512]; char *t; size_t i; int in_string=0; if(!expr) return NULL; strncpy(tmp,expr,sizeof(tmp)-1); tmp[sizeof(tmp)-1]=0; t=trim_inplace(tmp); for(i=0;t[i];i++){ char *left,*right; const char *lt,*rt; if(t[i]=='"') in_string=!in_string; if(!in_string&&t[i]==wanted){ left=substr(t,t+i); right=xstrdup(t+i+1); lt=simple_expr_type(types,left); rt=simple_expr_type(types,right); if(lt&&ci_eq(lt,"TEXT")){ snprintf(operand,sizeof(operand),"%s",trim_inplace(left)); free(left); free(right); return operand; } if(rt&&ci_eq(rt,"TEXT")){ snprintf(operand,sizeof(operand),"%s",trim_inplace(right)); free(left); free(right); return operand; } free(left); free(right); } } return NULL; }
-static char text_operator_for_number_return(Var *types,const char *expr){ const char ops[]="+-*/"; int i; for(i=0;ops[i];i++) if(text_operand_for_operator(types,expr,ops[i])) return ops[i]; return 0; }
-static int type_words_match(const char *need,const char *got){ if(!need||!*need||ci_eq(need,"ANY")||ci_eq(got,"ANY")) return 1; if(!got||!*got) return 1; if(ci_eq(need,got)) return 1; if((ci_eq(need,"LIST")||ci_eq(need,"MAP")) && starts_ci(got,need)) return 1; if(starts_ci(need,"LIST OF") && ci_eq(got,"LIST")) return 1; if(starts_ci(need,"MAP OF") && ci_eq(got,"MAP")) return 1; if((ci_eq(need,"YESNO")||ci_eq(need,"BOOL")||ci_eq(need,"BOOLEAN")) && (ci_eq(got,"YESNO")||ci_eq(got,"BOOL")||ci_eq(got,"BOOLEAN"))) return 1; if(ci_eq(need,"OBJECT") && (ci_eq(got,"MAP")||starts_ci(got,"OBJECT:"))) return 1; return 0; }
-static const char *container_member_type(const char *type,const char *kind){ const char *p; static char buf[128]; if(!type||!kind) return NULL; if(!starts_ci(type,kind)) return NULL; p=type+strlen(kind); while(*p&&isspace((unsigned char)*p)) p++; if(!starts_ci(p,"OF")) return NULL; p+=2; while(*p&&isspace((unsigned char)*p)) p++; if(!*p) return NULL; snprintf(buf,sizeof(buf),"%s",p); return trim_inplace(buf); }
-static void parse_set_for_typecheck2(const char *t,char **name,char **type,char **expr){ const char *rest=t+3; const char *to=find_word_ci(rest,"TO"); const char *as=find_word_ci(rest,"AS"); *name=NULL; *type=NULL; *expr=NULL; if(as&&to&&as<to){ *name=substr(rest,as); *type=substr(as+2,to); *expr=xstrdup(to+2); return; } if(to){ char *before=substr(rest,to); const char *pcur=before; char *var=unquote_token(&pcur); char *maybe=unquote_token(&pcur); char *mt=trim_inplace(maybe); *name=xstrdup(trim_inplace(var)); if(claro_is_type_word(mt)) *type=xstrdup(mt); *expr=xstrdup(to+2); free(before); free(var); free(maybe); return; } { const char *pcur=rest; char *var=unquote_token(&pcur); const char *after_var=pcur; char *maybe=unquote_token(&pcur); char *mt=trim_inplace(maybe); char *remaining=trim_inplace((char*)pcur); int uppercase_candidate=1; char *q; for(q=mt;*q;q++) if(isalpha((unsigned char)*q)&&!isupper((unsigned char)*q)) uppercase_candidate=0; *name=xstrdup(trim_inplace(var)); if(claro_is_type_word(mt)){ *type=xstrdup(mt); *expr=xstrdup(remaining); } else if(strchr(trim_inplace(var),'.')&&*remaining&&strchr(mt,' ')==NULL&&uppercase_candidate){ *type=xstrdup(mt); *expr=xstrdup(remaining); } else { *expr=xstrdup(trim_inplace((char*)after_var)); } free(var); free(maybe); } }
-typedef struct TypeParamCheck { char *func; char *param; char *type; int pos; struct TypeParamCheck *next; } TypeParamCheck;
-typedef struct TypeFieldCheck { char *cls; char *field; char *type; struct TypeFieldCheck *next; } TypeFieldCheck;
-typedef struct TypeMethodCheck { char *cls; char *method; struct TypeMethodCheck *next; } TypeMethodCheck;
-typedef struct TypeArityCheck { char *func; int arity; struct TypeArityCheck *next; } TypeArityCheck;
-typedef struct TypeReturnCheck { char *func; char *type; struct TypeReturnCheck *next; } TypeReturnCheck;
-static void add_type_param_check(TypeParamCheck **checks,const char *func,const char *param,const char *type,int pos){ TypeParamCheck *c; if(!func||!*func||!param||!*param||!type||!*type) return; c=(TypeParamCheck*)xmalloc(sizeof(TypeParamCheck)); c->func=xstrdup(func); c->param=xstrdup(param); c->type=xstrdup(type); c->pos=pos; c->next=*checks; *checks=c; }
-static const char *type_param_check_for(TypeParamCheck *checks,const char *func,int pos,const char **param){ TypeParamCheck *c=checks; while(c){ if(c->pos==pos&&ci_eq(c->func,func)){ if(param) *param=c->param; return c->type; } c=c->next; } return NULL; }
-static void add_type_arity_check(TypeArityCheck **checks,const char *func,int arity){ TypeArityCheck *c; if(!func||!*func) return; c=(TypeArityCheck*)xmalloc(sizeof(TypeArityCheck)); c->func=xstrdup(func); c->arity=arity; c->next=*checks; *checks=c; }
-static int type_arity_check_for(TypeArityCheck *checks,const char *func){ TypeArityCheck *c=checks; while(c){ if(ci_eq(c->func,func)) return c->arity; c=c->next; } return -1; }
-static void add_type_return_check(TypeReturnCheck **checks,const char *func,const char *type){ TypeReturnCheck *c; if(!func||!*func||!type||!*type) return; c=(TypeReturnCheck*)xmalloc(sizeof(TypeReturnCheck)); c->func=xstrdup(func); c->type=xstrdup(type); c->next=*checks; *checks=c; }
-static const char *type_return_check_for(TypeReturnCheck *checks,const char *func){ TypeReturnCheck *c=checks; while(c){ if(ci_eq(c->func,func)) return c->type; c=c->next; } return NULL; }
-static void add_type_field_check(TypeFieldCheck **checks,const char *cls,const char *field,const char *type){ TypeFieldCheck *c; if(!cls||!*cls||!field||!*field||!type||!*type) return; c=(TypeFieldCheck*)xmalloc(sizeof(TypeFieldCheck)); c->cls=xstrdup(cls); c->field=xstrdup(field); c->type=xstrdup(type); c->next=*checks; *checks=c; }
-static const char *type_field_check_for(TypeFieldCheck *checks,const char *cls,const char *field){ TypeFieldCheck *c=checks; while(c){ if(ci_eq(c->cls,cls)&&ci_eq(c->field,field)) return c->type; c=c->next; } return NULL; }
-static void add_type_method_check(TypeMethodCheck **checks,const char *cls,const char *method){ TypeMethodCheck *c; if(!cls||!*cls||!method||!*method) return; c=(TypeMethodCheck*)xmalloc(sizeof(TypeMethodCheck)); c->cls=xstrdup(cls); c->method=xstrdup(method); c->next=*checks; *checks=c; }
-static int type_method_check_for(TypeMethodCheck *checks,const char *cls,const char *method){ TypeMethodCheck *c=checks; while(c){ if(ci_eq(c->cls,cls)&&ci_eq(c->method,method)) return 1; c=c->next; } return 0; }
-static int type_method_name_exists(TypeMethodCheck *checks,const char *method){ TypeMethodCheck *c=checks; while(c){ if(ci_eq(c->method,method)) return 1; c=c->next; } return 0; }
-static int param_index_named(char **params,int pcnt,const char *name){ int i; char tmp[256]; char *p; for(i=0;i<pcnt;i++){ strncpy(tmp,params[i],sizeof(tmp)-1); tmp[sizeof(tmp)-1]=0; p=trim_inplace(tmp); if(ci_eq(p,name)) return i; } return -1; }
-static const char *duplicate_param_name(char **params,int pcnt){ int i,j; char left[256],right[256]; for(i=0;i<pcnt;i++){ snprintf(left,sizeof(left),"%s",trim_inplace(params[i])); for(j=0;j<i;j++){ snprintf(right,sizeof(right),"%s",trim_inplace(params[j])); if(ci_eq(left,right)) return params[i]; } } return NULL; }
-static void collect_teach_param_checks_from_body(TypeParamCheck **checks,FILE *f,const char *func_name,char **params,int pcnt){ char line[4096]; while(fgets(line,sizeof(line),f)){ char inner[4096],iup[64],iw[128]; char *it; strncpy(inner,line,sizeof(inner)-1); inner[sizeof(inner)-1]=0; it=trim_inplace(inner); if(is_blank_or_comment(it)) continue; first_word(it,iw,sizeof(iw)); upper_copy(iup,iw,sizeof(iup)); if(!strcmp(iup,"END")||!strcmp(iup,"LEARNED")) break; if(!strcmp(iup,"CHECK")&&starts_ci(it,"CHECK TYPE")){ const char *is=find_word_ci(it,"IS"); if(is){ char *expr=substr(it+10,is); char *need=xstrdup(trim_inplace((char*)is+2)); char *en=trim_inplace(expr); int idx=param_index_named(params,pcnt,en); if(idx>=0) add_type_param_check(checks,func_name,en,need,idx); free(expr); free(need); } } } }
-static TypeParamCheck *collect_function_param_type_checks(FILE *f){ TypeParamCheck *checks=NULL; char line[4096]; char current_class[128]=""; while(fgets(line,sizeof(line),f)){ char tmp[4096],up[64],w[128]; char *t; strncpy(tmp,line,sizeof(tmp)-1); tmp[sizeof(tmp)-1]=0; t=trim_inplace(tmp); if(is_blank_or_comment(t)) continue; first_word(t,w,sizeof(w)); upper_copy(up,w,sizeof(up)); if(!strcmp(up,"CLASS")){ const char *pcur=t+5; char *cls=unquote_token(&pcur); snprintf(current_class,sizeof(current_class),"%s",trim_inplace(cls)); free(cls); continue; } if((!strcmp(up,"END")||!strcmp(up,"ENDCLASS"))&&current_class[0]){ current_class[0]=0; continue; } if(!strcmp(up,"TEACH")){ char teachline[4096]; char *fname=NULL; char **params=NULL; int pcnt=0; char full_name[256]; strncpy(teachline,t,sizeof(teachline)-1); teachline[sizeof(teachline)-1]=0; parse_teach_parts(teachline,&fname,&params,&pcnt); if(current_class[0]) snprintf(full_name,sizeof(full_name),"%s.%s",current_class,fname); else snprintf(full_name,sizeof(full_name),"%s",fname); collect_teach_param_checks_from_body(&checks,f,full_name,params,pcnt); } } rewind(f); return checks; }
-static TypeArityCheck *collect_function_arity_checks(FILE *f){ TypeArityCheck *checks=NULL; char line[4096]; char current_class[128]=""; while(fgets(line,sizeof(line),f)){ char tmp[4096],up[64],w[128]; char *t; strncpy(tmp,line,sizeof(tmp)-1); tmp[sizeof(tmp)-1]=0; t=trim_inplace(tmp); if(is_blank_or_comment(t)) continue; first_word(t,w,sizeof(w)); upper_copy(up,w,sizeof(up)); if(!strcmp(up,"CLASS")){ const char *pcur=t+5; char *cls=unquote_token(&pcur); snprintf(current_class,sizeof(current_class),"%s",trim_inplace(cls)); free(cls); continue; } if((!strcmp(up,"END")||!strcmp(up,"ENDCLASS"))&&current_class[0]){ current_class[0]=0; continue; } if(!strcmp(up,"TEACH")){ char teachline[4096]; char *fname=NULL; char **params=NULL; int pcnt=0; char full_name[256]; strncpy(teachline,t,sizeof(teachline)-1); teachline[sizeof(teachline)-1]=0; parse_teach_parts(teachline,&fname,&params,&pcnt); if(current_class[0]) snprintf(full_name,sizeof(full_name),"%s.%s",current_class,fname); else snprintf(full_name,sizeof(full_name),"%s",fname); add_type_arity_check(&checks,full_name,pcnt); while(fgets(line,sizeof(line),f)){ char inner[4096],iup[64],iw[128]; char *it; strncpy(inner,line,sizeof(inner)-1); inner[sizeof(inner)-1]=0; it=trim_inplace(inner); if(is_blank_or_comment(it)) continue; first_word(it,iw,sizeof(iw)); upper_copy(iup,iw,sizeof(iup)); if(!strcmp(iup,"END")||!strcmp(iup,"LEARNED")) break; } } } rewind(f); return checks; }
-static TypeReturnCheck *collect_function_return_type_checks(FILE *f){ TypeReturnCheck *checks=NULL; char line[4096]; char current_class[128]=""; while(fgets(line,sizeof(line),f)){ char tmp[4096],up[64],w[128]; char *t; strncpy(tmp,line,sizeof(tmp)-1); tmp[sizeof(tmp)-1]=0; t=trim_inplace(tmp); if(is_blank_or_comment(t)) continue; first_word(t,w,sizeof(w)); upper_copy(up,w,sizeof(up)); if(!strcmp(up,"CLASS")){ const char *pcur=t+5; char *cls=unquote_token(&pcur); snprintf(current_class,sizeof(current_class),"%s",trim_inplace(cls)); free(cls); continue; } if((!strcmp(up,"END")||!strcmp(up,"ENDCLASS"))&&current_class[0]){ current_class[0]=0; continue; } if(!strcmp(up,"TEACH")){ char teachline[4096],full_name[256],*fname=NULL,**params=NULL; int pcnt=0; const char *returns; strncpy(teachline,t,sizeof(teachline)-1); teachline[sizeof(teachline)-1]=0; returns=find_word_ci(teachline,"RETURNS"); parse_teach_parts(teachline,&fname,&params,&pcnt); if(returns){ char ret[128],first_ret[128]; const char *p=returns+7; while(*p&&isspace((unsigned char)*p)) p++; snprintf(ret,sizeof(ret),"%s",p); if(sscanf(ret,"%127s",first_ret)==1){ if(current_class[0]) snprintf(full_name,sizeof(full_name),"%s.%s",current_class,fname); else snprintf(full_name,sizeof(full_name),"%s",fname); add_type_return_check(&checks,full_name,first_ret); } } while(fgets(line,sizeof(line),f)){ char inner[4096],iup[64],iw[128]; char *it; strncpy(inner,line,sizeof(inner)-1); inner[sizeof(inner)-1]=0; it=trim_inplace(inner); if(is_blank_or_comment(it)) continue; first_word(it,iw,sizeof(iw)); upper_copy(iup,iw,sizeof(iup)); if(!strcmp(iup,"END")||!strcmp(iup,"LEARNED")) break; } } } rewind(f); return checks; }
-static TypeFieldCheck *collect_class_field_type_checks(FILE *f){
- TypeFieldCheck *checks=NULL;
- char line[4096];
- char current_class[128]="";
- while(fgets(line,sizeof(line),f)){
-  char tmp[4096],up[64],w[128];
-  char *t;
-  strncpy(tmp,line,sizeof(tmp)-1); tmp[sizeof(tmp)-1]=0;
-  t=trim_inplace(tmp);
-  if(is_blank_or_comment(t)) continue;
-  first_word(t,w,sizeof(w)); upper_copy(up,w,sizeof(up));
-  if(!strcmp(up,"CLASS")){
-   const char *pcur=t+5;
-   char *cls=unquote_token(&pcur);
-   snprintf(current_class,sizeof(current_class),"%s",trim_inplace(cls));
-   free(cls);
-   continue;
-  }
-  if(current_class[0]&&!strcmp(up,"TEACH")){
-   while(fgets(line,sizeof(line),f)){
-    char inner[4096],iup[64],iw[128];
-    char *it;
-    strncpy(inner,line,sizeof(inner)-1); inner[sizeof(inner)-1]=0;
-    it=trim_inplace(inner);
-    if(is_blank_or_comment(it)) continue;
-    first_word(it,iw,sizeof(iw)); upper_copy(iup,iw,sizeof(iup));
-    if(!strcmp(iup,"END")||!strcmp(iup,"LEARNED")) break;
-   }
-   continue;
-  }
-  if((!strcmp(up,"END")||!strcmp(up,"ENDCLASS"))&&current_class[0]){ current_class[0]=0; continue; }
-  if(current_class[0]&&!strcmp(up,"HAS")){
-   const char *pcur=t+3;
-   char *field=unquote_token(&pcur);
-   char *type=unquote_token(&pcur);
-   add_type_field_check(&checks,current_class,trim_inplace(field),trim_inplace(type));
-   free(field); free(type);
-  }
- }
- rewind(f);
- return checks;
+static char *check_var_after_as(const char *line) {
+    const char *as = find_word_ci(line, "AS");
+    if (!as)
+        return NULL;
+    return xstrdup(trim_inplace((char *)as + 2));
 }
-static TypeMethodCheck *collect_class_method_type_checks(FILE *f){ TypeMethodCheck *checks=NULL; char line[4096]; char current_class[128]=""; while(fgets(line,sizeof(line),f)){ char tmp[4096],up[64],w[128]; char *t; strncpy(tmp,line,sizeof(tmp)-1); tmp[sizeof(tmp)-1]=0; t=trim_inplace(tmp); if(is_blank_or_comment(t)) continue; first_word(t,w,sizeof(w)); upper_copy(up,w,sizeof(up)); if(!strcmp(up,"CLASS")){ const char *pcur=t+5; char *cls=unquote_token(&pcur); snprintf(current_class,sizeof(current_class),"%s",trim_inplace(cls)); free(cls); continue; } if((!strcmp(up,"END")||!strcmp(up,"ENDCLASS"))&&current_class[0]){ current_class[0]=0; continue; } if(current_class[0]&&!strcmp(up,"TEACH")){ char teachline[4096]; char *fname=NULL; char **params=NULL; int pcnt=0; strncpy(teachline,t,sizeof(teachline)-1); teachline[sizeof(teachline)-1]=0; parse_teach_parts(teachline,&fname,&params,&pcnt); add_type_method_check(&checks,current_class,trim_inplace(fname)); while(fgets(line,sizeof(line),f)){ char inner[4096],iup[64],iw[128]; char *it; strncpy(inner,line,sizeof(inner)-1); inner[sizeof(inner)-1]=0; it=trim_inplace(inner); if(is_blank_or_comment(it)) continue; first_word(it,iw,sizeof(iw)); upper_copy(iup,iw,sizeof(iup)); if(!strcmp(iup,"END")||!strcmp(iup,"LEARNED")) break; } } } rewind(f); return checks; }
-static int typecheck_file(const char *path){ FILE *f=fopen(path,"rb"); char line[4096]; int line_no=0,errs=0; Var *types=NULL; TypeParamCheck *param_checks=NULL; TypeFieldCheck *field_checks=NULL; TypeMethodCheck *method_checks=NULL; TypeArityCheck *arity_checks=NULL; TypeReturnCheck *return_checks=NULL; char current_func[256]=""; char current_method[256]=""; char current_class[128]=""; char declared_classes[128][256]; char declared_functions[128][256]; char declared_methods[128][256]; char declared_fields[128][256]; char declared_objects[128][256]; int declared_class_count=0,declared_function_count=0,declared_method_count=0,declared_field_count=0,declared_object_count=0; int in_teach=0,return_seen=0,top_level_return_seen=0,nested_blocks=0,conditional_paths_complete=1; int branch_returned[64],branch_has_else[64]; if(!f){ fprintf(stderr,"Could not open %s\n",path); return 1; } param_checks=collect_function_param_type_checks(f); arity_checks=collect_function_arity_checks(f); return_checks=collect_function_return_type_checks(f); field_checks=collect_class_field_type_checks(f); method_checks=collect_class_method_type_checks(f); type_env_set(&types,"RESULT","ANY"); type_env_set(&types,"LASTERROR","TEXT"); type_env_set(&types,"LASTERRORFILE","TEXT"); type_env_set(&types,"LASTERRORLINE","NUMBER"); type_env_set(&types,"LASTEXIT","NUMBER"); while(fgets(line,sizeof(line),f)){ char tmp[4096],up[64],w[128]; char *t; line_no++; strncpy(tmp,line,sizeof(tmp)-1); tmp[sizeof(tmp)-1]=0; t=trim_inplace(tmp); if(is_blank_or_comment(t)) continue; first_word(t,w,sizeof(w)); upper_copy(up,w,sizeof(up)); if(!strcmp(up,"CLASS")){ const char *pcur=t+5; char *cls=unquote_token(&pcur); char *name=trim_inplace(cls); char *extra=trim_inplace((char *)pcur); int duplicate=0,ci; for(ci=0;ci<declared_class_count;ci++) if(ci_eq(declared_classes[ci],name)){ duplicate=1; break; } if(!*name){ printf("%s:%d: CLASS needs a class name. Add a name after CLASS, such as CLASS Player.\n",path,line_no); errs++; current_class[0]=0; } else if(*extra){ printf("%s:%d: Class %s has extra text after its name. Keep only the class name after CLASS.\n",path,line_no,name); errs++; } else if(duplicate){ printf("%s:%d: Class %s is declared more than once. Give each class a different name.\n",path,line_no,name); errs++; } else if(declared_class_count<128) snprintf(declared_classes[declared_class_count++],sizeof(declared_classes[0]),"%s",name); snprintf(current_class,sizeof(current_class),"%s",name); declared_field_count=0; free(cls); }
-else if(current_class[0]&&!strcmp(up,"HAS")){ const char *pcur=t+3; char *field=unquote_token(&pcur); char *field_type=unquote_token(&pcur); char *name=trim_inplace(field); char *ft=trim_inplace(field_type); char *extra=trim_inplace((char *)pcur); int duplicate=0,fi; for(fi=0;fi<declared_field_count;fi++) if(ci_eq(declared_fields[fi],name)){ duplicate=1; break; } if(!*name){ printf("%s:%d: Class %s needs a field name. Add a name and type after HAS, such as HAS score NUMBER.\n",path,line_no,current_class); errs++; } else if(duplicate){ printf("%s:%d: Class %s declares field %s more than once. Give each field a different name.\n",path,line_no,current_class,name); errs++; } else if(!*ft){ printf("%s:%d: Class %s field %s is missing a type. Add a type such as NUMBER, TEXT, YESNO, LIST, or MAP after the field name.\n",path,line_no,current_class,name); errs++; } else if(!claro_is_type_word(ft)){ printf("%s:%d: Class %s field %s uses an unknown type %s. Use a Claro type such as NUMBER, TEXT, YESNO, LIST, or MAP.\n",path,line_no,current_class,name,ft); errs++; } else if(*extra){ printf("%s:%d: Class %s field %s has extra text after type %s. Keep only the field name and one type.\n",path,line_no,current_class,name,ft); errs++; } else if(declared_field_count<128) snprintf(declared_fields[declared_field_count++],sizeof(declared_fields[0]),"%s",name); free(field); free(field_type); }
-else if(!strcmp(up,"TEACH")){ char teachline[4096],full_name[256],*fname=NULL,**params=NULL; int pcnt=0; int duplicate_method=0; strncpy(teachline,t,sizeof(teachline)-1); teachline[sizeof(teachline)-1]=0; parse_teach_parts(teachline,&fname,&params,&pcnt); if(current_class[0]) snprintf(full_name,sizeof(full_name),"%s.%s",current_class,fname); else snprintf(full_name,sizeof(full_name),"%s",fname); { const char *returns=find_word_ci(t,"RETURNS"); if(returns){ const char *rp=returns+7; char ret[128],first_ret[128],*extra; while(*rp&&isspace((unsigned char)*rp)) rp++; snprintf(ret,sizeof(ret),"%s",rp); if(sscanf(ret,"%127s",first_ret)==1){ extra=trim_inplace((char *)rp+strlen(first_ret)); if(*extra){ printf("%s:%d: %s %s has extra text after return type %s. Keep only the function name, parameters, and one return type.\n",path,line_no,current_class[0]?"Method":"Function",full_name,first_ret); errs++; } } else { printf("%s:%d: %s %s needs a return type after RETURNS. Add a type such as NUMBER.\n",path,line_no,current_class[0]?"Method":"Function",full_name); errs++; } } } if(!fname||!*trim_inplace(fname)){ if(current_class[0]) printf("%s:%d: Method %s needs a method name. Add a name after TEACH, such as TEACH show.\n",path,line_no,current_class); else printf("%s:%d: TEACH needs a function name. Add a name after TEACH, such as TEACH greet.\n",path,line_no); errs++; } if(!fname) fname=xstrdup(""); if(current_class[0]) snprintf(full_name,sizeof(full_name),"%s.%s",current_class,fname); else snprintf(full_name,sizeof(full_name),"%s",fname); if(current_class[0]){ int mi; for(mi=0;mi<declared_method_count;mi++) if(ci_eq(declared_methods[mi],full_name)){ duplicate_method=1; break; } if(duplicate_method){ printf("%s:%d: Method %s is declared more than once. Give each method a different name.\n",path,line_no,full_name); errs++; } else if(declared_method_count<128) snprintf(declared_methods[declared_method_count++],sizeof(declared_methods[0]),"%s",full_name); } else { int fi,duplicate_function=0; for(fi=0;fi<declared_function_count;fi++) if(ci_eq(declared_functions[fi],full_name)){ duplicate_function=1; break; } if(duplicate_function){ printf("%s:%d: Function %s is declared more than once. Give each function a different name.\n",path,line_no,full_name); errs++; } else if(declared_function_count<128) snprintf(declared_functions[declared_function_count++],sizeof(declared_functions[0]),"%s",full_name); } { const char *duplicate=duplicate_param_name(params,pcnt); if(duplicate){ printf("%s:%d: %s %s declares parameter %s more than once. Give each parameter a different name.\n",path,line_no,current_class[0]?"Method":"Function",full_name,trim_inplace((char *)duplicate)); errs++; } } { int pi; for(pi=0;pi<pcnt;pi++) type_env_set(&types,params[pi],"ANY"); } current_func[0]=0; current_method[0]=0; return_seen=0; top_level_return_seen=0; nested_blocks=0; conditional_paths_complete=1; in_teach=1; if(current_class[0]) snprintf(current_method,sizeof(current_method),"%s",full_name); if(current_class[0]){ TypeFieldCheck *fc; for(fc=field_checks;fc;fc=fc->next) if(ci_eq(fc->cls,current_class)) type_env_set(&types,fc->field,fc->type); } { const char *declared_return=type_return_check_for(return_checks,full_name); if(declared_return&&!claro_is_type_word(declared_return)){ printf("%s:%d: %s %s declares an unknown return type %s. Use a Claro type such as NUMBER, TEXT, YESNO, LIST, or MAP.\n",path,line_no,strchr(full_name,'.')?"Method":"Function",full_name,declared_return); errs++; } else if(declared_return) snprintf(current_func,sizeof(current_func),"%s",full_name); } }
-else if(!strcmp(up,"IF")){ if(in_teach){ if(nested_blocks<64){ branch_returned[nested_blocks]=0; branch_has_else[nested_blocks]=0; } nested_blocks++; } }
- else if(!strcmp(up,"ELSE")){ if(in_teach&&nested_blocks>0&&nested_blocks<=64){ if(!branch_returned[nested_blocks-1]) conditional_paths_complete=0; branch_has_else[nested_blocks-1]=1; branch_returned[nested_blocks-1]=0; } }
- else if(!strcmp(up,"END")||!strcmp(up,"LEARNED")||!strcmp(up,"ENDIF")){ if(in_teach&&nested_blocks>0){ int nested_complete=(nested_blocks<=64&&branch_has_else[nested_blocks-1]&&branch_returned[nested_blocks-1]); if(nested_blocks<=64&&(!branch_has_else[nested_blocks-1]||!branch_returned[nested_blocks-1])) conditional_paths_complete=0; nested_blocks--; if(nested_complete&&nested_blocks>0&&nested_blocks<=64) branch_returned[nested_blocks-1]=1; } else if(in_teach){ if(current_func[0]&&!return_seen){ const char *need=type_return_check_for(return_checks,current_func); printf("%s:%d: %s %s declares RETURNS %s but has no RETURN statement. Add RETURN with a %s value.\n",path,line_no,strchr(current_func,'.')?"Method":"Function",current_func,need,need); errs++; } else if(current_func[0]&&(!top_level_return_seen&&!conditional_paths_complete)){ const char *need=type_return_check_for(return_checks,current_func); printf("%s:%d: %s %s declares RETURNS %s but does not return a %s value on every path. Add RETURN to each branch or after the conditional.\n",path,line_no,strchr(current_func,'.')?"Method":"Function",current_func,need,need); errs++; } in_teach=0; current_func[0]=0; current_method[0]=0; } else current_class[0]=0; }
-  else if(!strcmp(up,"RETURN")&&current_func[0]){ const char *need=type_return_check_for(return_checks,current_func); char *return_expr=trim_inplace(t+6); const char *got=simple_expr_type(types,return_expr); return_seen=1; if(nested_blocks==0) top_level_return_seen=1; else if(nested_blocks<=64) branch_returned[nested_blocks-1]=1; if(need&&!*return_expr){ printf("%s:%d: %s %s needs a %s value after RETURN. Add a %s expression.\n",path,line_no,strchr(current_func,'.')?"Method":"Function",current_func,need,need); errs++; } else if(need&&!got){ char first_value[128]; if(return_value_extra_tokens(return_expr,first_value,sizeof(first_value))){ printf("%s:%d: %s %s has extra text after return value %s. Keep only one expression after RETURN.\n",path,line_no,strchr(current_func,'.')?"Method":"Function",current_func,first_value); } else { printf("%s:%d: %s %s's return value could not be understood yet. Use a %s expression after RETURN.\n",path,line_no,strchr(current_func,'.')?"Method":"Function",current_func,need); } errs++; } else if(need&&got&&!type_words_match(need,got)){ char text_operator=(ci_eq(need,"NUMBER")&&ci_eq(got,"TEXT"))?text_operator_for_number_return(types,return_expr):0; const char *text_operand=text_operator?text_operand_for_operator(types,return_expr,text_operator):NULL; if(text_operand){ printf("%s:%d: Type mismatch for return from %s: %s needs NUMBER values, but %s looks like TEXT.\n",path,line_no,current_func,text_operator=='+'?"addition":(text_operator=='-'?"subtraction":(text_operator=='*'?"multiplication":"division")),text_operand); } else { printf("%s:%d: Type mismatch for return from %s: expected %s, but this value looks like %s.\n",path,line_no,current_func,need,got); } errs++; } }
- else if(!strcmp(up,"SET")){ char *name=NULL,*type=NULL,*expr=NULL; const char *got,*old; const char *as=find_word_ci(t+3,"AS"), *to=find_word_ci(t+3,"TO"); if(as&&!to){ const char *pcur=as+2; char *typed_name=substr(t+3,as); char *typed_type=unquote_token(&pcur); char *nt=trim_inplace(typed_name); char *tt=trim_inplace(typed_type); if(*nt&&*tt){ printf("%s:%d: SET %s needs TO after type %s. Try: SET %s AS %s TO 10.\n",path,line_no,nt,tt,nt,tt); errs++; } free(typed_name); free(typed_type); continue; } parse_set_for_typecheck2(t,&name,&type,&expr); if(name&&*trim_inplace(name)){ char *nt=trim_inplace(name); char *tt=type?trim_inplace(type):NULL; if(!tt&&(!expr||!*trim_inplace(expr))&&strchr(nt,'.')){ printf("%s:%d: SET %s needs a value. Add one expression after the field name.\n",path,line_no,nt); errs++; free(name); free(type); free(expr); continue; } if(as&&to&&as<to){ char value[128]; if(!*trim_inplace((char *)to+2)){ printf("%s:%d: SET %s needs a value after type %s and TO. Add one expression.\n",path,line_no,nt,tt?tt:"the declared type"); errs++; free(name); free(type); free(expr); continue; } if(return_value_extra_tokens(to+2,value,sizeof(value))){ printf("%s:%d: SET %s has extra text after value %s. Keep only the field name, type, TO, and one expression.\n",path,line_no,nt,value); errs++; free(name); free(type); free(expr); continue; } } else if(tt&&*tt){ char value[128]; if(!expr||!*trim_inplace(expr)){ printf("%s:%d: SET %s needs a value after type %s. Add one expression.\n",path,line_no,nt,tt); errs++; free(name); free(type); free(expr); continue; } if(return_value_extra_tokens(expr,value,sizeof(value))){ printf("%s:%d: SET %s has extra text after value %s. Keep only the field name, type, and one expression.\n",path,line_no,nt,value); errs++; free(name); free(type); free(expr); continue; } } got=simple_expr_type(types,expr); if(current_method[0]&&current_class[0]&&!strchr(nt,'.')&&!type_env_get(types,nt)&&!type_field_check_for(field_checks,current_class,nt)){ if(got){ printf("%s:%d: Object %s has no field %s. Check the field name or add HAS %s %s to the class.\n",path,line_no,current_class,nt,nt,got); } else { printf("%s:%d: Object %s has no field %s. Check the field name or add the field to the class with the right type.\n",path,line_no,current_class,nt); } errs++; free(name); free(type); free(expr); continue; } old=type_env_get(types,nt); if(tt&&*tt){ if(current_method[0]&&current_class[0]&&!strchr(nt,'.')){ const char *declared=type_field_check_for(field_checks,current_class,nt); if(declared&&tt&&!claro_is_type_word(tt)){ printf("%s:%d: Field %s in %s needs a known type such as NUMBER, TEXT, or YESNO, but %s is not a Claro type. Use %s for %s.\n",path,line_no,nt,current_method,tt,declared,nt); errs++; got=NULL; } else if(declared&&tt&&!type_words_match(declared,tt)){ printf("%s:%d: Type mismatch for field %s in %s: class declares %s, but this assignment says %s. Use %s for %s.\n",path,line_no,nt,current_method,declared,tt,declared,nt); errs++; got=NULL; } else if(declared&&got&&!type_words_match(declared,got)){ printf("%s:%d: Type mismatch for field %s in %s: expected %s, but this value looks like %s.\n",path,line_no,nt,current_method,declared,got); errs++; } } if(strchr(nt,'.')){ char objname[128],fieldname[128]; char *dot=strchr(nt,'.'); const char *objtype; snprintf(objname,sizeof(objname),"%.*s",(int)(dot-nt),nt); snprintf(fieldname,sizeof(fieldname),"%s",dot+1); objtype=type_env_get(types,objname); if(objtype&&starts_ci(objtype,"OBJECT:")){ const char *declared=type_field_check_for(field_checks,objtype+7,fieldname); if(declared&&tt&&!claro_is_type_word(tt)){ printf("%s:%d: Field %s needs a known type such as NUMBER, TEXT, or YESNO, but %s is not a Claro type. Use %s for %s.\n",path,line_no,nt,tt,declared,fieldname); errs++; } else if(declared&&tt&&!type_words_match(declared,tt)){ printf("%s:%d: Type mismatch for field %s: class declares %s, but this assignment says %s. Use %s for %s.\n",path,line_no,nt,declared,tt,declared,fieldname); errs++; } else if(declared&&got&&!type_words_match(declared,got)){ char text_operator=(ci_eq(declared,"NUMBER")&&ci_eq(got,"TEXT"))?(text_operand_for_operator(types,expr,'+')?'+':(text_operand_for_operator(types,expr,'-')?'-':(text_operand_for_operator(types,expr,'*')?'*':(text_operand_for_operator(types,expr,'/')?'/':0)))):0; const char *text_operand=text_operator?text_operand_for_operator(types,expr,text_operator):NULL; if(text_operand){ printf("%s:%d: Type mismatch for field %s: %s needs NUMBER values, but %s looks like TEXT.\n",path,line_no,nt,text_operator=='+'?"addition":(text_operator=='-'?"subtraction":(text_operator=='*'?"multiplication":"division")),text_operand); } else { printf("%s:%d: Type mismatch for field %s: expected %s, but this value looks like %s.\n",path,line_no,nt,declared,got); } errs++; } else if(!declared){ printf("%s:%d: Object %s has no field %s. Check the field name or add HAS %s %s to the class.\n",path,line_no,objtype+7,fieldname,fieldname,tt); errs++; } else if(got&&!type_words_match(tt,got)){ printf("%s:%d: Type mismatch for %s: expected %s, but this value looks like %s.\n",path,line_no,nt,tt,got); errs++; } } else if(got&&!type_words_match(tt,got)){ printf("%s:%d: Type mismatch for %s: expected %s, but this value looks like %s.\n",path,line_no,nt,tt,got); errs++; } } else if(got&&!type_words_match(tt,got)){ printf("%s:%d: Type mismatch for %s: expected %s, but this value looks like %s.\n",path,line_no,nt,tt,got); errs++; } type_env_set(&types,nt,tt); } else if(old){ if(got&&!type_words_match(old,got)){ if(strchr(nt,'.')){ char text_operator=(ci_eq(old,"NUMBER")&&ci_eq(got,"TEXT"))?(text_operand_for_operator(types,expr,'+')?'+':(text_operand_for_operator(types,expr,'-')?'-':(text_operand_for_operator(types,expr,'*')?'*':(text_operand_for_operator(types,expr,'/')?'/':0)))):0; const char *text_operand=text_operator?text_operand_for_operator(types,expr,text_operator):NULL; if(text_operand) printf("%s:%d: Type mismatch for field %s: %s needs NUMBER values, but %s looks like TEXT.\n",path,line_no,nt,text_operator=='+'?"addition":(text_operator=='-'?"subtraction":(text_operator=='*'?"multiplication":"division")),text_operand); else printf("%s:%d: Type mismatch for field %s: expected %s, but this value looks like %s.\n",path,line_no,nt,old,got); } else if(in_teach&&current_class[0]&&type_field_check_for(field_checks,current_class,nt)){ const char *declared=type_field_check_for(field_checks,current_class,nt); char text_operator=(ci_eq(declared,"NUMBER")&&ci_eq(got,"TEXT"))?(text_operand_for_operator(types,expr,'+')?'+':(text_operand_for_operator(types,expr,'-')?'-':(text_operand_for_operator(types,expr,'*')?'*':(text_operand_for_operator(types,expr,'/')?'/':0)))):0; const char *text_operand=text_operator?text_operand_for_operator(types,expr,text_operator):NULL; if(text_operand) printf("%s:%d: Type mismatch for field %s in %s: %s needs NUMBER values, but %s looks like TEXT.\n",path,line_no,nt,current_method,text_operator=='+'?"addition":(text_operator=='-'?"subtraction":(text_operator=='*'?"multiplication":"division")),text_operand); else printf("%s:%d: Type mismatch for field %s in %s: expected %s, but this value looks like %s.\n",path,line_no,nt,current_method,declared,got); errs++; } else printf("%s:%d: Type mismatch for %s: it was first set as %s, but this value looks like %s.\n",path,line_no,nt,old,got); errs++; } } else if(strchr(nt,'.')){ char objname[128],fieldname[128]; char *dot=strchr(nt,'.'); const char *objtype; snprintf(objname,sizeof(objname),"%.*s",(int)(dot-nt),nt); snprintf(fieldname,sizeof(fieldname),"%s",dot+1); objtype=type_env_get(types,objname); if(objtype&&starts_ci(objtype,"OBJECT:")){ const char *cls=objtype+7; if(!type_field_check_for(field_checks,cls,fieldname)){ if(got&&!strchr(expr,'+')&&!strchr(expr,'-')&&!strchr(expr,'*')&&!strchr(expr,'/')) printf("%s:%d: Object %s has no field %s. Check the field name or add HAS %s %s to the class.\n",path,line_no,cls,fieldname,fieldname,got); else printf("%s:%d: Object %s has no field %s. Check the field name or add the field to the class with the right type.\n",path,line_no,cls,fieldname); errs++; } else { const char *fieldtype=type_field_check_for(field_checks,cls,fieldname); if(got&&!type_words_match(fieldtype,got)){ printf("%s:%d: Type mismatch for field %s.%s: expected %s, but this value looks like %s.\n",path,line_no,objname,fieldname,fieldtype,got); errs++; } } } else { printf("%s:%d: Object %s is not known yet. Create it with NEW ClassName %s before setting %s.\n",path,line_no,objname,objname,nt); errs++; } } else if(got) type_env_set(&types,nt,got); else type_env_set(&types,nt,"ANY"); } free(name); free(type); free(expr); }
-  else if(!strcmp(up,"ADD")){ const char *to=find_word_ci(t,"TO"); if(to){ char *expr=substr(t+3,to); char *name=xstrdup(trim_inplace((char*)to+2)); const char *listtype=type_env_get(types,name); const char *need=container_member_type(listtype,"LIST"); const char *got=simple_expr_type(types,expr); if(need&&got&&!type_words_match(need,got)){ printf("%s:%d: Type mismatch for list %s: expected %s item, but this value looks like %s.\n",path,line_no,name,need,got); errs++; } free(expr); free(name); } }
-  else if(!strcmp(up,"PUT")){ const char *key=find_word_ci(t,"KEY"), *val=find_word_ci(t,"VALUE"); if(key&&val){ char *name=substr(t+3,key); char *expr=xstrdup(trim_inplace((char*)val+5)); char *nt=trim_inplace(name); const char *maptype=type_env_get(types,nt); const char *need=container_member_type(maptype,"MAP"); const char *got=simple_expr_type(types,expr); if(need&&got&&!type_words_match(need,got)){ printf("%s:%d: Type mismatch for map %s: expected %s value, but this value looks like %s.\n",path,line_no,nt,need,got); errs++; } free(name); free(expr); } }
-  else if(!strcmp(up,"ASK")){ const char *as=find_word_ci(t,"AS"); char *name=NULL,*type=NULL; if(as){ const char *pcur=as+2; name=unquote_token(&pcur); { char *rest=xstrdup(trim_inplace((char*)pcur)); if(claro_is_type_word(rest)) type=rest; else free(rest); } } else { const char *pcur=t+3; char *prompt=unquote_token(&pcur); free(prompt); name=unquote_token(&pcur); { char *rest=xstrdup(trim_inplace((char*)pcur)); if(claro_is_type_word(rest)) type=rest; else free(rest); } } if(name&&*trim_inplace(name)) type_env_set(&types,trim_inplace(name),type?type:"TEXT"); free(name); free(type); }
-  else if(!strcmp(up,"IMPORT")){ const char *as=find_word_ci(t,"AS"); if(as){ const char *pcur=as+2; char *alias=unquote_token(&pcur); if(alias&&*trim_inplace(alias)) type_env_set(&types,trim_inplace(alias),"MODULE"); free(alias); } }
-  else if(!strcmp(up,"TYPE")&&starts_ci(t,"TYPE OF")){ const char *as=find_word_ci(t,"AS"); if(!as){ if(!*trim_inplace(t+7)) printf("%s:%d: TYPE OF needs an expression, AS, and a result name. Try: TYPE OF score AS kind.\n",path,line_no); else printf("%s:%d: TYPE OF needs AS. Try: TYPE OF score AS kind.\n",path,line_no); errs++; } else { char *expr=substr(t+7,as); const char *pcur=as+2; char *name=unquote_token(&pcur); char *extra=xstrdup(trim_inplace((char *)pcur)); if(!*trim_inplace(expr)){ printf("%s:%d: TYPE OF needs an expression before AS. Try: TYPE OF score AS kind.\n",path,line_no); errs++; } else if(!name||!*trim_inplace(name)){ printf("%s:%d: TYPE OF needs a result name after AS. Try: TYPE OF score AS kind.\n",path,line_no); errs++; } else if(extra&&*extra){ printf("%s:%d: TYPE OF %s has extra text after result name %s. Keep only the expression, AS, and one result name.\n",path,line_no,trim_inplace(expr),trim_inplace(name)); errs++; } else if(name&&*trim_inplace(name)) type_env_set(&types,name,"TEXT"); free(expr); free(name); free(extra); } }
-  else if(!strcmp(up,"NEW")){ const char *as=find_word_ci(t,"AS"); char *name=NULL; char *cls=NULL; char *extra=NULL; char objtype[256]; if(as){ const char *pcur=as+2; cls=substr(t+3,as); name=unquote_token(&pcur); extra=xstrdup(trim_inplace((char *)pcur)); } else { const char *pcur=t+3; cls=unquote_token(&pcur); name=unquote_token(&pcur); extra=xstrdup(trim_inplace((char *)pcur)); } snprintf(objtype,sizeof(objtype),"OBJECT:%s",trim_inplace(cls)); if(name&&*trim_inplace(name)){ TypeFieldCheck *fc; char fullname[256]; char *nt=trim_inplace(name); char *ct=trim_inplace(cls); int duplicate=0,class_known=0,oi,ci; if(extra&&*extra){ printf("%s:%d: NEW %s has extra text after object name %s. Keep only the class and object names.\n",path,line_no,ct,nt); errs++; } for(ci=0;ci<declared_class_count;ci++) if(ci_eq(declared_classes[ci],ct)){ class_known=1; break; } if(declared_class_count>0&&!class_known){ printf("%s:%d: Class %s is not known yet. Check the class name or declare CLASS %s before creating %s.\n",path,line_no,ct,ct,nt); errs++; } for(oi=0;oi<declared_object_count;oi++) if(ci_eq(declared_objects[oi],nt)){ duplicate=1; break; } if(duplicate){ printf("%s:%d: Object %s is created more than once. Give each object a different name.\n",path,line_no,nt); errs++; } else if(declared_object_count<128) snprintf(declared_objects[declared_object_count++],sizeof(declared_objects[0]),"%s",nt); type_env_set(&types,nt,objtype); for(fc=field_checks;fc;fc=fc->next){ if(ci_eq(fc->cls,ct)){ snprintf(fullname,sizeof(fullname),"%s.%s",nt,fc->field); type_env_set(&types,fullname,fc->type); } } } else if(cls&&*trim_inplace(cls)){ printf("%s:%d: NEW %s needs an object name. Add a name after the class, such as NEW %s player.\n",path,line_no,trim_inplace(cls),trim_inplace(cls)); errs++; } else { printf("%s:%d: NEW needs a class name. Add a class and object name, such as NEW Player player.\n",path,line_no); errs++; } free(cls); free(name); free(extra); }
-  else if((!strcmp(up,"DO")&&!find_word_ci(t,"TIMES"))||!strcmp(up,"CALL")){ char *fname=NULL; char **parts=NULL; int ac=0,i,is_method=0; char lookup[256],display[256]; if(!strcmp(up,"DO")){ const char *pcur=t+2; fname=unquote_token(&pcur); if(*trim_inplace((char*)pcur)) ac=split_args(pcur,&parts); } else { char *rest=t+4; const char *with=find_word_ci(rest,"WITH"); fname=with?substr(rest,with):xstrdup(rest); if(with&&*trim_inplace((char*)with+4)) ac=split_args(with+4,&parts); } snprintf(lookup,sizeof(lookup),"%s",trim_inplace(fname)); snprintf(display,sizeof(display),"%s",lookup); { char *dot=strchr(lookup,'.'); if(dot){ char objname[128]; const char *objtype; snprintf(objname,sizeof(objname),"%.*s",(int)(dot-lookup),lookup); objtype=type_env_get(types,objname); if(objtype&&starts_ci(objtype,"OBJECT:")){ char method[128]; const char *cls=objtype+7; snprintf(method,sizeof(method),"%s",dot+1); if(!type_method_check_for(method_checks,cls,method)){ printf("%s:%d: Object %s has no method %s. Check the method name or add TEACH %s inside CLASS %s.\n",path,line_no,cls,method,method,cls); errs++; } snprintf(lookup,sizeof(lookup),"%s.%s",cls,method); snprintf(display,sizeof(display),"%s",lookup); is_method=1; }
-       else if(!objtype||(!starts_ci(objtype,"MODULE")&&(!strcmp(up,"DO")||type_method_name_exists(method_checks,dot+1)))){ printf("%s:%d: Object %s is not known yet. Create it with NEW ClassName %s before calling %s.\n",path,line_no,objname,objname,lookup); errs++; } } } for(i=0;i<ac;i++){ const char *param=NULL; const char *need=type_param_check_for(param_checks,lookup,i,&param); const char *got=simple_expr_type(types,parts[i]); if(need&&got&&!type_words_match(need,got)){ printf("%s:%d: Type mismatch for %s %s: parameter %s needs %s, but this argument looks like %s.\n",path,line_no,is_method?"method":"function",display,param?param:"argument",need,got); errs++; } } { TypeParamCheck *pc=param_checks; while(pc){ if(ci_eq(pc->func,lookup)&&pc->pos>=ac){ printf("%s:%d: %s %s needs argument %s as %s, but this call does not provide it.\n",path,line_no,is_method?"Method":"Function",display,pc->param,pc->type); errs++; } pc=pc->next; } } { int expected=type_arity_check_for(arity_checks,lookup); if(expected>=0&&ac>expected){ printf("%s:%d: %s %s only accepts %d %s, but this call gives %d. Remove the extra %s.\n",path,line_no,is_method?"Method":"Function",display,expected,expected==1?"argument":"arguments",ac,ac-expected==1?"argument":"arguments"); errs++; } else if(expected>=0&&ac<expected){ int has_checked_missing=0; TypeParamCheck *mpc=param_checks; while(mpc){ if(ci_eq(mpc->func,lookup)&&mpc->pos>=ac){ has_checked_missing=1; break; } mpc=mpc->next; } if(!has_checked_missing){ printf("%s:%d: %s %s needs %d %s, but this call gives %d. Add the missing %s.\n",path,line_no,is_method?"Method":"Function",display,expected,expected==1?"argument":"arguments",ac,expected-ac==1?"argument":"arguments"); errs++; } } else if((!strcmp(up,"DO")||!strcmp(up,"CALL"))&&!is_method&&!strchr(lookup,'.')&&expected<0){ printf("%s:%d: Function %s is not known yet. Check the function name or add TEACH %s before calling it.\n",path,line_no,lookup,lookup); errs++; } } free(fname); }
-  else if(!strcmp(up,"CHECK")&&starts_ci(t,"CHECK TYPE")){ const char *is=find_word_ci(t,"IS"); if(is){ char *expr=substr(t+10,is); char *need=xstrdup(trim_inplace((char*)is+2)); char *et=trim_inplace(expr); if(current_func[0]&&!strchr(et,'.')){ TypeParamCheck *pc; for(pc=param_checks;pc;pc=pc->next){ if(ci_eq(pc->func,current_func)&&ci_eq(pc->param,et)){ type_env_set(&types,et,pc->type); break; } } } const char *got=simple_expr_type(types,et); char first_type[64]; int first_type_len=0; if(!*et){ printf("%s:%d: CHECK TYPE needs an expression before IS. Try: CHECK TYPE score IS NUMBER.\n",path,line_no); errs++; } else if(!*trim_inplace(need)){ printf("%s:%d: CHECK TYPE %s needs a type after IS. Try: CHECK TYPE %s IS NUMBER.\n",path,line_no,et,et); errs++; } else if(sscanf(need,"%63s%n",first_type,&first_type_len)==1 && claro_is_type_word(first_type) && *trim_inplace(need+first_type_len)){ printf("%s:%d: CHECK TYPE %s has extra text after type %s. Keep only the expression, IS, and one type.\n",path,line_no,et,first_type); errs++; } else if(!claro_is_type_word(need)){ printf("%s:%d: CHECK TYPE needs a known type such as NUMBER, TEXT, YESNO, LIST, or MAP, but %s is not a Claro type.\n",path,line_no,need); errs++; } else if(got&&!type_words_match(need,got)){ const char *method_field=(current_method[0]&&current_class[0]&&!strchr(et,'.'))?type_field_check_for(field_checks,current_class,et):NULL; if(method_field){ printf("%s:%d: Type check failed in %s: expected %s, but %s looks like %s.\n",path,line_no,current_method,need,et,got); } else { printf("%s:%d: Type check failed: expected %s, but %s looks like %s.\n",path,line_no,need,et,got); } errs++; } else if(!got&&current_method[0]&&current_class[0]&&!strchr(et,'.')&&!type_env_get(types,et)&&!type_field_check_for(field_checks,current_class,et)){ printf("%s:%d: Object %s has no field %s. Check the field name or add HAS %s %s to the class.\n",path,line_no,current_class,et,et,need); errs++; } else if(!got&&strchr(et,'.')){ char objname[128],fieldname[128]; char *dot=strchr(et,'.'); const char *objtype; snprintf(objname,sizeof(objname),"%.*s",(int)(dot-et),et); snprintf(fieldname,sizeof(fieldname),"%s",dot+1); objtype=type_env_get(types,objname); if(objtype&&starts_ci(objtype,"OBJECT:")){ const char *declared=type_field_check_for(field_checks,objtype+7,fieldname); if(declared&&!type_words_match(need,declared)){ printf("%s:%d: Type check failed: expected %s, but %s looks like %s.\n",path,line_no,need,et,declared); errs++; } else if(!declared){ printf("%s:%d: Object %s has no field %s. Check the field name or add HAS %s %s to the class.\n",path,line_no,objtype+7,fieldname,fieldname,need); errs++; } } else if(!objtype){ printf("%s:%d: Object %s is not known yet. Create it with NEW ClassName %s before checking %s.\n",path,line_no,objname,objname,et); errs++; } } free(expr); free(need); } else if(!*trim_inplace(t+10)){ printf("%s:%d: CHECK TYPE needs an expression, IS, and a type. Try: CHECK TYPE score IS NUMBER.\n",path,line_no); errs++; } else { printf("%s:%d: CHECK TYPE needs IS. Try: CHECK TYPE score IS NUMBER.\n",path,line_no); errs++; } }
- }
- fclose(f); type_env_free(&types); if(errs==0) printf("Type check OK\n"); return errs?1:0; }
-static char *read_file_text(const char *path){ FILE *f=fopen(path,"rb"); Str b; int c; if(!f) return NULL; str_init(&b); while((c=fgetc(f))!=EOF) str_ch(&b,(char)c); fclose(f); return str_take(&b); }
-/* Golden output files may be checked out as CRLF on Windows while Claro captures output as LF. Normalize only test expectations so test results represent behavior, not Git line-ending settings. */
-static char *read_test_expectation(const char *path){ char *raw=read_file_text(path); Str normalized; size_t i; if(!raw) return NULL; str_init(&normalized); for(i=0;raw[i];i++){ if(raw[i]=='\015'){ if(raw[i+1]=='\012') continue; str_ch(&normalized,'\012'); } else str_ch(&normalized,raw[i]); } free(raw); return str_take(&normalized); }
-static int run_one_test(const char *path){ char outpath[512]; char *dot; char *expect,*got; int rc,ok; Runtime rt; snprintf(outpath,sizeof(outpath),"%s",path); dot=strrchr(outpath,'.'); if(dot) strcpy(dot,".out"); expect=read_test_expectation(outpath); if(!expect) return 0; rt_init(&rt); rt.capture=1; rc=run_file(&rt,path); got=rt.captured.s?xstrdup(rt.captured.s):xstrdup(""); ok=(rc==0 && strcmp(got,expect)==0); printf("%s %s\n",ok?"PASS":"FAIL",path); if(!ok) printf("Expected:\n%s\nGot:\n%s\n",expect,got); free(expect); free(got); return ok?0:1; }
-static int run_tests(void){ int fails=0;
+static char *check_between_words(const char *line, const char *a, const char *b) {
+    const char *pa = find_word_ci(line, a);
+    const char *pb;
+    if (!pa)
+        return NULL;
+    pa += strlen(a);
+    pb = find_word_ci(pa, b);
+    if (!pb)
+        return NULL;
+    return substr(pa, pb);
+}
+typedef struct CheckBlock {
+    const char *expect;
+    const char *open;
+    int line;
+} CheckBlock;
+static CheckBlock check_block(const char *expect, const char *open, int line) {
+    CheckBlock block;
+    block.expect = expect;
+    block.open = open;
+    block.line = line;
+    return block;
+}
+
+static void check_vars_free(Var **vars) {
+    Var *v, *next;
+    if (!vars)
+        return;
+    for (v = *vars; v; v = next) {
+        next = v->next;
+        free(v->name);
+        value_free(v->val);
+        free(v);
+    }
+    *vars = NULL;
+}
+static int check_file(const char *path) {
+    FILE *f = fopen(path, "rb");
+    char line[4096];
+    int line_no = 0, errs = 0, sp = 0;
+    CheckBlock stack[256];
+    Var *vars = NULL;
+    check_add_var(&vars, "RESULT");
+    check_add_var(&vars, "LASTERROR");
+    check_add_var(&vars, "LASTERRORFILE");
+    check_add_var(&vars, "LASTERRORLINE");
+    check_add_var(&vars, "LASTEXIT");
+    check_add_var(&vars, "LASTHTTP");
+    if (!f) {
+        fprintf(stderr, "Could not open %s\n", path);
+        return 1;
+    }
+    while (fgets(line, sizeof(line), f)) {
+        char tmp[4096], up[64], w[128];
+        char *t;
+        line_no++;
+        strncpy(tmp, line, sizeof(tmp) - 1);
+        tmp[sizeof(tmp) - 1] = 0;
+        t = trim_inplace(tmp);
+        if (is_blank_or_comment(t))
+            continue;
+        first_word(t, w, sizeof(w));
+        upper_copy(up, w, sizeof(up));
+        if (!known_command(up)) {
+            const char *sug = suggest_command_name(up);
+            printf("%s:%d: I do not know the command \"%s\".", path, line_no, w);
+            if (sug)
+                printf(" Did you mean \"%s\"?", sug);
+            printf("\n");
+            errs++;
+            continue;
+        }
+
+        if (!strcmp(up, "IF")) {
+            if (!*trim_inplace(t + 2)) {
+                printf("%s:%d: IF needs a condition. Try: IF score = 10\n", path, line_no);
+                errs++;
+            }
+            stack[sp++] = check_block("ENDIF", "IF", line_no);
+        } else if (!strcmp(up, "CLASS")) {
+            stack[sp++] = check_block("ENDCLASS", "CLASS", line_no);
+        } else if (!strcmp(up, "START")) {
+            if (starts_ci(t + 5, " TASK"))
+                stack[sp++] = check_block("ENDTASK", "START", line_no);
+        } else if (!strcmp(up, "NEW")) {
+            char *name = check_var_after_as(t);
+            if (name) {
+                check_add_var(&vars, name);
+                free(name);
+            } else {
+                const char *pcur = t + 3;
+                char *cls = unquote_token(&pcur);
+                name = unquote_token(&pcur);
+                if (name && *trim_inplace(name))
+                    check_add_var(&vars, name);
+                else {
+                    printf("%s:%d: NEW needs a class and a name. Try: NEW Player player\n", path,
+                           line_no);
+                    errs++;
+                }
+                free(cls);
+                free(name);
+            }
+        } else if (!strcmp(up, "TEACH")) {
+            if (!*trim_inplace(t + 5)) {
+                printf("%s:%d: TEACH needs a function name. Try: TEACH greet name\n", path,
+                       line_no);
+                errs++;
+            } else {
+                const char *takes = find_word_ci(t, "TAKES");
+                const char *usingw = find_word_ci(t, "USING");
+                const char *params = takes ? takes + 5 : (usingw ? usingw + 5 : NULL);
+                if (!params) {
+                    char *after = t + 5;
+                    while (*after && isspace((unsigned char)*after))
+                        after++;
+                    while (*after && !isspace((unsigned char)*after))
+                        after++;
+                    params = after;
+                }
+                if (params) {
+                    char *pc = xstrdup(params);
+                    char *pp = pc;
+                    while (pp && *pp) {
+                        char *comma = strchr(pp, ',');
+                        if (comma) {
+                            *comma = 0;
+                            check_add_var(&vars, pp);
+                            pp = comma + 1;
+                        } else {
+                            check_add_var(&vars, pp);
+                            break;
+                        }
+                    }
+                    free(pc);
+                }
+            }
+            stack[sp++] = check_block("LEARNED", "TEACH", line_no);
+        } else if (!strcmp(up, "DO")) {
+            if (find_word_ci(t, "TIMES")) {
+                stack[sp++] = check_block("DONE", "DO", line_no);
+            }
+        } else if (!strcmp(up, "FOR")) {
+            char *name = NULL;
+            if (find_word_ci(t, "EACH")) {
+                const char *each = find_word_ci(t, "EACH");
+                const char *in = find_word_ci(t, "IN");
+                if (!in) {
+                    printf("%s:%d: FOR EACH needs IN. Try: FOR EACH item IN list\n", path, line_no);
+                    errs++;
+                } else {
+                    char *comma;
+                    name = substr(each + 4, in);
+                    comma = strchr(name, ',');
+                    if (comma) {
+                        *comma = 0;
+                        check_add_var(&vars, name);
+                        check_add_var(&vars, comma + 1);
+                    } else
+                        check_add_var(&vars, name);
+                    free(name);
+                }
+            } else {
+                const char *from = find_word_ci(t, "FROM");
+                if (!from) {
+                    printf("%s:%d: FOR needs FROM. Try: FOR i FROM 1 TO 5\n", path, line_no);
+                    errs++;
+                } else {
+                    name = substr(t + 3, from);
+                    check_add_var(&vars, name);
+                    free(name);
+                    if (!find_word_ci(t, "TO")) {
+                        printf("%s:%d: FOR needs TO. Try: FOR i FROM 1 TO 5\n", path, line_no);
+                        errs++;
+                    }
+                }
+            }
+            stack[sp++] = check_block("DONE", "FOR", line_no);
+        } else if (!strcmp(up, "TRY")) {
+            stack[sp++] = check_block("ENDTRY", "TRY", line_no);
+        } else if (!strcmp(up, "COMMENT")) {
+            stack[sp++] = check_block("ENDCOMMENT", "COMMENT", line_no);
+        } else if (!strcmp(up, "REPEAT")) {
+            stack[sp++] = check_block("UNTIL", "REPEAT", line_no);
+        } else if (!strcmp(up, "ELSE")) {
+            if (sp == 0 || strcmp(stack[sp - 1].expect, "ENDIF") != 0) {
+                printf("%s:%d: ELSE must be inside an IF block.\n", path, line_no);
+                errs++;
+            }
+        } else if (!strcmp(up, "CATCH")) {
+            if (sp == 0 || strcmp(stack[sp - 1].expect, "ENDTRY") != 0) {
+                printf("%s:%d: CATCH must be inside a TRY block.\n", path, line_no);
+                errs++;
+            }
+        } else if (!strcmp(up, "ENDIF") || !strcmp(up, "LEARNED") || !strcmp(up, "DONE") ||
+                   !strcmp(up, "ENDTRY") || !strcmp(up, "ENDCOMMENT") || !strcmp(up, "ENDCLASS") ||
+                   !strcmp(up, "ENDTASK") || !strcmp(up, "UNTIL") || !strcmp(up, "END")) {
+            if (!strcmp(up, "END")) {
+                if (sp == 0) {
+                    printf("%s:%d: unexpected END\n", path, line_no);
+                    errs++;
+                } else
+                    sp--;
+            } else if (sp == 0 || strcmp(stack[sp - 1].expect, up) != 0) {
+                printf("%s:%d: unexpected %s\n", path, line_no, up);
+                errs++;
+            } else
+                sp--;
+        }
+
+        if (!strcmp(up, "HAS")) {
+            const char *pcur = t + 3;
+            char *name = unquote_token(&pcur);
+            if (name && *trim_inplace(name))
+                check_add_var(&vars, name);
+            free(name);
+        }
+
+        if (!strcmp(up, "SET")) {
+            const char *to = find_word_ci(t, "TO");
+            if (!to) {
+                const char *pcur = t + 3;
+                char *name = unquote_token(&pcur);
+                if (!*trim_inplace(name) || !*trim_inplace((char *)pcur)) {
+                    printf("%s:%d: SET needs a name and a value. Try: SET name TO \"Alex\" or SET "
+                           "name \"Alex\"\n",
+                           path, line_no);
+                    errs++;
+                } else
+                    check_add_var(&vars, name);
+                free(name);
+            } else {
+                char *name = substr(t + 3, to);
+                if (!*trim_inplace(name)) {
+                    printf("%s:%d: SET needs a variable name. Try: SET score TO 0\n", path,
+                           line_no);
+                    errs++;
+                } else
+                    check_add_var(&vars, name);
+                free(name);
+            }
+        }
+        if (!strcmp(up, "ASK")) {
+            char *name = NULL;
+            const char *as = find_word_ci(t, "AS");
+            if (as) {
+                const char *pcur = as + 2;
+                name = unquote_token(&pcur);
+            } else {
+                const char *pcur = t + 3;
+                char *prompt = unquote_token(&pcur);
+                free(prompt);
+                name = unquote_token(&pcur);
+            }
+            if (!name || !*trim_inplace(name)) {
+                printf("%s:%d: ASK needs a variable name. Try: ASK \"What is your name?\" name\n",
+                       path, line_no);
+                errs++;
+            } else
+                check_add_var(&vars, name);
+            free(name);
+        }
+        if (!strcmp(up, "COUNT") || !strcmp(up, "READ") || !strcmp(up, "EXISTS") ||
+            !strcmp(up, "PARSE") || !strcmp(up, "MAKE")) {
+            char *name = check_var_after_as(t);
+            if (name) {
+                check_add_var(&vars, name);
+                free(name);
+            } else if (!strcmp(up, "COUNT")) {
+                printf("%s:%d: COUNT needs AS. Try: COUNT items AS total\n", path, line_no);
+                errs++;
+            }
+        }
+        if (!strcmp(up, "GET")) {
+            char *name = check_var_after_as(t);
+            if (name) {
+                check_add_var(&vars, name);
+                free(name);
+            } else {
+                printf("%s:%d: GET needs AS. Try: GET items AT 1 AS item\n", path, line_no);
+                errs++;
+            }
+        }
+        if (!strcmp(up, "HTTP")) {
+            const char *as = find_word_ci(t, "AS");
+            if (as) {
+                char *name = xstrdup(trim_inplace((char *)as + 2));
+                const char *status = find_word_ci(name, "STATUS");
+                if (status) {
+                    char *primary = substr(name, status);
+                    check_add_var(&vars, primary);
+                    check_add_var(&vars, trim_inplace((char *)status + 6));
+                    free(primary);
+                } else
+                    check_add_var(&vars, name);
+                free(name);
+            }
+        }
+        if (!strcmp(up, "TASK")) {
+            char *name = check_var_after_as(t);
+            if (name) {
+                check_add_var(&vars, name);
+                free(name);
+            }
+        }
+        if (!strcmp(up, "CALL")) {
+            char *name = check_var_after_as(t);
+            if (name) {
+                check_add_var(&vars, name);
+                free(name);
+            }
+        }
+        if (!strcmp(up, "TEXT") || !strcmp(up, "TYPE") || !strcmp(up, "OBJECT") ||
+            !strcmp(up, "RANDOM") || !strcmp(up, "RUN") || !strcmp(up, "LIST") ||
+            !strcmp(up, "FIND") || (!strcmp(up, "GET") && find_word_ci(t, "AS"))) {
+            char *name = check_var_after_as(t);
+            if (name) {
+                check_add_var(&vars, name);
+                free(name);
+            }
+        }
+        if (!strcmp(up, "SAY") || !strcmp(up, "IF") || !strcmp(up, "RETURN")) {
+            const char *expr = t + strlen(w);
+            Tokens ts = tokenize(expr);
+            int i;
+            for (i = 0; i < ts.n; i++) {
+                char *tok = ts.t[i];
+                if (isalpha((unsigned char)tok[0]) && !ci_eq(tok, "YES") && !ci_eq(tok, "NO") &&
+                    !ci_eq(tok, "AND") && !ci_eq(tok, "OR") && !ci_eq(tok, "NOT") &&
+                    !ci_eq(tok, "IS") && !ci_eq(tok, "LIST") && !ci_eq(tok, "MAP") &&
+                    !env_find(vars, tok)) {
+                    Var *v = vars;
+                    char *best = NULL;
+                    int bd = 999;
+                    while (v) {
+                        int d = levenshtein(tok, v->name);
+                        if (d < bd) {
+                            bd = d;
+                            best = v->name;
+                        }
+                        v = v->next;
+                    }
+                    if (best && bd <= 2)
+                        printf(
+                            "%s:%d: I do not know the variable \"%s\" yet. Did you mean \"%s\"?\n",
+                            path, line_no, tok, best);
+                    else
+                        printf("%s:%d: I do not know the variable \"%s\" yet.\n", path, line_no,
+                               tok);
+                    errs++;
+                }
+            }
+            tokens_free(&ts);
+        }
+    }
+    fclose(f);
+    while (sp > 0) {
+        CheckBlock b = stack[--sp];
+        printf("%s:%d: %s block opened here needs %s\n", path, b.line, b.open, b.expect);
+        errs++;
+    }
+    if (errs == 0)
+        printf("OK\n");
+    check_vars_free(&vars);
+    return errs ? 1 : 0;
+}
+
+static const char *type_env_get(Var *types, const char *name) {
+    Var *v = env_find(types, name);
+    if (v && v->val.type == V_STR)
+        return v->val.str;
+    return NULL;
+}
+static void type_env_free(Var **types) {
+    Var *v, *next;
+    if (!types)
+        return;
+    for (v = *types; v; v = next) {
+        next = v->next;
+        free(v->name);
+        value_free(v->val);
+        free(v);
+    }
+    *types = NULL;
+}
+static void type_env_set(Var **types, const char *name, const char *type) {
+    Var *v;
+    char tmp[256];
+    char *t;
+    if (!name || !type || !*type)
+        return;
+    strncpy(tmp, name, sizeof(tmp) - 1);
+    tmp[sizeof(tmp) - 1] = 0;
+    t = trim_inplace(tmp);
+    if (!*t)
+        return;
+    v = env_find(*types, t);
+    if (v) {
+        value_free(v->val);
+        v->val = v_str(type);
+        return;
+    }
+    v = (Var *)xmalloc(sizeof(Var));
+    memset(v, 0, sizeof(Var));
+    v->name = xstrdup(t);
+    v->val = v_str(type);
+    v->next = *types;
+    *types = v;
+}
+static const char *simple_expr_type(Var *types, const char *expr) {
+    char tmp[512];
+    char *t;
+    double d;
+    size_t i = 0;
+    int in_string = 0;
+    if (!expr)
+        return NULL;
+    strncpy(tmp, expr, sizeof(tmp) - 1);
+    tmp[sizeof(tmp) - 1] = 0;
+    t = trim_inplace(tmp);
+    if (!*t)
+        return NULL;
+    if (*t == '"')
+        return "TEXT";
+    if (parse_number_strict(t, &d))
+        return "NUMBER";
+    if (ci_eq(t, "YES") || ci_eq(t, "NO") || ci_eq(t, "TRUE") || ci_eq(t, "FALSE"))
+        return "YESNO";
+    if (ci_eq(t, "LIST"))
+        return "LIST";
+    if (ci_eq(t, "MAP"))
+        return "MAP";
+    if (starts_ci(t, "NEW "))
+        return "OBJECT";
+    for (i = 0; t[i]; i++) {
+        if (t[i] == '"')
+            in_string = !in_string;
+        if (!in_string && strchr("+-*/", t[i])) {
+            char *left = substr(t, t + i), *right = xstrdup(t + i + 1);
+            const char *lt, *rt;
+            lt = simple_expr_type(types, left);
+            rt = simple_expr_type(types, right);
+            free(left);
+            free(right);
+            if ((lt && ci_eq(lt, "TEXT")) || (rt && ci_eq(rt, "TEXT")))
+                return "TEXT";
+            if (lt && rt && ci_eq(lt, "NUMBER") && ci_eq(rt, "NUMBER"))
+                return "NUMBER";
+            return NULL;
+        }
+    }
+    i = 0;
+    while (t[i] && (isalnum((unsigned char)t[i]) || t[i] == '_' || t[i] == '.'))
+        i++;
+    if (i > 0 && t[i] == 0)
+        return type_env_get(types, t);
+    return NULL;
+}
+static int return_value_extra_tokens(const char *expr, char *value, size_t value_size) {
+    char tmp[512], *t, *p;
+    if (!expr || !value || value_size == 0)
+        return 0;
+    strncpy(tmp, expr, sizeof(tmp) - 1);
+    tmp[sizeof(tmp) - 1] = 0;
+    t = trim_inplace(tmp);
+    if (!*t || strpbrk(t, "+-*/\"") != NULL)
+        return 0;
+    p = t;
+    while (*p && !isspace((unsigned char)*p))
+        p++;
+    if (!*p)
+        return 0;
+    *p++ = 0;
+    while (*p && isspace((unsigned char)*p))
+        p++;
+    if (!*p)
+        return 0;
+    claro_snprintf(value, value_size, "%s", t);
+    return 1;
+}
+static const char *text_operand_for_operator(Var *types, const char *expr, char wanted) {
+    static char operand[256];
+    char tmp[512];
+    char *t;
+    size_t i;
+    int in_string = 0;
+    if (!expr)
+        return NULL;
+    strncpy(tmp, expr, sizeof(tmp) - 1);
+    tmp[sizeof(tmp) - 1] = 0;
+    t = trim_inplace(tmp);
+    for (i = 0; t[i]; i++) {
+        char *left, *right;
+        const char *lt, *rt;
+        if (t[i] == '"')
+            in_string = !in_string;
+        if (!in_string && t[i] == wanted) {
+            left = substr(t, t + i);
+            right = xstrdup(t + i + 1);
+            lt = simple_expr_type(types, left);
+            rt = simple_expr_type(types, right);
+            if (lt && ci_eq(lt, "TEXT")) {
+                claro_snprintf(operand, sizeof(operand), "%s", trim_inplace(left));
+                free(left);
+                free(right);
+                return operand;
+            }
+            if (rt && ci_eq(rt, "TEXT")) {
+                claro_snprintf(operand, sizeof(operand), "%s", trim_inplace(right));
+                free(left);
+                free(right);
+                return operand;
+            }
+            free(left);
+            free(right);
+        }
+    }
+    return NULL;
+}
+static char text_operator_for_number_return(Var *types, const char *expr) {
+    const char ops[] = "+-*/";
+    int i;
+    for (i = 0; ops[i]; i++)
+        if (text_operand_for_operator(types, expr, ops[i]))
+            return ops[i];
+    return 0;
+}
+static int type_words_match(const char *need, const char *got) {
+    if (!need || !*need || ci_eq(need, "ANY") || ci_eq(got, "ANY"))
+        return 1;
+    if (!got || !*got)
+        return 1;
+    if (ci_eq(need, got))
+        return 1;
+    if ((ci_eq(need, "LIST") || ci_eq(need, "MAP")) && starts_ci(got, need))
+        return 1;
+    if (starts_ci(need, "LIST OF") && ci_eq(got, "LIST"))
+        return 1;
+    if (starts_ci(need, "MAP OF") && ci_eq(got, "MAP"))
+        return 1;
+    if ((ci_eq(need, "YESNO") || ci_eq(need, "BOOL") || ci_eq(need, "BOOLEAN")) &&
+        (ci_eq(got, "YESNO") || ci_eq(got, "BOOL") || ci_eq(got, "BOOLEAN")))
+        return 1;
+    if (ci_eq(need, "OBJECT") && (ci_eq(got, "MAP") || starts_ci(got, "OBJECT:")))
+        return 1;
+    return 0;
+}
+static const char *container_member_type(const char *type, const char *kind) {
+    const char *p;
+    static char buf[128];
+    if (!type || !kind)
+        return NULL;
+    if (!starts_ci(type, kind))
+        return NULL;
+    p = type + strlen(kind);
+    while (*p && isspace((unsigned char)*p))
+        p++;
+    if (!starts_ci(p, "OF"))
+        return NULL;
+    p += 2;
+    while (*p && isspace((unsigned char)*p))
+        p++;
+    if (!*p)
+        return NULL;
+    claro_snprintf(buf, sizeof(buf), "%s", p);
+    return trim_inplace(buf);
+}
+static void parse_set_for_typecheck2(const char *t, char **name, char **type, char **expr) {
+    const char *rest = t + 3;
+    const char *to = find_word_ci(rest, "TO");
+    const char *as = find_word_ci(rest, "AS");
+    *name = NULL;
+    *type = NULL;
+    *expr = NULL;
+    if (as && to && as < to) {
+        *name = substr(rest, as);
+        *type = substr(as + 2, to);
+        *expr = xstrdup(to + 2);
+        return;
+    }
+    if (to) {
+        char *before = substr(rest, to);
+        const char *pcur = before;
+        char *var = unquote_token(&pcur);
+        char *maybe = unquote_token(&pcur);
+        char *mt = trim_inplace(maybe);
+        *name = xstrdup(trim_inplace(var));
+        if (claro_is_type_word(mt))
+            *type = xstrdup(mt);
+        *expr = xstrdup(to + 2);
+        free(before);
+        free(var);
+        free(maybe);
+        return;
+    }
+    {
+        const char *pcur = rest;
+        char *var = unquote_token(&pcur);
+        const char *after_var = pcur;
+        char *maybe = unquote_token(&pcur);
+        char *mt = trim_inplace(maybe);
+        char *remaining = trim_inplace((char *)pcur);
+        int uppercase_candidate = 1;
+        char *q;
+        for (q = mt; *q; q++)
+            if (isalpha((unsigned char)*q) && !isupper((unsigned char)*q))
+                uppercase_candidate = 0;
+        *name = xstrdup(trim_inplace(var));
+        if (claro_is_type_word(mt)) {
+            *type = xstrdup(mt);
+            *expr = xstrdup(remaining);
+        } else if (strchr(trim_inplace(var), '.') && *remaining && strchr(mt, ' ') == NULL &&
+                   uppercase_candidate) {
+            *type = xstrdup(mt);
+            *expr = xstrdup(remaining);
+        } else {
+            *expr = xstrdup(trim_inplace((char *)after_var));
+        }
+        free(var);
+        free(maybe);
+    }
+}
+typedef struct TypeParamCheck {
+    char *func;
+    char *param;
+    char *type;
+    int pos;
+    struct TypeParamCheck *next;
+} TypeParamCheck;
+typedef struct TypeFieldCheck {
+    char *cls;
+    char *field;
+    char *type;
+    struct TypeFieldCheck *next;
+} TypeFieldCheck;
+typedef struct TypeMethodCheck {
+    char *cls;
+    char *method;
+    struct TypeMethodCheck *next;
+} TypeMethodCheck;
+typedef struct TypeArityCheck {
+    char *func;
+    int arity;
+    struct TypeArityCheck *next;
+} TypeArityCheck;
+typedef struct TypeReturnCheck {
+    char *func;
+    char *type;
+    struct TypeReturnCheck *next;
+} TypeReturnCheck;
+static void add_type_param_check(TypeParamCheck **checks, const char *func, const char *param,
+                                 const char *type, int pos) {
+    TypeParamCheck *c;
+    if (!func || !*func || !param || !*param || !type || !*type)
+        return;
+    c = (TypeParamCheck *)xmalloc(sizeof(TypeParamCheck));
+    c->func = xstrdup(func);
+    c->param = xstrdup(param);
+    c->type = xstrdup(type);
+    c->pos = pos;
+    c->next = *checks;
+    *checks = c;
+}
+static const char *type_param_check_for(TypeParamCheck *checks, const char *func, int pos,
+                                        const char **param) {
+    TypeParamCheck *c = checks;
+    while (c) {
+        if (c->pos == pos && ci_eq(c->func, func)) {
+            if (param)
+                *param = c->param;
+            return c->type;
+        }
+        c = c->next;
+    }
+    return NULL;
+}
+static void add_type_arity_check(TypeArityCheck **checks, const char *func, int arity) {
+    TypeArityCheck *c;
+    if (!func || !*func)
+        return;
+    c = (TypeArityCheck *)xmalloc(sizeof(TypeArityCheck));
+    c->func = xstrdup(func);
+    c->arity = arity;
+    c->next = *checks;
+    *checks = c;
+}
+static int type_arity_check_for(TypeArityCheck *checks, const char *func) {
+    TypeArityCheck *c = checks;
+    while (c) {
+        if (ci_eq(c->func, func))
+            return c->arity;
+        c = c->next;
+    }
+    return -1;
+}
+static void add_type_return_check(TypeReturnCheck **checks, const char *func, const char *type) {
+    TypeReturnCheck *c;
+    if (!func || !*func || !type || !*type)
+        return;
+    c = (TypeReturnCheck *)xmalloc(sizeof(TypeReturnCheck));
+    c->func = xstrdup(func);
+    c->type = xstrdup(type);
+    c->next = *checks;
+    *checks = c;
+}
+static const char *type_return_check_for(TypeReturnCheck *checks, const char *func) {
+    TypeReturnCheck *c = checks;
+    while (c) {
+        if (ci_eq(c->func, func))
+            return c->type;
+        c = c->next;
+    }
+    return NULL;
+}
+static void add_type_field_check(TypeFieldCheck **checks, const char *cls, const char *field,
+                                 const char *type) {
+    TypeFieldCheck *c;
+    if (!cls || !*cls || !field || !*field || !type || !*type)
+        return;
+    c = (TypeFieldCheck *)xmalloc(sizeof(TypeFieldCheck));
+    c->cls = xstrdup(cls);
+    c->field = xstrdup(field);
+    c->type = xstrdup(type);
+    c->next = *checks;
+    *checks = c;
+}
+static const char *type_field_check_for(TypeFieldCheck *checks, const char *cls,
+                                        const char *field) {
+    TypeFieldCheck *c = checks;
+    while (c) {
+        if (ci_eq(c->cls, cls) && ci_eq(c->field, field))
+            return c->type;
+        c = c->next;
+    }
+    return NULL;
+}
+static void add_type_method_check(TypeMethodCheck **checks, const char *cls, const char *method) {
+    TypeMethodCheck *c;
+    if (!cls || !*cls || !method || !*method)
+        return;
+    c = (TypeMethodCheck *)xmalloc(sizeof(TypeMethodCheck));
+    c->cls = xstrdup(cls);
+    c->method = xstrdup(method);
+    c->next = *checks;
+    *checks = c;
+}
+static int type_method_check_for(TypeMethodCheck *checks, const char *cls, const char *method) {
+    TypeMethodCheck *c = checks;
+    while (c) {
+        if (ci_eq(c->cls, cls) && ci_eq(c->method, method))
+            return 1;
+        c = c->next;
+    }
+    return 0;
+}
+static int type_method_name_exists(TypeMethodCheck *checks, const char *method) {
+    TypeMethodCheck *c = checks;
+    while (c) {
+        if (ci_eq(c->method, method))
+            return 1;
+        c = c->next;
+    }
+    return 0;
+}
+static int param_index_named(char **params, int pcnt, const char *name) {
+    int i;
+    char tmp[256];
+    char *p;
+    for (i = 0; i < pcnt; i++) {
+        strncpy(tmp, params[i], sizeof(tmp) - 1);
+        tmp[sizeof(tmp) - 1] = 0;
+        p = trim_inplace(tmp);
+        if (ci_eq(p, name))
+            return i;
+    }
+    return -1;
+}
+static const char *duplicate_param_name(char **params, int pcnt) {
+    int i, j;
+    char left[256], right[256];
+    for (i = 0; i < pcnt; i++) {
+        claro_snprintf(left, sizeof(left), "%s", trim_inplace(params[i]));
+        for (j = 0; j < i; j++) {
+            claro_snprintf(right, sizeof(right), "%s", trim_inplace(params[j]));
+            if (ci_eq(left, right))
+                return params[i];
+        }
+    }
+    return NULL;
+}
+static void collect_teach_param_checks_from_body(TypeParamCheck **checks, FILE *f,
+                                                 const char *func_name, char **params, int pcnt) {
+    char line[4096];
+    while (fgets(line, sizeof(line), f)) {
+        char inner[4096], iup[64], iw[128];
+        char *it;
+        strncpy(inner, line, sizeof(inner) - 1);
+        inner[sizeof(inner) - 1] = 0;
+        it = trim_inplace(inner);
+        if (is_blank_or_comment(it))
+            continue;
+        first_word(it, iw, sizeof(iw));
+        upper_copy(iup, iw, sizeof(iup));
+        if (!strcmp(iup, "END") || !strcmp(iup, "LEARNED"))
+            break;
+        if (!strcmp(iup, "CHECK") && starts_ci(it, "CHECK TYPE")) {
+            const char *is = find_word_ci(it, "IS");
+            if (is) {
+                char *expr = substr(it + 10, is);
+                char *need = xstrdup(trim_inplace((char *)is + 2));
+                char *en = trim_inplace(expr);
+                int idx = param_index_named(params, pcnt, en);
+                if (idx >= 0)
+                    add_type_param_check(checks, func_name, en, need, idx);
+                free(expr);
+                free(need);
+            }
+        }
+    }
+}
+static TypeParamCheck *collect_function_param_type_checks(FILE *f) {
+    TypeParamCheck *checks = NULL;
+    char line[4096];
+    char current_class[128] = "";
+    while (fgets(line, sizeof(line), f)) {
+        char tmp[4096], up[64], w[128];
+        char *t;
+        strncpy(tmp, line, sizeof(tmp) - 1);
+        tmp[sizeof(tmp) - 1] = 0;
+        t = trim_inplace(tmp);
+        if (is_blank_or_comment(t))
+            continue;
+        first_word(t, w, sizeof(w));
+        upper_copy(up, w, sizeof(up));
+        if (!strcmp(up, "CLASS")) {
+            const char *pcur = t + 5;
+            char *cls = unquote_token(&pcur);
+            claro_snprintf(current_class, sizeof(current_class), "%s", trim_inplace(cls));
+            free(cls);
+            continue;
+        }
+        if ((!strcmp(up, "END") || !strcmp(up, "ENDCLASS")) && current_class[0]) {
+            current_class[0] = 0;
+            continue;
+        }
+        if (!strcmp(up, "TEACH")) {
+            char teachline[4096];
+            char *fname = NULL;
+            char **params = NULL;
+            int pcnt = 0;
+            char full_name[256];
+            strncpy(teachline, t, sizeof(teachline) - 1);
+            teachline[sizeof(teachline) - 1] = 0;
+            parse_teach_parts(teachline, &fname, &params, &pcnt);
+            if (current_class[0])
+                claro_snprintf(full_name, sizeof(full_name), "%s.%s", current_class, fname);
+            else
+                claro_snprintf(full_name, sizeof(full_name), "%s", fname);
+            collect_teach_param_checks_from_body(&checks, f, full_name, params, pcnt);
+        }
+    }
+    rewind(f);
+    return checks;
+}
+static TypeArityCheck *collect_function_arity_checks(FILE *f) {
+    TypeArityCheck *checks = NULL;
+    char line[4096];
+    char current_class[128] = "";
+    while (fgets(line, sizeof(line), f)) {
+        char tmp[4096], up[64], w[128];
+        char *t;
+        strncpy(tmp, line, sizeof(tmp) - 1);
+        tmp[sizeof(tmp) - 1] = 0;
+        t = trim_inplace(tmp);
+        if (is_blank_or_comment(t))
+            continue;
+        first_word(t, w, sizeof(w));
+        upper_copy(up, w, sizeof(up));
+        if (!strcmp(up, "CLASS")) {
+            const char *pcur = t + 5;
+            char *cls = unquote_token(&pcur);
+            claro_snprintf(current_class, sizeof(current_class), "%s", trim_inplace(cls));
+            free(cls);
+            continue;
+        }
+        if ((!strcmp(up, "END") || !strcmp(up, "ENDCLASS")) && current_class[0]) {
+            current_class[0] = 0;
+            continue;
+        }
+        if (!strcmp(up, "TEACH")) {
+            char teachline[4096];
+            char *fname = NULL;
+            char **params = NULL;
+            int pcnt = 0;
+            char full_name[256];
+            strncpy(teachline, t, sizeof(teachline) - 1);
+            teachline[sizeof(teachline) - 1] = 0;
+            parse_teach_parts(teachline, &fname, &params, &pcnt);
+            if (current_class[0])
+                claro_snprintf(full_name, sizeof(full_name), "%s.%s", current_class, fname);
+            else
+                claro_snprintf(full_name, sizeof(full_name), "%s", fname);
+            add_type_arity_check(&checks, full_name, pcnt);
+            while (fgets(line, sizeof(line), f)) {
+                char inner[4096], iup[64], iw[128];
+                char *it;
+                strncpy(inner, line, sizeof(inner) - 1);
+                inner[sizeof(inner) - 1] = 0;
+                it = trim_inplace(inner);
+                if (is_blank_or_comment(it))
+                    continue;
+                first_word(it, iw, sizeof(iw));
+                upper_copy(iup, iw, sizeof(iup));
+                if (!strcmp(iup, "END") || !strcmp(iup, "LEARNED"))
+                    break;
+            }
+        }
+    }
+    rewind(f);
+    return checks;
+}
+static TypeReturnCheck *collect_function_return_type_checks(FILE *f) {
+    TypeReturnCheck *checks = NULL;
+    char line[4096];
+    char current_class[128] = "";
+    while (fgets(line, sizeof(line), f)) {
+        char tmp[4096], up[64], w[128];
+        char *t;
+        strncpy(tmp, line, sizeof(tmp) - 1);
+        tmp[sizeof(tmp) - 1] = 0;
+        t = trim_inplace(tmp);
+        if (is_blank_or_comment(t))
+            continue;
+        first_word(t, w, sizeof(w));
+        upper_copy(up, w, sizeof(up));
+        if (!strcmp(up, "CLASS")) {
+            const char *pcur = t + 5;
+            char *cls = unquote_token(&pcur);
+            claro_snprintf(current_class, sizeof(current_class), "%s", trim_inplace(cls));
+            free(cls);
+            continue;
+        }
+        if ((!strcmp(up, "END") || !strcmp(up, "ENDCLASS")) && current_class[0]) {
+            current_class[0] = 0;
+            continue;
+        }
+        if (!strcmp(up, "TEACH")) {
+            char teachline[4096], full_name[256], *fname = NULL, **params = NULL;
+            int pcnt = 0;
+            const char *returns;
+            strncpy(teachline, t, sizeof(teachline) - 1);
+            teachline[sizeof(teachline) - 1] = 0;
+            returns = find_word_ci(teachline, "RETURNS");
+            parse_teach_parts(teachline, &fname, &params, &pcnt);
+            if (returns) {
+                char ret[128], first_ret[128];
+                const char *p = returns + 7;
+                while (*p && isspace((unsigned char)*p))
+                    p++;
+                claro_snprintf(ret, sizeof(ret), "%s", p);
+                if (sscanf(ret, "%127s", first_ret) == 1) {
+                    if (current_class[0])
+                        claro_snprintf(full_name, sizeof(full_name), "%s.%s", current_class, fname);
+                    else
+                        claro_snprintf(full_name, sizeof(full_name), "%s", fname);
+                    add_type_return_check(&checks, full_name, first_ret);
+                }
+            }
+            while (fgets(line, sizeof(line), f)) {
+                char inner[4096], iup[64], iw[128];
+                char *it;
+                strncpy(inner, line, sizeof(inner) - 1);
+                inner[sizeof(inner) - 1] = 0;
+                it = trim_inplace(inner);
+                if (is_blank_or_comment(it))
+                    continue;
+                first_word(it, iw, sizeof(iw));
+                upper_copy(iup, iw, sizeof(iup));
+                if (!strcmp(iup, "END") || !strcmp(iup, "LEARNED"))
+                    break;
+            }
+        }
+    }
+    rewind(f);
+    return checks;
+}
+static TypeFieldCheck *collect_class_field_type_checks(FILE *f) {
+    TypeFieldCheck *checks = NULL;
+    char line[4096];
+    char current_class[128] = "";
+    while (fgets(line, sizeof(line), f)) {
+        char tmp[4096], up[64], w[128];
+        char *t;
+        strncpy(tmp, line, sizeof(tmp) - 1);
+        tmp[sizeof(tmp) - 1] = 0;
+        t = trim_inplace(tmp);
+        if (is_blank_or_comment(t))
+            continue;
+        first_word(t, w, sizeof(w));
+        upper_copy(up, w, sizeof(up));
+        if (!strcmp(up, "CLASS")) {
+            const char *pcur = t + 5;
+            char *cls = unquote_token(&pcur);
+            claro_snprintf(current_class, sizeof(current_class), "%s", trim_inplace(cls));
+            free(cls);
+            continue;
+        }
+        if (current_class[0] && !strcmp(up, "TEACH")) {
+            while (fgets(line, sizeof(line), f)) {
+                char inner[4096], iup[64], iw[128];
+                char *it;
+                strncpy(inner, line, sizeof(inner) - 1);
+                inner[sizeof(inner) - 1] = 0;
+                it = trim_inplace(inner);
+                if (is_blank_or_comment(it))
+                    continue;
+                first_word(it, iw, sizeof(iw));
+                upper_copy(iup, iw, sizeof(iup));
+                if (!strcmp(iup, "END") || !strcmp(iup, "LEARNED"))
+                    break;
+            }
+            continue;
+        }
+        if ((!strcmp(up, "END") || !strcmp(up, "ENDCLASS")) && current_class[0]) {
+            current_class[0] = 0;
+            continue;
+        }
+        if (current_class[0] && !strcmp(up, "HAS")) {
+            const char *pcur = t + 3;
+            char *field = unquote_token(&pcur);
+            char *type = unquote_token(&pcur);
+            add_type_field_check(&checks, current_class, trim_inplace(field), trim_inplace(type));
+            free(field);
+            free(type);
+        }
+    }
+    rewind(f);
+    return checks;
+}
+static TypeMethodCheck *collect_class_method_type_checks(FILE *f) {
+    TypeMethodCheck *checks = NULL;
+    char line[4096];
+    char current_class[128] = "";
+    while (fgets(line, sizeof(line), f)) {
+        char tmp[4096], up[64], w[128];
+        char *t;
+        strncpy(tmp, line, sizeof(tmp) - 1);
+        tmp[sizeof(tmp) - 1] = 0;
+        t = trim_inplace(tmp);
+        if (is_blank_or_comment(t))
+            continue;
+        first_word(t, w, sizeof(w));
+        upper_copy(up, w, sizeof(up));
+        if (!strcmp(up, "CLASS")) {
+            const char *pcur = t + 5;
+            char *cls = unquote_token(&pcur);
+            claro_snprintf(current_class, sizeof(current_class), "%s", trim_inplace(cls));
+            free(cls);
+            continue;
+        }
+        if ((!strcmp(up, "END") || !strcmp(up, "ENDCLASS")) && current_class[0]) {
+            current_class[0] = 0;
+            continue;
+        }
+        if (current_class[0] && !strcmp(up, "TEACH")) {
+            char teachline[4096];
+            char *fname = NULL;
+            char **params = NULL;
+            int pcnt = 0;
+            strncpy(teachline, t, sizeof(teachline) - 1);
+            teachline[sizeof(teachline) - 1] = 0;
+            parse_teach_parts(teachline, &fname, &params, &pcnt);
+            add_type_method_check(&checks, current_class, trim_inplace(fname));
+            while (fgets(line, sizeof(line), f)) {
+                char inner[4096], iup[64], iw[128];
+                char *it;
+                strncpy(inner, line, sizeof(inner) - 1);
+                inner[sizeof(inner) - 1] = 0;
+                it = trim_inplace(inner);
+                if (is_blank_or_comment(it))
+                    continue;
+                first_word(it, iw, sizeof(iw));
+                upper_copy(iup, iw, sizeof(iup));
+                if (!strcmp(iup, "END") || !strcmp(iup, "LEARNED"))
+                    break;
+            }
+        }
+    }
+    rewind(f);
+    return checks;
+}
+static int typecheck_file(const char *path) {
+    FILE *f = fopen(path, "rb");
+    char line[4096];
+    int line_no = 0, errs = 0;
+    Var *types = NULL;
+    TypeParamCheck *param_checks = NULL;
+    TypeFieldCheck *field_checks = NULL;
+    TypeMethodCheck *method_checks = NULL;
+    TypeArityCheck *arity_checks = NULL;
+    TypeReturnCheck *return_checks = NULL;
+    char current_func[256] = "";
+    char current_method[256] = "";
+    char current_class[128] = "";
+    char declared_classes[128][256];
+    char declared_functions[128][256];
+    char declared_methods[128][256];
+    char declared_fields[128][256];
+    char declared_objects[128][256];
+    int declared_class_count = 0, declared_function_count = 0, declared_method_count = 0,
+        declared_field_count = 0, declared_object_count = 0;
+    int in_teach = 0, return_seen = 0, top_level_return_seen = 0, nested_blocks = 0,
+        conditional_paths_complete = 1;
+    int branch_returned[64], branch_has_else[64];
+    if (!f) {
+        fprintf(stderr, "Could not open %s\n", path);
+        return 1;
+    }
+    param_checks = collect_function_param_type_checks(f);
+    arity_checks = collect_function_arity_checks(f);
+    return_checks = collect_function_return_type_checks(f);
+    field_checks = collect_class_field_type_checks(f);
+    method_checks = collect_class_method_type_checks(f);
+    type_env_set(&types, "RESULT", "ANY");
+    type_env_set(&types, "LASTERROR", "TEXT");
+    type_env_set(&types, "LASTERRORFILE", "TEXT");
+    type_env_set(&types, "LASTERRORLINE", "NUMBER");
+    type_env_set(&types, "LASTEXIT", "NUMBER");
+    while (fgets(line, sizeof(line), f)) {
+        char tmp[4096], up[64], w[128];
+        char *t;
+        line_no++;
+        strncpy(tmp, line, sizeof(tmp) - 1);
+        tmp[sizeof(tmp) - 1] = 0;
+        t = trim_inplace(tmp);
+        if (is_blank_or_comment(t))
+            continue;
+        first_word(t, w, sizeof(w));
+        upper_copy(up, w, sizeof(up));
+        if (!strcmp(up, "CLASS")) {
+            const char *pcur = t + 5;
+            char *cls = unquote_token(&pcur);
+            char *name = trim_inplace(cls);
+            char *extra = trim_inplace((char *)pcur);
+            int duplicate = 0, ci;
+            for (ci = 0; ci < declared_class_count; ci++)
+                if (ci_eq(declared_classes[ci], name)) {
+                    duplicate = 1;
+                    break;
+                }
+            if (!*name) {
+                printf("%s:%d: CLASS needs a class name. Add a name after CLASS, such as CLASS "
+                       "Player.\n",
+                       path, line_no);
+                errs++;
+                current_class[0] = 0;
+            } else if (*extra) {
+                printf("%s:%d: Class %s has extra text after its name. Keep only the class name "
+                       "after CLASS.\n",
+                       path, line_no, name);
+                errs++;
+            } else if (duplicate) {
+                printf("%s:%d: Class %s is declared more than once. Give each class a different "
+                       "name.\n",
+                       path, line_no, name);
+                errs++;
+            } else if (declared_class_count < 128)
+                claro_snprintf(declared_classes[declared_class_count++],
+                               sizeof(declared_classes[0]), "%s", name);
+            claro_snprintf(current_class, sizeof(current_class), "%s", name);
+            declared_field_count = 0;
+            free(cls);
+        } else if (current_class[0] && !strcmp(up, "HAS")) {
+            const char *pcur = t + 3;
+            char *field = unquote_token(&pcur);
+            char *field_type = unquote_token(&pcur);
+            char *name = trim_inplace(field);
+            char *ft = trim_inplace(field_type);
+            char *extra = trim_inplace((char *)pcur);
+            int duplicate = 0, fi;
+            for (fi = 0; fi < declared_field_count; fi++)
+                if (ci_eq(declared_fields[fi], name)) {
+                    duplicate = 1;
+                    break;
+                }
+            if (!*name) {
+                printf("%s:%d: Class %s needs a field name. Add a name and type after HAS, such as "
+                       "HAS score NUMBER.\n",
+                       path, line_no, current_class);
+                errs++;
+            } else if (duplicate) {
+                printf("%s:%d: Class %s declares field %s more than once. Give each field a "
+                       "different name.\n",
+                       path, line_no, current_class, name);
+                errs++;
+            } else if (!*ft) {
+                printf("%s:%d: Class %s field %s is missing a type. Add a type such as NUMBER, "
+                       "TEXT, YESNO, LIST, or MAP after the field name.\n",
+                       path, line_no, current_class, name);
+                errs++;
+            } else if (!claro_is_type_word(ft)) {
+                printf("%s:%d: Class %s field %s uses an unknown type %s. Use a Claro type such as "
+                       "NUMBER, TEXT, YESNO, LIST, or MAP.\n",
+                       path, line_no, current_class, name, ft);
+                errs++;
+            } else if (*extra) {
+                printf("%s:%d: Class %s field %s has extra text after type %s. Keep only the field "
+                       "name and one type.\n",
+                       path, line_no, current_class, name, ft);
+                errs++;
+            } else if (declared_field_count < 128)
+                claro_snprintf(declared_fields[declared_field_count++], sizeof(declared_fields[0]),
+                               "%s", name);
+            free(field);
+            free(field_type);
+        } else if (!strcmp(up, "TEACH")) {
+            char teachline[4096], full_name[256], *fname = NULL, **params = NULL;
+            int pcnt = 0;
+            int duplicate_method = 0;
+            strncpy(teachline, t, sizeof(teachline) - 1);
+            teachline[sizeof(teachline) - 1] = 0;
+            parse_teach_parts(teachline, &fname, &params, &pcnt);
+            if (current_class[0])
+                claro_snprintf(full_name, sizeof(full_name), "%s.%s", current_class, fname);
+            else
+                claro_snprintf(full_name, sizeof(full_name), "%s", fname);
+            {
+                const char *returns = find_word_ci(t, "RETURNS");
+                if (returns) {
+                    const char *rp = returns + 7;
+                    char ret[128], first_ret[128], *extra;
+                    while (*rp && isspace((unsigned char)*rp))
+                        rp++;
+                    claro_snprintf(ret, sizeof(ret), "%s", rp);
+                    if (sscanf(ret, "%127s", first_ret) == 1) {
+                        extra = trim_inplace((char *)rp + strlen(first_ret));
+                        if (*extra) {
+                            printf("%s:%d: %s %s has extra text after return type %s. Keep only "
+                                   "the function name, parameters, and one return type.\n",
+                                   path, line_no, current_class[0] ? "Method" : "Function",
+                                   full_name, first_ret);
+                            errs++;
+                        }
+                    } else {
+                        printf("%s:%d: %s %s needs a return type after RETURNS. Add a type such as "
+                               "NUMBER.\n",
+                               path, line_no, current_class[0] ? "Method" : "Function", full_name);
+                        errs++;
+                    }
+                }
+            }
+            if (!fname || !*trim_inplace(fname)) {
+                if (current_class[0])
+                    printf("%s:%d: Method %s needs a method name. Add a name after TEACH, such as "
+                           "TEACH show.\n",
+                           path, line_no, current_class);
+                else
+                    printf("%s:%d: TEACH needs a function name. Add a name after TEACH, such as "
+                           "TEACH greet.\n",
+                           path, line_no);
+                errs++;
+            }
+            if (!fname)
+                fname = xstrdup("");
+            if (current_class[0])
+                claro_snprintf(full_name, sizeof(full_name), "%s.%s", current_class, fname);
+            else
+                claro_snprintf(full_name, sizeof(full_name), "%s", fname);
+            if (current_class[0]) {
+                int mi;
+                for (mi = 0; mi < declared_method_count; mi++)
+                    if (ci_eq(declared_methods[mi], full_name)) {
+                        duplicate_method = 1;
+                        break;
+                    }
+                if (duplicate_method) {
+                    printf("%s:%d: Method %s is declared more than once. Give each method a "
+                           "different name.\n",
+                           path, line_no, full_name);
+                    errs++;
+                } else if (declared_method_count < 128)
+                    claro_snprintf(declared_methods[declared_method_count++],
+                                   sizeof(declared_methods[0]), "%s", full_name);
+            } else {
+                int fi, duplicate_function = 0;
+                for (fi = 0; fi < declared_function_count; fi++)
+                    if (ci_eq(declared_functions[fi], full_name)) {
+                        duplicate_function = 1;
+                        break;
+                    }
+                if (duplicate_function) {
+                    printf("%s:%d: Function %s is declared more than once. Give each function a "
+                           "different name.\n",
+                           path, line_no, full_name);
+                    errs++;
+                } else if (declared_function_count < 128)
+                    claro_snprintf(declared_functions[declared_function_count++],
+                                   sizeof(declared_functions[0]), "%s", full_name);
+            }
+            {
+                const char *duplicate = duplicate_param_name(params, pcnt);
+                if (duplicate) {
+                    printf("%s:%d: %s %s declares parameter %s more than once. Give each parameter "
+                           "a different name.\n",
+                           path, line_no, current_class[0] ? "Method" : "Function", full_name,
+                           trim_inplace((char *)duplicate));
+                    errs++;
+                }
+            }
+            {
+                int pi;
+                for (pi = 0; pi < pcnt; pi++)
+                    type_env_set(&types, params[pi], "ANY");
+            }
+            current_func[0] = 0;
+            current_method[0] = 0;
+            return_seen = 0;
+            top_level_return_seen = 0;
+            nested_blocks = 0;
+            conditional_paths_complete = 1;
+            in_teach = 1;
+            if (current_class[0])
+                claro_snprintf(current_method, sizeof(current_method), "%s", full_name);
+            if (current_class[0]) {
+                TypeFieldCheck *fc;
+                for (fc = field_checks; fc; fc = fc->next)
+                    if (ci_eq(fc->cls, current_class))
+                        type_env_set(&types, fc->field, fc->type);
+            }
+            {
+                const char *declared_return = type_return_check_for(return_checks, full_name);
+                if (declared_return && !claro_is_type_word(declared_return)) {
+                    printf("%s:%d: %s %s declares an unknown return type %s. Use a Claro type such "
+                           "as NUMBER, TEXT, YESNO, LIST, or MAP.\n",
+                           path, line_no, strchr(full_name, '.') ? "Method" : "Function", full_name,
+                           declared_return);
+                    errs++;
+                } else if (declared_return)
+                    claro_snprintf(current_func, sizeof(current_func), "%s", full_name);
+            }
+        } else if (!strcmp(up, "IF")) {
+            if (in_teach) {
+                if (nested_blocks < 64) {
+                    branch_returned[nested_blocks] = 0;
+                    branch_has_else[nested_blocks] = 0;
+                }
+                nested_blocks++;
+            }
+        } else if (!strcmp(up, "ELSE")) {
+            if (in_teach && nested_blocks > 0 && nested_blocks <= 64) {
+                if (!branch_returned[nested_blocks - 1])
+                    conditional_paths_complete = 0;
+                branch_has_else[nested_blocks - 1] = 1;
+                branch_returned[nested_blocks - 1] = 0;
+            }
+        } else if (!strcmp(up, "END") || !strcmp(up, "LEARNED") || !strcmp(up, "ENDIF")) {
+            if (in_teach && nested_blocks > 0) {
+                int nested_complete = (nested_blocks <= 64 && branch_has_else[nested_blocks - 1] &&
+                                       branch_returned[nested_blocks - 1]);
+                if (nested_blocks <= 64 &&
+                    (!branch_has_else[nested_blocks - 1] || !branch_returned[nested_blocks - 1]))
+                    conditional_paths_complete = 0;
+                nested_blocks--;
+                if (nested_complete && nested_blocks > 0 && nested_blocks <= 64)
+                    branch_returned[nested_blocks - 1] = 1;
+            } else if (in_teach) {
+                if (current_func[0] && !return_seen) {
+                    const char *need = type_return_check_for(return_checks, current_func);
+                    printf("%s:%d: %s %s declares RETURNS %s but has no RETURN statement. Add "
+                           "RETURN with a %s value.\n",
+                           path, line_no, strchr(current_func, '.') ? "Method" : "Function",
+                           current_func, need, need);
+                    errs++;
+                } else if (current_func[0] &&
+                           (!top_level_return_seen && !conditional_paths_complete)) {
+                    const char *need = type_return_check_for(return_checks, current_func);
+                    printf("%s:%d: %s %s declares RETURNS %s but does not return a %s value on "
+                           "every path. Add RETURN to each branch or after the conditional.\n",
+                           path, line_no, strchr(current_func, '.') ? "Method" : "Function",
+                           current_func, need, need);
+                    errs++;
+                }
+                in_teach = 0;
+                current_func[0] = 0;
+                current_method[0] = 0;
+            } else
+                current_class[0] = 0;
+        } else if (!strcmp(up, "RETURN") && current_func[0]) {
+            const char *need = type_return_check_for(return_checks, current_func);
+            char *return_expr = trim_inplace(t + 6);
+            const char *got = simple_expr_type(types, return_expr);
+            return_seen = 1;
+            if (nested_blocks == 0)
+                top_level_return_seen = 1;
+            else if (nested_blocks <= 64)
+                branch_returned[nested_blocks - 1] = 1;
+            if (need && !*return_expr) {
+                printf("%s:%d: %s %s needs a %s value after RETURN. Add a %s expression.\n", path,
+                       line_no, strchr(current_func, '.') ? "Method" : "Function", current_func,
+                       need, need);
+                errs++;
+            } else if (need && !got) {
+                char first_value[128];
+                if (return_value_extra_tokens(return_expr, first_value, sizeof(first_value))) {
+                    printf("%s:%d: %s %s has extra text after return value %s. Keep only one "
+                           "expression after RETURN.\n",
+                           path, line_no, strchr(current_func, '.') ? "Method" : "Function",
+                           current_func, first_value);
+                } else {
+                    printf("%s:%d: %s %s's return value could not be understood yet. Use a %s "
+                           "expression after RETURN.\n",
+                           path, line_no, strchr(current_func, '.') ? "Method" : "Function",
+                           current_func, need);
+                }
+                errs++;
+            } else if (need && got && !type_words_match(need, got)) {
+                char text_operator = (ci_eq(need, "NUMBER") && ci_eq(got, "TEXT"))
+                                         ? text_operator_for_number_return(types, return_expr)
+                                         : 0;
+                const char *text_operand =
+                    text_operator ? text_operand_for_operator(types, return_expr, text_operator)
+                                  : NULL;
+                if (text_operand) {
+                    printf("%s:%d: Type mismatch for return from %s: %s needs NUMBER values, but "
+                           "%s looks like TEXT.\n",
+                           path, line_no, current_func,
+                           text_operator == '+'
+                               ? "addition"
+                               : (text_operator == '-'
+                                      ? "subtraction"
+                                      : (text_operator == '*' ? "multiplication" : "division")),
+                           text_operand);
+                } else {
+                    printf("%s:%d: Type mismatch for return from %s: expected %s, but this value "
+                           "looks like %s.\n",
+                           path, line_no, current_func, need, got);
+                }
+                errs++;
+            }
+        } else if (!strcmp(up, "SET")) {
+            char *name = NULL, *type = NULL, *expr = NULL;
+            const char *got, *old;
+            const char *as = find_word_ci(t + 3, "AS"), *to = find_word_ci(t + 3, "TO");
+            if (as && !to) {
+                const char *pcur = as + 2;
+                char *typed_name = substr(t + 3, as);
+                char *typed_type = unquote_token(&pcur);
+                char *nt = trim_inplace(typed_name);
+                char *tt = trim_inplace(typed_type);
+                if (*nt && *tt) {
+                    printf("%s:%d: SET %s needs TO after type %s. Try: SET %s AS %s TO 10.\n", path,
+                           line_no, nt, tt, nt, tt);
+                    errs++;
+                }
+                free(typed_name);
+                free(typed_type);
+                continue;
+            }
+            parse_set_for_typecheck2(t, &name, &type, &expr);
+            if (name && *trim_inplace(name)) {
+                char *nt = trim_inplace(name);
+                char *tt = type ? trim_inplace(type) : NULL;
+                if (!tt && (!expr || !*trim_inplace(expr)) && strchr(nt, '.')) {
+                    printf(
+                        "%s:%d: SET %s needs a value. Add one expression after the field name.\n",
+                        path, line_no, nt);
+                    errs++;
+                    free(name);
+                    free(type);
+                    free(expr);
+                    continue;
+                }
+                if (as && to && as < to) {
+                    char value[128];
+                    if (!*trim_inplace((char *)to + 2)) {
+                        printf("%s:%d: SET %s needs a value after type %s and TO. Add one "
+                               "expression.\n",
+                               path, line_no, nt, tt ? tt : "the declared type");
+                        errs++;
+                        free(name);
+                        free(type);
+                        free(expr);
+                        continue;
+                    }
+                    if (return_value_extra_tokens(to + 2, value, sizeof(value))) {
+                        printf("%s:%d: SET %s has extra text after value %s. Keep only the field "
+                               "name, type, TO, and one expression.\n",
+                               path, line_no, nt, value);
+                        errs++;
+                        free(name);
+                        free(type);
+                        free(expr);
+                        continue;
+                    }
+                } else if (tt && *tt) {
+                    char value[128];
+                    if (!expr || !*trim_inplace(expr)) {
+                        printf("%s:%d: SET %s needs a value after type %s. Add one expression.\n",
+                               path, line_no, nt, tt);
+                        errs++;
+                        free(name);
+                        free(type);
+                        free(expr);
+                        continue;
+                    }
+                    if (return_value_extra_tokens(expr, value, sizeof(value))) {
+                        printf("%s:%d: SET %s has extra text after value %s. Keep only the field "
+                               "name, type, and one expression.\n",
+                               path, line_no, nt, value);
+                        errs++;
+                        free(name);
+                        free(type);
+                        free(expr);
+                        continue;
+                    }
+                }
+                got = simple_expr_type(types, expr);
+                if (current_method[0] && current_class[0] && !strchr(nt, '.') &&
+                    !type_env_get(types, nt) &&
+                    !type_field_check_for(field_checks, current_class, nt)) {
+                    if (got) {
+                        printf("%s:%d: Object %s has no field %s. Check the field name or add HAS "
+                               "%s %s to the class.\n",
+                               path, line_no, current_class, nt, nt, got);
+                    } else {
+                        printf("%s:%d: Object %s has no field %s. Check the field name or add the "
+                               "field to the class with the right type.\n",
+                               path, line_no, current_class, nt);
+                    }
+                    errs++;
+                    free(name);
+                    free(type);
+                    free(expr);
+                    continue;
+                }
+                old = type_env_get(types, nt);
+                if (tt && *tt) {
+                    if (current_method[0] && current_class[0] && !strchr(nt, '.')) {
+                        const char *declared =
+                            type_field_check_for(field_checks, current_class, nt);
+                        if (declared && tt && !claro_is_type_word(tt)) {
+                            printf("%s:%d: Field %s in %s needs a known type such as NUMBER, TEXT, "
+                                   "or YESNO, but %s is not a Claro type. Use %s for %s.\n",
+                                   path, line_no, nt, current_method, tt, declared, nt);
+                            errs++;
+                            got = NULL;
+                        } else if (declared && tt && !type_words_match(declared, tt)) {
+                            printf("%s:%d: Type mismatch for field %s in %s: class declares %s, "
+                                   "but this assignment says %s. Use %s for %s.\n",
+                                   path, line_no, nt, current_method, declared, tt, declared, nt);
+                            errs++;
+                            got = NULL;
+                        } else if (declared && got && !type_words_match(declared, got)) {
+                            printf("%s:%d: Type mismatch for field %s in %s: expected %s, but this "
+                                   "value looks like %s.\n",
+                                   path, line_no, nt, current_method, declared, got);
+                            errs++;
+                        }
+                    }
+                    if (strchr(nt, '.')) {
+                        char objname[128], fieldname[128];
+                        char *dot = strchr(nt, '.');
+                        const char *objtype;
+                        claro_snprintf(objname, sizeof(objname), "%.*s", (int)(dot - nt), nt);
+                        claro_snprintf(fieldname, sizeof(fieldname), "%s", dot + 1);
+                        objtype = type_env_get(types, objname);
+                        if (objtype && starts_ci(objtype, "OBJECT:")) {
+                            const char *declared =
+                                type_field_check_for(field_checks, objtype + 7, fieldname);
+                            if (declared && tt && !claro_is_type_word(tt)) {
+                                printf("%s:%d: Field %s needs a known type such as NUMBER, TEXT, "
+                                       "or YESNO, but %s is not a Claro type. Use %s for %s.\n",
+                                       path, line_no, nt, tt, declared, fieldname);
+                                errs++;
+                            } else if (declared && tt && !type_words_match(declared, tt)) {
+                                printf("%s:%d: Type mismatch for field %s: class declares %s, but "
+                                       "this assignment says %s. Use %s for %s.\n",
+                                       path, line_no, nt, declared, tt, declared, fieldname);
+                                errs++;
+                            } else if (declared && got && !type_words_match(declared, got)) {
+                                char text_operator =
+                                    (ci_eq(declared, "NUMBER") && ci_eq(got, "TEXT"))
+                                        ? (text_operand_for_operator(types, expr, '+')
+                                               ? '+'
+                                               : (text_operand_for_operator(types, expr, '-')
+                                                      ? '-'
+                                                      : (text_operand_for_operator(types, expr, '*')
+                                                             ? '*'
+                                                             : (text_operand_for_operator(types,
+                                                                                          expr, '/')
+                                                                    ? '/'
+                                                                    : 0))))
+                                        : 0;
+                                const char *text_operand =
+                                    text_operator
+                                        ? text_operand_for_operator(types, expr, text_operator)
+                                        : NULL;
+                                if (text_operand) {
+                                    printf("%s:%d: Type mismatch for field %s: %s needs NUMBER "
+                                           "values, but %s looks like TEXT.\n",
+                                           path, line_no, nt,
+                                           text_operator == '+'
+                                               ? "addition"
+                                               : (text_operator == '-'
+                                                      ? "subtraction"
+                                                      : (text_operator == '*' ? "multiplication"
+                                                                              : "division")),
+                                           text_operand);
+                                } else {
+                                    printf("%s:%d: Type mismatch for field %s: expected %s, but "
+                                           "this value looks like %s.\n",
+                                           path, line_no, nt, declared, got);
+                                }
+                                errs++;
+                            } else if (!declared) {
+                                printf("%s:%d: Object %s has no field %s. Check the field name or "
+                                       "add HAS %s %s to the class.\n",
+                                       path, line_no, objtype + 7, fieldname, fieldname, tt);
+                                errs++;
+                            } else if (got && !type_words_match(tt, got)) {
+                                printf("%s:%d: Type mismatch for %s: expected %s, but this value "
+                                       "looks like %s.\n",
+                                       path, line_no, nt, tt, got);
+                                errs++;
+                            }
+                        } else if (got && !type_words_match(tt, got)) {
+                            printf("%s:%d: Type mismatch for %s: expected %s, but this value looks "
+                                   "like %s.\n",
+                                   path, line_no, nt, tt, got);
+                            errs++;
+                        }
+                    } else if (got && !type_words_match(tt, got)) {
+                        printf("%s:%d: Type mismatch for %s: expected %s, but this value looks "
+                               "like %s.\n",
+                               path, line_no, nt, tt, got);
+                        errs++;
+                    }
+                    type_env_set(&types, nt, tt);
+                } else if (old) {
+                    if (got && !type_words_match(old, got)) {
+                        if (strchr(nt, '.')) {
+                            char text_operator =
+                                (ci_eq(old, "NUMBER") && ci_eq(got, "TEXT"))
+                                    ? (text_operand_for_operator(types, expr, '+')
+                                           ? '+'
+                                           : (text_operand_for_operator(types, expr, '-')
+                                                  ? '-'
+                                                  : (text_operand_for_operator(types, expr, '*')
+                                                         ? '*'
+                                                         : (text_operand_for_operator(types, expr,
+                                                                                      '/')
+                                                                ? '/'
+                                                                : 0))))
+                                    : 0;
+                            const char *text_operand =
+                                text_operator
+                                    ? text_operand_for_operator(types, expr, text_operator)
+                                    : NULL;
+                            if (text_operand)
+                                printf("%s:%d: Type mismatch for field %s: %s needs NUMBER values, "
+                                       "but %s looks like TEXT.\n",
+                                       path, line_no, nt,
+                                       text_operator == '+'
+                                           ? "addition"
+                                           : (text_operator == '-'
+                                                  ? "subtraction"
+                                                  : (text_operator == '*' ? "multiplication"
+                                                                          : "division")),
+                                       text_operand);
+                            else
+                                printf("%s:%d: Type mismatch for field %s: expected %s, but this "
+                                       "value looks like %s.\n",
+                                       path, line_no, nt, old, got);
+                        } else if (in_teach && current_class[0] &&
+                                   type_field_check_for(field_checks, current_class, nt)) {
+                            const char *declared =
+                                type_field_check_for(field_checks, current_class, nt);
+                            char text_operator =
+                                (ci_eq(declared, "NUMBER") && ci_eq(got, "TEXT"))
+                                    ? (text_operand_for_operator(types, expr, '+')
+                                           ? '+'
+                                           : (text_operand_for_operator(types, expr, '-')
+                                                  ? '-'
+                                                  : (text_operand_for_operator(types, expr, '*')
+                                                         ? '*'
+                                                         : (text_operand_for_operator(types, expr,
+                                                                                      '/')
+                                                                ? '/'
+                                                                : 0))))
+                                    : 0;
+                            const char *text_operand =
+                                text_operator
+                                    ? text_operand_for_operator(types, expr, text_operator)
+                                    : NULL;
+                            if (text_operand)
+                                printf("%s:%d: Type mismatch for field %s in %s: %s needs NUMBER "
+                                       "values, but %s looks like TEXT.\n",
+                                       path, line_no, nt, current_method,
+                                       text_operator == '+'
+                                           ? "addition"
+                                           : (text_operator == '-'
+                                                  ? "subtraction"
+                                                  : (text_operator == '*' ? "multiplication"
+                                                                          : "division")),
+                                       text_operand);
+                            else
+                                printf("%s:%d: Type mismatch for field %s in %s: expected %s, but "
+                                       "this value looks like %s.\n",
+                                       path, line_no, nt, current_method, declared, got);
+                            errs++;
+                        } else
+                            printf("%s:%d: Type mismatch for %s: it was first set as %s, but this "
+                                   "value looks like %s.\n",
+                                   path, line_no, nt, old, got);
+                        errs++;
+                    }
+                } else if (strchr(nt, '.')) {
+                    char objname[128], fieldname[128];
+                    char *dot = strchr(nt, '.');
+                    const char *objtype;
+                    claro_snprintf(objname, sizeof(objname), "%.*s", (int)(dot - nt), nt);
+                    claro_snprintf(fieldname, sizeof(fieldname), "%s", dot + 1);
+                    objtype = type_env_get(types, objname);
+                    if (objtype && starts_ci(objtype, "OBJECT:")) {
+                        const char *cls = objtype + 7;
+                        if (!type_field_check_for(field_checks, cls, fieldname)) {
+                            if (got && !strchr(expr, '+') && !strchr(expr, '-') &&
+                                !strchr(expr, '*') && !strchr(expr, '/'))
+                                printf("%s:%d: Object %s has no field %s. Check the field name or "
+                                       "add HAS %s %s to the class.\n",
+                                       path, line_no, cls, fieldname, fieldname, got);
+                            else
+                                printf("%s:%d: Object %s has no field %s. Check the field name or "
+                                       "add the field to the class with the right type.\n",
+                                       path, line_no, cls, fieldname);
+                            errs++;
+                        } else {
+                            const char *fieldtype =
+                                type_field_check_for(field_checks, cls, fieldname);
+                            if (got && !type_words_match(fieldtype, got)) {
+                                printf("%s:%d: Type mismatch for field %s.%s: expected %s, but "
+                                       "this value looks like %s.\n",
+                                       path, line_no, objname, fieldname, fieldtype, got);
+                                errs++;
+                            }
+                        }
+                    } else {
+                        printf("%s:%d: Object %s is not known yet. Create it with NEW ClassName %s "
+                               "before setting %s.\n",
+                               path, line_no, objname, objname, nt);
+                        errs++;
+                    }
+                } else if (got)
+                    type_env_set(&types, nt, got);
+                else
+                    type_env_set(&types, nt, "ANY");
+            }
+            free(name);
+            free(type);
+            free(expr);
+        } else if (!strcmp(up, "ADD")) {
+            const char *to = find_word_ci(t, "TO");
+            if (to) {
+                char *expr = substr(t + 3, to);
+                char *name = xstrdup(trim_inplace((char *)to + 2));
+                const char *listtype = type_env_get(types, name);
+                const char *need = container_member_type(listtype, "LIST");
+                const char *got = simple_expr_type(types, expr);
+                if (need && got && !type_words_match(need, got)) {
+                    printf("%s:%d: Type mismatch for list %s: expected %s item, but this value "
+                           "looks like %s.\n",
+                           path, line_no, name, need, got);
+                    errs++;
+                }
+                free(expr);
+                free(name);
+            }
+        } else if (!strcmp(up, "PUT")) {
+            const char *key = find_word_ci(t, "KEY"), *val = find_word_ci(t, "VALUE");
+            if (key && val) {
+                char *name = substr(t + 3, key);
+                char *expr = xstrdup(trim_inplace((char *)val + 5));
+                char *nt = trim_inplace(name);
+                const char *maptype = type_env_get(types, nt);
+                const char *need = container_member_type(maptype, "MAP");
+                const char *got = simple_expr_type(types, expr);
+                if (need && got && !type_words_match(need, got)) {
+                    printf("%s:%d: Type mismatch for map %s: expected %s value, but this value "
+                           "looks like %s.\n",
+                           path, line_no, nt, need, got);
+                    errs++;
+                }
+                free(name);
+                free(expr);
+            }
+        } else if (!strcmp(up, "ASK")) {
+            const char *as = find_word_ci(t, "AS");
+            char *name = NULL, *type = NULL;
+            if (as) {
+                const char *pcur = as + 2;
+                name = unquote_token(&pcur);
+                {
+                    char *rest = xstrdup(trim_inplace((char *)pcur));
+                    if (claro_is_type_word(rest))
+                        type = rest;
+                    else
+                        free(rest);
+                }
+            } else {
+                const char *pcur = t + 3;
+                char *prompt = unquote_token(&pcur);
+                free(prompt);
+                name = unquote_token(&pcur);
+                {
+                    char *rest = xstrdup(trim_inplace((char *)pcur));
+                    if (claro_is_type_word(rest))
+                        type = rest;
+                    else
+                        free(rest);
+                }
+            }
+            if (name && *trim_inplace(name))
+                type_env_set(&types, trim_inplace(name), type ? type : "TEXT");
+            free(name);
+            free(type);
+        } else if (!strcmp(up, "IMPORT")) {
+            const char *as = find_word_ci(t, "AS");
+            if (as) {
+                const char *pcur = as + 2;
+                char *alias = unquote_token(&pcur);
+                if (alias && *trim_inplace(alias))
+                    type_env_set(&types, trim_inplace(alias), "MODULE");
+                free(alias);
+            }
+        } else if (!strcmp(up, "TYPE") && starts_ci(t, "TYPE OF")) {
+            const char *as = find_word_ci(t, "AS");
+            if (!as) {
+                if (!*trim_inplace(t + 7))
+                    printf("%s:%d: TYPE OF needs an expression, AS, and a result name. Try: TYPE "
+                           "OF score AS kind.\n",
+                           path, line_no);
+                else
+                    printf("%s:%d: TYPE OF needs AS. Try: TYPE OF score AS kind.\n", path, line_no);
+                errs++;
+            } else {
+                char *expr = substr(t + 7, as);
+                const char *pcur = as + 2;
+                char *name = unquote_token(&pcur);
+                char *extra = xstrdup(trim_inplace((char *)pcur));
+                if (!*trim_inplace(expr)) {
+                    printf("%s:%d: TYPE OF needs an expression before AS. Try: TYPE OF score AS "
+                           "kind.\n",
+                           path, line_no);
+                    errs++;
+                } else if (!name || !*trim_inplace(name)) {
+                    printf("%s:%d: TYPE OF needs a result name after AS. Try: TYPE OF score AS "
+                           "kind.\n",
+                           path, line_no);
+                    errs++;
+                } else if (extra && *extra) {
+                    printf("%s:%d: TYPE OF %s has extra text after result name %s. Keep only the "
+                           "expression, AS, and one result name.\n",
+                           path, line_no, trim_inplace(expr), trim_inplace(name));
+                    errs++;
+                } else if (name && *trim_inplace(name))
+                    type_env_set(&types, name, "TEXT");
+                free(expr);
+                free(name);
+                free(extra);
+            }
+        } else if (!strcmp(up, "NEW")) {
+            const char *as = find_word_ci(t, "AS");
+            char *name = NULL;
+            char *cls = NULL;
+            char *extra = NULL;
+            char objtype[256];
+            if (as) {
+                const char *pcur = as + 2;
+                cls = substr(t + 3, as);
+                name = unquote_token(&pcur);
+                extra = xstrdup(trim_inplace((char *)pcur));
+            } else {
+                const char *pcur = t + 3;
+                cls = unquote_token(&pcur);
+                name = unquote_token(&pcur);
+                extra = xstrdup(trim_inplace((char *)pcur));
+            }
+            claro_snprintf(objtype, sizeof(objtype), "OBJECT:%s", trim_inplace(cls));
+            if (name && *trim_inplace(name)) {
+                TypeFieldCheck *fc;
+                char fullname[256];
+                char *nt = trim_inplace(name);
+                char *ct = trim_inplace(cls);
+                int duplicate = 0, class_known = 0, oi, ci;
+                if (extra && *extra) {
+                    printf("%s:%d: NEW %s has extra text after object name %s. Keep only the class "
+                           "and object names.\n",
+                           path, line_no, ct, nt);
+                    errs++;
+                }
+                for (ci = 0; ci < declared_class_count; ci++)
+                    if (ci_eq(declared_classes[ci], ct)) {
+                        class_known = 1;
+                        break;
+                    }
+                if (declared_class_count > 0 && !class_known) {
+                    printf("%s:%d: Class %s is not known yet. Check the class name or declare "
+                           "CLASS %s before creating %s.\n",
+                           path, line_no, ct, ct, nt);
+                    errs++;
+                }
+                for (oi = 0; oi < declared_object_count; oi++)
+                    if (ci_eq(declared_objects[oi], nt)) {
+                        duplicate = 1;
+                        break;
+                    }
+                if (duplicate) {
+                    printf("%s:%d: Object %s is created more than once. Give each object a "
+                           "different name.\n",
+                           path, line_no, nt);
+                    errs++;
+                } else if (declared_object_count < 128)
+                    claro_snprintf(declared_objects[declared_object_count++],
+                                   sizeof(declared_objects[0]), "%s", nt);
+                type_env_set(&types, nt, objtype);
+                for (fc = field_checks; fc; fc = fc->next) {
+                    if (ci_eq(fc->cls, ct)) {
+                        claro_snprintf(fullname, sizeof(fullname), "%s.%s", nt, fc->field);
+                        type_env_set(&types, fullname, fc->type);
+                    }
+                }
+            } else if (cls && *trim_inplace(cls)) {
+                printf("%s:%d: NEW %s needs an object name. Add a name after the class, such as "
+                       "NEW %s player.\n",
+                       path, line_no, trim_inplace(cls), trim_inplace(cls));
+                errs++;
+            } else {
+                printf("%s:%d: NEW needs a class name. Add a class and object name, such as NEW "
+                       "Player player.\n",
+                       path, line_no);
+                errs++;
+            }
+            free(cls);
+            free(name);
+            free(extra);
+        } else if ((!strcmp(up, "DO") && !find_word_ci(t, "TIMES")) || !strcmp(up, "CALL")) {
+            char *fname = NULL;
+            char **parts = NULL;
+            int ac = 0, i, is_method = 0;
+            char lookup[256], display[256];
+            if (!strcmp(up, "DO")) {
+                const char *pcur = t + 2;
+                fname = unquote_token(&pcur);
+                if (*trim_inplace((char *)pcur))
+                    ac = split_args(pcur, &parts);
+            } else {
+                char *rest = t + 4;
+                const char *with = find_word_ci(rest, "WITH");
+                fname = with ? substr(rest, with) : xstrdup(rest);
+                if (with && *trim_inplace((char *)with + 4))
+                    ac = split_args(with + 4, &parts);
+            }
+            claro_snprintf(lookup, sizeof(lookup), "%s", trim_inplace(fname));
+            claro_snprintf(display, sizeof(display), "%s", lookup);
+            {
+                char *dot = strchr(lookup, '.');
+                if (dot) {
+                    char objname[128];
+                    const char *objtype;
+                    claro_snprintf(objname, sizeof(objname), "%.*s", (int)(dot - lookup), lookup);
+                    objtype = type_env_get(types, objname);
+                    if (objtype && starts_ci(objtype, "OBJECT:")) {
+                        char method[128];
+                        const char *cls = objtype + 7;
+                        claro_snprintf(method, sizeof(method), "%s", dot + 1);
+                        if (!type_method_check_for(method_checks, cls, method)) {
+                            printf("%s:%d: Object %s has no method %s. Check the method name or "
+                                   "add TEACH %s inside CLASS %s.\n",
+                                   path, line_no, cls, method, method, cls);
+                            errs++;
+                        }
+                        claro_snprintf(lookup, sizeof(lookup), "%s.%s", cls, method);
+                        claro_snprintf(display, sizeof(display), "%s", lookup);
+                        is_method = 1;
+                    } else if (!objtype || (!starts_ci(objtype, "MODULE") &&
+                                            (!strcmp(up, "DO") ||
+                                             type_method_name_exists(method_checks, dot + 1)))) {
+                        printf("%s:%d: Object %s is not known yet. Create it with NEW ClassName %s "
+                               "before calling %s.\n",
+                               path, line_no, objname, objname, lookup);
+                        errs++;
+                    }
+                }
+            }
+            for (i = 0; i < ac; i++) {
+                const char *param = NULL;
+                const char *need = type_param_check_for(param_checks, lookup, i, &param);
+                const char *got = simple_expr_type(types, parts[i]);
+                if (need && got && !type_words_match(need, got)) {
+                    printf("%s:%d: Type mismatch for %s %s: parameter %s needs %s, but this "
+                           "argument looks like %s.\n",
+                           path, line_no, is_method ? "method" : "function", display,
+                           param ? param : "argument", need, got);
+                    errs++;
+                }
+            }
+            {
+                TypeParamCheck *pc = param_checks;
+                while (pc) {
+                    if (ci_eq(pc->func, lookup) && pc->pos >= ac) {
+                        printf("%s:%d: %s %s needs argument %s as %s, but this call does not "
+                               "provide it.\n",
+                               path, line_no, is_method ? "Method" : "Function", display, pc->param,
+                               pc->type);
+                        errs++;
+                    }
+                    pc = pc->next;
+                }
+            }
+            {
+                int expected = type_arity_check_for(arity_checks, lookup);
+                if (expected >= 0 && ac > expected) {
+                    printf("%s:%d: %s %s only accepts %d %s, but this call gives %d. Remove the "
+                           "extra %s.\n",
+                           path, line_no, is_method ? "Method" : "Function", display, expected,
+                           expected == 1 ? "argument" : "arguments", ac,
+                           ac - expected == 1 ? "argument" : "arguments");
+                    errs++;
+                } else if (expected >= 0 && ac < expected) {
+                    int has_checked_missing = 0;
+                    TypeParamCheck *mpc = param_checks;
+                    while (mpc) {
+                        if (ci_eq(mpc->func, lookup) && mpc->pos >= ac) {
+                            has_checked_missing = 1;
+                            break;
+                        }
+                        mpc = mpc->next;
+                    }
+                    if (!has_checked_missing) {
+                        printf("%s:%d: %s %s needs %d %s, but this call gives %d. Add the missing "
+                               "%s.\n",
+                               path, line_no, is_method ? "Method" : "Function", display, expected,
+                               expected == 1 ? "argument" : "arguments", ac,
+                               expected - ac == 1 ? "argument" : "arguments");
+                        errs++;
+                    }
+                } else if ((!strcmp(up, "DO") || !strcmp(up, "CALL")) && !is_method &&
+                           !strchr(lookup, '.') && expected < 0) {
+                    printf("%s:%d: Function %s is not known yet. Check the function name or add "
+                           "TEACH %s before calling it.\n",
+                           path, line_no, lookup, lookup);
+                    errs++;
+                }
+            }
+            free(fname);
+        } else if (!strcmp(up, "CHECK") && starts_ci(t, "CHECK TYPE")) {
+            const char *is = find_word_ci(t, "IS");
+            if (is) {
+                char *expr = substr(t + 10, is);
+                char *need = xstrdup(trim_inplace((char *)is + 2));
+                char *et = trim_inplace(expr);
+                const char *got;
+                char first_type[64];
+                int first_type_len = 0;
+                if (current_func[0] && !strchr(et, '.')) {
+                    TypeParamCheck *pc;
+                    for (pc = param_checks; pc; pc = pc->next) {
+                        if (ci_eq(pc->func, current_func) && ci_eq(pc->param, et)) {
+                            type_env_set(&types, et, pc->type);
+                            break;
+                        }
+                    }
+                }
+                got = simple_expr_type(types, et);
+                if (!*et) {
+                    printf("%s:%d: CHECK TYPE needs an expression before IS. Try: CHECK TYPE score "
+                           "IS NUMBER.\n",
+                           path, line_no);
+                    errs++;
+                } else if (!*trim_inplace(need)) {
+                    printf("%s:%d: CHECK TYPE %s needs a type after IS. Try: CHECK TYPE %s IS "
+                           "NUMBER.\n",
+                           path, line_no, et, et);
+                    errs++;
+                } else if (sscanf(need, "%63s%n", first_type, &first_type_len) == 1 &&
+                           claro_is_type_word(first_type) && *trim_inplace(need + first_type_len)) {
+                    printf("%s:%d: CHECK TYPE %s has extra text after type %s. Keep only the "
+                           "expression, IS, and one type.\n",
+                           path, line_no, et, first_type);
+                    errs++;
+                } else if (!claro_is_type_word(need)) {
+                    printf("%s:%d: CHECK TYPE needs a known type such as NUMBER, TEXT, YESNO, "
+                           "LIST, or MAP, but %s is not a Claro type.\n",
+                           path, line_no, need);
+                    errs++;
+                } else if (got && !type_words_match(need, got)) {
+                    const char *method_field =
+                        (current_method[0] && current_class[0] && !strchr(et, '.'))
+                            ? type_field_check_for(field_checks, current_class, et)
+                            : NULL;
+                    if (method_field) {
+                        printf(
+                            "%s:%d: Type check failed in %s: expected %s, but %s looks like %s.\n",
+                            path, line_no, current_method, need, et, got);
+                    } else {
+                        printf("%s:%d: Type check failed: expected %s, but %s looks like %s.\n",
+                               path, line_no, need, et, got);
+                    }
+                    errs++;
+                } else if (!got && current_method[0] && current_class[0] && !strchr(et, '.') &&
+                           !type_env_get(types, et) &&
+                           !type_field_check_for(field_checks, current_class, et)) {
+                    printf("%s:%d: Object %s has no field %s. Check the field name or add HAS %s "
+                           "%s to the class.\n",
+                           path, line_no, current_class, et, et, need);
+                    errs++;
+                } else if (!got && strchr(et, '.')) {
+                    char objname[128], fieldname[128];
+                    char *dot = strchr(et, '.');
+                    const char *objtype;
+                    claro_snprintf(objname, sizeof(objname), "%.*s", (int)(dot - et), et);
+                    claro_snprintf(fieldname, sizeof(fieldname), "%s", dot + 1);
+                    objtype = type_env_get(types, objname);
+                    if (objtype && starts_ci(objtype, "OBJECT:")) {
+                        const char *declared =
+                            type_field_check_for(field_checks, objtype + 7, fieldname);
+                        if (declared && !type_words_match(need, declared)) {
+                            printf("%s:%d: Type check failed: expected %s, but %s looks like %s.\n",
+                                   path, line_no, need, et, declared);
+                            errs++;
+                        } else if (!declared) {
+                            printf("%s:%d: Object %s has no field %s. Check the field name or add "
+                                   "HAS %s %s to the class.\n",
+                                   path, line_no, objtype + 7, fieldname, fieldname, need);
+                            errs++;
+                        }
+                    } else if (!objtype) {
+                        printf("%s:%d: Object %s is not known yet. Create it with NEW ClassName %s "
+                               "before checking %s.\n",
+                               path, line_no, objname, objname, et);
+                        errs++;
+                    }
+                }
+                free(expr);
+                free(need);
+            } else if (!*trim_inplace(t + 10)) {
+                printf("%s:%d: CHECK TYPE needs an expression, IS, and a type. Try: CHECK TYPE "
+                       "score IS NUMBER.\n",
+                       path, line_no);
+                errs++;
+            } else {
+                printf("%s:%d: CHECK TYPE needs IS. Try: CHECK TYPE score IS NUMBER.\n", path,
+                       line_no);
+                errs++;
+            }
+        }
+    }
+    fclose(f);
+    type_env_free(&types);
+    if (errs == 0)
+        printf("Type check OK\n");
+    return errs ? 1 : 0;
+}
+static char *read_file_text(const char *path) {
+    FILE *f = fopen(path, "rb");
+    Str b;
+    int c;
+    if (!f)
+        return NULL;
+    str_init(&b);
+    while ((c = fgetc(f)) != EOF)
+        str_ch(&b, (char)c);
+    fclose(f);
+    return str_take(&b);
+}
+/* Golden output files may be checked out as CRLF on Windows while Claro captures output as LF.
+ * Normalize only test expectations so test results represent behavior, not Git line-ending
+ * settings. */
+static char *read_test_expectation(const char *path) {
+    char *raw = read_file_text(path);
+    Str normalized;
+    size_t i;
+    if (!raw)
+        return NULL;
+    str_init(&normalized);
+    for (i = 0; raw[i]; i++) {
+        if (raw[i] == '\015') {
+            if (raw[i + 1] == '\012')
+                continue;
+            str_ch(&normalized, '\012');
+        } else
+            str_ch(&normalized, raw[i]);
+    }
+    free(raw);
+    return str_take(&normalized);
+}
+static int run_one_test(const char *path) {
+    char outpath[512];
+    char *dot;
+    char *expect, *got;
+    int rc, ok;
+    Runtime rt;
+    claro_snprintf(outpath, sizeof(outpath), "%s", path);
+    dot = strrchr(outpath, '.');
+    if (dot)
+        strcpy(dot, ".out");
+    expect = read_test_expectation(outpath);
+    if (!expect)
+        return 0;
+    rt_init(&rt);
+    rt.capture = 1;
+    rc = run_file(&rt, path);
+    got = rt.captured.s ? xstrdup(rt.captured.s) : xstrdup("");
+    ok = (rc == 0 && strcmp(got, expect) == 0);
+    printf("%s %s\n", ok ? "PASS" : "FAIL", path);
+    if (!ok)
+        printf("Expected:\n%s\nGot:\n%s\n", expect, got);
+    free(expect);
+    free(got);
+    return ok ? 0 : 1;
+}
+static int run_tests(void) {
+    int fails = 0;
 #ifndef _WIN32
- DIR *d=opendir("tests"); struct dirent *de; if(!d){ fprintf(stderr,"No tests directory\n"); return 1;} while((de=readdir(d))){ if(strstr(de->d_name,".claro")){ char path[512]; snprintf(path,sizeof(path),"tests/%s",de->d_name); fails+=run_one_test(path); } } closedir(d);
+    DIR *d = opendir("tests");
+    struct dirent *de;
+    if (!d) {
+        fprintf(stderr, "No tests directory\n");
+        return 1;
+    }
+    while ((de = readdir(d))) {
+        if (strstr(de->d_name, ".claro")) {
+            char path[512];
+            claro_snprintf(path, sizeof(path), "tests/%s", de->d_name);
+            fails += run_one_test(path);
+        }
+    }
+    closedir(d);
 #else
- struct _finddata_t fd; intptr_t h=_findfirst("tests/*.claro",&fd); if(h==-1){ fprintf(stderr,"No tests directory\n"); return 1;} do { char path[512]; snprintf(path,sizeof(path),"tests/%s",fd.name); fails+=run_one_test(path); } while(_findnext(h,&fd)==0); _findclose(h);
+    struct _finddata_t fd;
+    intptr_t h = _findfirst("tests/*.claro", &fd);
+    if (h == -1) {
+        fprintf(stderr, "No tests directory\n");
+        return 1;
+    }
+    do {
+        char path[512];
+        claro_snprintf(path, sizeof(path), "tests/%s", fd.name);
+        fails += run_one_test(path);
+    } while (_findnext(h, &fd) == 0);
+    _findclose(h);
 #endif
- printf("%s: %d failure(s)\n",fails?"FAIL":"PASS",fails); return fails?1:0; }
+    printf("%s: %d failure(s)\n", fails ? "FAIL" : "PASS", fails);
+    return fails ? 1 : 0;
+}
 
-static int write_text_file_simple(const char *path,const char *text){ FILE *f=fopen(path,"wb"); if(!f) return 0; fputs(text,f); fclose(f); return 1; }
-static int project_name_safe(const char *name){ int i; if(!name||!*name) return 0; if(strlen(name)>64) return 0; if(name[0]=='.'||name[0]=='-'||name[0]=='_') return 0; for(i=0;name[i];i++){ unsigned char c=(unsigned char)name[i]; if(!(isalnum(c)||c=='_'||c=='-')) return 0; } return 1; }
-static int create_new_project(const char *name){ char path[512]; char text[1024]; if(!name||!*name){ fprintf(stderr,"Project needs a name. Try: claro new MyProject\n"); return 1; } if(strlen(name)>64){ fprintf(stderr,"Project names must be 64 characters or fewer.\n"); return 1; } if(!project_name_safe(name)){ fprintf(stderr,"Project names may use only letters, numbers, dash, and underscore.\n"); return 1; } if(!make_folder(name)){ fprintf(stderr,"Could not create project folder: %s\n",name); return 1; } snprintf(path,sizeof(path),"%s/main.claro",name); write_text_file_simple(path,"SAY \"Welcome to Claro!\"\n\nSET name TO \"Learner\"\nSAY \"Hello \" + name\n\nTEACH greet person\n    SAY \"Nice to meet you, \" + person\nEND\n\nDO greet \"Friend\"\n"); snprintf(path,sizeof(path),"%s/packages",name); make_folder(path); snprintf(path,sizeof(path),"%s/claro.project",name); snprintf(text,sizeof(text),"manifest-version: 1\nname: %s\nmain: main.claro\nversion: v2026.10.20.155641\npackages:\n",name); write_text_file_simple(path,text); snprintf(path,sizeof(path),"%s/claro.lock",name); write_text_file_simple(path,"# Claro package lock\nlock-version: 1\nversion: v2026.10.20.155641\n"); snprintf(path,sizeof(path),"%s/README.md",name); write_text_file_simple(path,"# My Claro Project\n\nBuild Claro, then run this project with:\n\n```bash\nclaro run\n```\n\nUse packages with:\n\n```bash\nclaro package add text\nclaro package list\nclaro package doctor\n```\n"); printf("Created Claro project: %s\n",name); printf("Next steps:\n  cd %s\n  claro run\n",name); return 0; }
-static int run_repl(void){ Runtime rt; char line[4096]; Program p; rt_init(&rt); memset(&p,0,sizeof(p)); p.path=xstrdup("<repl>"); p.count=1; p.cap=1; p.lines=(char**)xmalloc(sizeof(char*)); printf("%s\n",CLARO_VERSION); printf("Type HELP for help, or EXIT to leave.\n"); while(1){ int pc=0; printf("> "); fflush(stdout); if(!fgets(line,sizeof(line),stdin)) break; { size_t n=strlen(line); while(n&&(line[n-1]=='\n'||line[n-1]=='\r')) line[--n]=0; } { char *t=trim_inplace(line); if(ci_eq(t,"EXIT")||ci_eq(t,"QUIT")) break; if(ci_eq(t,"HELP")){ printf("Try: SAY \"Hello\"\n"); printf("Try: SET name TO \"Jon\"\n"); printf("Try: SAY name\n"); continue; } if(!*t) continue; p.lines[0]=t; exec_line(&rt,&p,&pc,t); if(rt.error){ fprintf(stderr,"%s:%d: %s\n",rt.err_file?rt.err_file:"<repl>",rt.err_line,rt.err_msg?rt.err_msg:"error"); rt_clear_error(&rt); } } } return 0; }
+static int write_text_file_simple(const char *path, const char *text) {
+    FILE *f = fopen(path, "wb");
+    if (!f)
+        return 0;
+    fputs(text, f);
+    fclose(f);
+    return 1;
+}
+static int project_name_safe(const char *name) {
+    int i;
+    if (!name || !*name)
+        return 0;
+    if (strlen(name) > 64)
+        return 0;
+    if (name[0] == '.' || name[0] == '-' || name[0] == '_')
+        return 0;
+    for (i = 0; name[i]; i++) {
+        unsigned char c = (unsigned char)name[i];
+        if (!(isalnum(c) || c == '_' || c == '-'))
+            return 0;
+    }
+    return 1;
+}
+static int create_new_project(const char *name) {
+    char path[512];
+    char text[1024];
+    if (!name || !*name) {
+        fprintf(stderr, "Project needs a name. Try: claro new MyProject\n");
+        return 1;
+    }
+    if (strlen(name) > 64) {
+        fprintf(stderr, "Project names must be 64 characters or fewer.\n");
+        return 1;
+    }
+    if (!project_name_safe(name)) {
+        fprintf(stderr, "Project names may use only letters, numbers, dash, and underscore.\n");
+        return 1;
+    }
+    if (!make_folder(name)) {
+        fprintf(stderr, "Could not create project folder: %s\n", name);
+        return 1;
+    }
+    claro_snprintf(path, sizeof(path), "%s/main.claro", name);
+    write_text_file_simple(
+        path,
+        "SAY \"Welcome to Claro!\"\n\nSET name TO \"Learner\"\nSAY \"Hello \" + name\n\nTEACH "
+        "greet person\n    SAY \"Nice to meet you, \" + person\nEND\n\nDO greet \"Friend\"\n");
+    claro_snprintf(path, sizeof(path), "%s/packages", name);
+    make_folder(path);
+    claro_snprintf(path, sizeof(path), "%s/claro.project", name);
+    claro_snprintf(
+        text, sizeof(text),
+        "manifest-version: 1\nname: %s\nmain: main.claro\nversion: v2026.10.20.160950\npackages:\n",
+        name);
+    write_text_file_simple(path, text);
+    claro_snprintf(path, sizeof(path), "%s/claro.lock", name);
+    write_text_file_simple(path,
+                           "# Claro package lock\nlock-version: 1\nversion: v2026.10.20.160950\n");
+    claro_snprintf(path, sizeof(path), "%s/README.md", name);
+    write_text_file_simple(
+        path, "# My Claro Project\n\nBuild Claro, then run this project with:\n\n```bash\nclaro "
+              "run\n```\n\nUse packages with:\n\n```bash\nclaro package add text\nclaro package "
+              "list\nclaro package doctor\n```\n");
+    printf("Created Claro project: %s\n", name);
+    printf("Next steps:\n  cd %s\n  claro run\n", name);
+    return 0;
+}
+static int run_repl(void) {
+    Runtime rt;
+    char line[4096];
+    Program p;
+    rt_init(&rt);
+    memset(&p, 0, sizeof(p));
+    p.path = xstrdup("<repl>");
+    p.count = 1;
+    p.cap = 1;
+    p.lines = (char **)xmalloc(sizeof(char *));
+    printf("%s\n", CLARO_VERSION);
+    printf("Type HELP for help, or EXIT to leave.\n");
+    while (1) {
+        int pc = 0;
+        printf("> ");
+        fflush(stdout);
+        if (!fgets(line, sizeof(line), stdin))
+            break;
+        {
+            size_t n = strlen(line);
+            while (n && (line[n - 1] == '\n' || line[n - 1] == '\r'))
+                line[--n] = 0;
+        }
+        {
+            char *t = trim_inplace(line);
+            if (ci_eq(t, "EXIT") || ci_eq(t, "QUIT"))
+                break;
+            if (ci_eq(t, "HELP")) {
+                printf("Try: SAY \"Hello\"\n");
+                printf("Try: SET name TO \"Jon\"\n");
+                printf("Try: SAY name\n");
+                continue;
+            }
+            if (!*t)
+                continue;
+            p.lines[0] = t;
+            exec_line(&rt, &p, &pc, t);
+            if (rt.error) {
+                fprintf(stderr, "%s:%d: %s\n", rt.err_file ? rt.err_file : "<repl>", rt.err_line,
+                        rt.err_msg ? rt.err_msg : "error");
+                rt_clear_error(&rt);
+            }
+        }
+    }
+    return 0;
+}
 
 static int file_exists_simple(const char *path);
-static int path_exists_simple(const char *path){ struct stat st; return path&&*path&&stat(path,&st)==0; }
-static int package_name_too_long(const char *name){ return name&&strlen(name)>64; }
-static int package_name_safe(const char *name){ int i; if(!name||!*name) return 0; if(package_name_too_long(name)) return 0; if(name[0]=='.'||name[0]=='-'||name[0]=='_') return 0; for(i=0;name[i];i++){ unsigned char c=(unsigned char)name[i]; if(!(isalnum(c)||c=='_'||c=='-')) return 0; } return 1; }
-static void package_checksum(const char *name,char *out,size_t n){ unsigned long h=5381; const char *p=name?name:""; while(*p){ h=((h<<5)+h)+(unsigned char)(*p++); } p="|local|1|claro"; while(*p){ h=((h<<5)+h)+(unsigned char)(*p++); } snprintf(out,n,"%08lx",h); }
-static void ensure_project_file(void){ if(!file_exists_simple("claro.project")) write_text_file_simple("claro.project","manifest-version: 1\nname: ClaroProject\nmain: main.claro\nversion: v2026.10.20.155641\npackages:\n"); }
-static char *project_value(const char *key){ char *txt=read_file_text("claro.project"); size_t kn=strlen(key); char *p,*out=NULL; if(!txt) return NULL; p=txt; while(*p){ char *line=p; char save; while(*p&&*p!='\n'&&*p!='\r') p++; save=*p; *p=0; { char *t=trim_inplace(line); if(strnicmp2(t,key,kn)==0 && t[kn]==':'){ out=xstrdup(trim_inplace(t+kn+1)); break; } } if(save) p++; while(*p=='\n'||*p=='\r') p++; } free(txt); return out; }
-static int package_has_name(const char *name){ char *txt=read_file_text("claro.project"); char *p; int found=0; if(!txt) return 0; p=txt; while(*p){ char *line=p; char save; while(*p&&*p!='\n'&&*p!='\r') p++; save=*p; *p=0; { char *t=trim_inplace(line); if(strnicmp2(t,"package:",8)==0){ char *pkg=trim_inplace(t+8); if(strcmp(pkg,name)==0){ found=1; break; } } } if(save) p++; while(*p=='\n'||*p=='\r') p++; } free(txt); return found; }
-static int project_package_names_safe(void){ char *txt=read_file_text("claro.project"); char *p; char seen[128][65]; int seen_count=0; if(!txt) return 1; p=txt; while(*p){ char *line=p; char save; while(*p&&*p!='\n'&&*p!='\r') p++; save=*p; *p=0; { char *t=trim_inplace(line); if(strnicmp2(t,"package:",8)==0){ char *pkg=trim_inplace(t+8); int i; if(*pkg&&!package_name_safe(pkg)){ printf("BAD package name: %s\n",pkg); free(txt); return 0; } if(*pkg){ for(i=0;i<seen_count;i++){ if(strcmp(seen[i],pkg)==0){ printf("DUPLICATE package: %s\n",pkg); free(txt); return 0; } } if(seen_count<128) snprintf(seen[seen_count++],sizeof(seen[0]),"%s",pkg); } } } if(save){ *p=save; p++; } while(*p=='\n'||*p=='\r') p++; } free(txt); return 1; }
-static int write_package_lock(void){ char *txt=read_file_text("claro.project"); FILE *f; char *p; if(!txt) return 0; if(!project_package_names_safe()){ free(txt); return 0; } f=fopen("claro.lock","wb"); if(!f){ free(txt); return 0; } fputs("# Claro package lock\nlock-version: 1\nversion: v2026.10.20.155641\n",f); p=txt; while(*p){ char *line=p; char save; while(*p&&*p!='\n'&&*p!='\r') p++; save=*p; *p=0; { char *t=trim_inplace(line); if(strnicmp2(t,"package:",8)==0){ char *pkg=trim_inplace(t+8); if(*pkg){ char sum[32]; package_checksum(pkg,sum,sizeof(sum)); fprintf(f,"package: %s\nchecksum: %s\n",pkg,sum); } } } if(save) p++; while(*p=='\n'||*p=='\r') p++; } fclose(f); free(txt); return 1; }
-static int append_package_to_project(const char *name){ FILE *f; if(package_name_too_long(name)){ fprintf(stderr,"Package names must be 64 characters or fewer.\n"); return 0; } if(!package_name_safe(name)){ fprintf(stderr,"Package names may use only letters, numbers, dash, and underscore.\n"); return 0; } ensure_project_file(); if(package_has_name(name)){ printf("Package already listed: %s\n",name); return 1; } f=fopen("claro.project","ab"); if(!f) return 0; fprintf(f,"package: %s\n",name); fclose(f); write_package_lock(); return 1; }
-static int remove_package_from_project(const char *name){ char *txt=read_file_text("claro.project"); FILE *f; char *p; int removed=0; if(!txt) return 0; f=fopen("claro.project","wb"); if(!f){ free(txt); return 0; } p=txt; while(*p){ char *line=p; char save; int skip=0; while(*p&&*p!='\n'&&*p!='\r') p++; save=*p; *p=0; { char *copy=xstrdup(line); char *t=trim_inplace(copy); if(strnicmp2(t,"package:",8)==0){ char *pkg=trim_inplace(t+8); if(strcmp(pkg,name)==0){ skip=1; removed=1; } } free(copy); } if(!skip) fprintf(f,"%s\n",line); if(save) p++; while(*p=='\n'||*p=='\r') p++; } fclose(f); free(txt); if(!write_package_lock()) return -1; return removed; }
-static void create_package_folder(const char *name){ char path[1024], meta[1280], readme[1280], sum[32]; make_folder("packages"); snprintf(path,sizeof(path),"packages/%s",name); make_folder(path); snprintf(meta,sizeof(meta),"%s/claro.package",path); package_checksum(name,sum,sizeof(sum)); { char text[1024]; snprintf(text,sizeof(text),"manifest-version: 1\nname: %s\nversion: 1\nsource: local\nchecksum: %s\n",name,sum); write_text_file_simple(meta,text); } snprintf(readme,sizeof(readme),"%s/README.md",path); if(!file_exists_simple(readme)){ char text[512]; snprintf(text,sizeof(text),"# %s\n\nThis is a local Claro package folder.\n",name); write_text_file_simple(readme,text); } }
-static int list_project_packages(void){ char *txt=read_file_text("claro.project"); char *p; int count=0; printf("Packages in claro.project:\n"); if(!txt){ printf("  (no claro.project yet)\n"); return 0; } if(!project_package_names_safe()){ free(txt); return 1; } p=txt; while(*p){ char *line=p; char save; while(*p&&*p!='\n'&&*p!='\r') p++; save=*p; *p=0; { char *t=trim_inplace(line); if(strnicmp2(t,"package:",8)==0){ char *pkg=trim_inplace(t+8); if(*pkg){ printf("  %s\n",pkg); count++; } } } if(save) p++; while(*p=='\n'||*p=='\r') p++; } if(!count) printf("  (none)\n"); free(txt); return 0; }
-static int package_lock_checksum_ok(const char *name){ char *txt=read_file_text("claro.lock"); char *p; int in_pkg=0, fields=0, matches=0; char expected[32]; if(!txt) return 0; package_checksum(name,expected,sizeof(expected)); p=txt; while(*p){ char *line=p; char save; while(*p&&*p!='\n'&&*p!='\r') p++; save=*p; *p=0; { char *t=trim_inplace(line); if(strnicmp2(t,"package:",8)==0){ char *pkg=trim_inplace(t+8); in_pkg=(strcmp(pkg,name)==0); } else if(in_pkg&&strnicmp2(t,"checksum:",9)==0){ char *sum=trim_inplace(t+9); fields++; if(strcmp(sum,expected)==0) matches++; } } if(save){ *p=save; p++; } while(*p=='\n'||*p=='\r') p++; } free(txt); return fields==1&&matches==1; }
-static int lock_packages_match_project(void){ char *txt=read_file_text("claro.lock"); char *p; char seen[128][65]; int seen_count=0; int ok=1; if(!txt) return 1; p=txt; while(*p){ char *line=p; char save; while(*p&&*p!='\n'&&*p!='\r') p++; save=*p; *p=0; { char *t=trim_inplace(line); if(strnicmp2(t,"package:",8)==0){ char *pkg=trim_inplace(t+8); int i; if(*pkg&&!package_name_safe(pkg)){ printf("  BAD lock package name: %s\n",pkg); ok=0; } else if(*pkg){ for(i=0;i<seen_count;i++){ if(strcmp(seen[i],pkg)==0){ printf("  DUPLICATE lock package: %s\n",pkg); ok=0; break; } } if(seen_count<128) snprintf(seen[seen_count++],sizeof(seen[0]),"%s",pkg); if(!package_has_name(pkg)){ printf("  BAD lock package not in claro.project: %s\n",pkg); ok=0; } } } } if(save){ *p=save; p++; } while(*p=='\n'||*p=='\r') p++; } free(txt); return ok; }
-static int package_manifest_version_matches(const char *text){ const char *p=text; int fields=0; int matches=0; while(p&&*p){ const char *line=p; const char *end; while(*p&&*p!='\n'&&*p!='\r') p++; end=p; if((size_t)(end-line)>=17&&strncmp(line,"manifest-version:",17)==0){ const char *value=line+17; fields++; while(value<end&&isspace((unsigned char)*value)) value++; while(end>value&&isspace((unsigned char)end[-1])) end--; if((size_t)(end-value)==1&&value[0]=='1') matches++; } while(*p=='\n'||*p=='\r') p++; } return fields==1&&matches==1; }
-static int package_project_name_valid(const char *text){ const char *p=text; int fields=0; int nonempty=0; while(p&&*p){ const char *line=p; const char *end; while(*p&&*p!='\n'&&*p!='\r') p++; end=p; if((size_t)(end-line)>=5&&strncmp(line,"name:",5)==0){ const char *value=line+5; fields++; while(value<end&&isspace((unsigned char)*value)) value++; while(end>value&&isspace((unsigned char)end[-1])) end--; if(value<end) nonempty++; } while(*p=='\n'||*p=='\r') p++; } return fields==1&&nonempty==1; }
-static int package_manifest_name_matches(const char *text,const char *name){ const char *p=text; size_t n=strlen(name); int fields=0; int matches=0; while(p&&*p){ const char *line=p; const char *end; while(*p&&*p!='\n'&&*p!='\r') p++; end=p; if((size_t)(end-line)>=5&&strncmp(line,"name:",5)==0){ const char *value=line+5; fields++; while(value<end&&isspace((unsigned char)*value)) value++; while(end>value&&isspace((unsigned char)end[-1])) end--; if((size_t)(end-value)==n&&strncmp(value,name,n)==0) matches++; } while(*p=='\n'||*p=='\r') p++; } return fields==1&&matches==1; }
-static int package_manifest_version_value_matches(const char *text){ const char *p=text; int fields=0; int matches=0; while(p&&*p){ const char *line=p; const char *end; while(*p&&*p!='\n'&&*p!='\r') p++; end=p; if((size_t)(end-line)>=8&&strncmp(line,"version:",8)==0){ const char *value=line+8; fields++; while(value<end&&isspace((unsigned char)*value)) value++; while(end>value&&isspace((unsigned char)end[-1])) end--; if((size_t)(end-value)==1&&value[0]=='1') matches++; } while(*p=='\n'||*p=='\r') p++; } return fields==1&&matches==1; }
-static int package_manifest_source_matches(const char *text){ const char *p=text; int fields=0; int matches=0; while(p&&*p){ const char *line=p; const char *end; while(*p&&*p!='\n'&&*p!='\r') p++; end=p; if((size_t)(end-line)>=7&&strncmp(line,"source:",7)==0){ const char *value=line+7; fields++; while(value<end&&isspace((unsigned char)*value)) value++; while(end>value&&isspace((unsigned char)end[-1])) end--; if((size_t)(end-value)==5&&strncmp(value,"local",5)==0) matches++; } while(*p=='\n'||*p=='\r') p++; } return fields==1&&matches==1; }
-static int package_manifest_checksum_matches(const char *text,const char *expected){ const char *p=text; size_t n=strlen(expected); int fields=0; int matches=0; while(p&&*p){ const char *line=p; const char *end; while(*p&&*p!='\n'&&*p!='\r') p++; end=p; if((size_t)(end-line)>=9&&strncmp(line,"checksum:",9)==0){ const char *value=line+9; fields++; while(value<end&&isspace((unsigned char)*value)) value++; while(end>value&&isspace((unsigned char)end[-1])) end--; if((size_t)(end-value)==n&&strncmp(value,expected,n)==0) matches++; } while(*p=='\n'||*p=='\r') p++; } return fields==1&&matches==1; }
-static int package_lock_version_matches(const char *text){
- const char *p=text; int fields=0, matches=0;
- while(p&&*p){
-  const char *line=p, *end;
-  while(*p&&*p!='\n'&&*p!='\r') p++;
-  end=p;
-  while(line<end&&isspace((unsigned char)*line)) line++;
-  if((size_t)(end-line)>=13&&strnicmp2(line,"lock-version:",13)==0){
-   const char *value=line+13; fields++;
-   while(value<end&&isspace((unsigned char)*value)) value++;
-   while(end>value&&isspace((unsigned char)end[-1])) end--;
-   if((size_t)(end-value)==1&&value[0]=='1') matches++;
-  }
-  while(*p=='\n'||*p=='\r') p++;
- }
- return fields==1&&matches==1;
+static int path_exists_simple(const char *path) {
+    struct stat st;
+    return path && *path && stat(path, &st) == 0;
 }
-static int package_lock_release_version_matches(const char *text){
- const char *p=text; int fields=0, matches=0;
- while(p&&*p){
-  const char *line=p, *end;
-  while(*p&&*p!='\n'&&*p!='\r') p++;
-  end=p;
-  while(line<end&&isspace((unsigned char)*line)) line++;
-  if((size_t)(end-line)>=8&&strncmp(line,"version:",8)==0){
-   const char *value=line+8; fields++;
-   while(value<end&&isspace((unsigned char)*value)) value++;
-   while(end>value&&isspace((unsigned char)end[-1])) end--;
-   if((size_t)(end-value)==strlen(CLARO_VERSION + 6)&&strncmp(value,CLARO_VERSION + 6,strlen(CLARO_VERSION + 6))==0) matches++;
-  }
-  while(*p=='\n'||*p=='\r') p++;
- }
- return fields==1&&matches==1;
+static int package_name_too_long(const char *name) { return name && strlen(name) > 64; }
+static int package_name_safe(const char *name) {
+    int i;
+    if (!name || !*name)
+        return 0;
+    if (package_name_too_long(name))
+        return 0;
+    if (name[0] == '.' || name[0] == '-' || name[0] == '_')
+        return 0;
+    for (i = 0; name[i]; i++) {
+        unsigned char c = (unsigned char)name[i];
+        if (!(isalnum(c) || c == '_' || c == '-'))
+            return 0;
+    }
+    return 1;
 }
-static int package_doctor(void){ int ok=1; char *mainfile; char *txt; printf("%s\n",CLARO_VERSION); printf("Package/project doctor:\n"); printf("  %s claro.project\n",file_exists_simple("claro.project")?"OK":"MISSING"); if(!file_exists_simple("claro.project")) ok=0; mainfile=project_value("main"); if(mainfile&&*mainfile){ printf("  %s main script: %s\n",file_exists_simple(mainfile)?"OK":"MISSING",mainfile); if(!file_exists_simple(mainfile)) ok=0; } else { printf("  MISSING main setting\n"); ok=0; } printf("  %s packages folder\n",path_exists_simple("packages")?"OK":"MISSING"); if(!path_exists_simple("packages")) ok=0; printf("  %s claro.lock\n",file_exists_simple("claro.lock")?"OK":"MISSING"); if(!file_exists_simple("claro.lock")) ok=0; txt=read_file_text("claro.lock"); if(txt&&!package_lock_version_matches(txt)){ printf("  BAD lock version: expected exactly one lock-version: 1 line\n"); ok=0; } if(txt&&!package_lock_release_version_matches(txt)){ printf("  BAD lock release version: expected exactly one version: v2026.10.20.155641 line\n"); ok=0; } free(txt); txt=read_file_text("claro.project"); if(txt&&!project_package_names_safe()){ ok=0; } if(txt&& !package_manifest_version_matches(txt)){ printf("  BAD project manifest version: expected 1\n"); ok=0; } if(txt&& !package_project_name_valid(txt)){ printf("  BAD project manifest name: expected a non-empty name\n"); ok=0; } if(txt){ char *p=txt; while(*p){ char *line=p; char save; while(*p&&*p!='\n'&&*p!='\r') p++; save=*p; *p=0; { char *t=trim_inplace(line); if(strnicmp2(t,"package:",8)==0){ char *pkg=trim_inplace(t+8); if(*pkg){ char meta[512], *mt, sum[32]; if(!package_name_safe(pkg)){ printf("  BAD package name: %s\n",pkg); ok=0; } else { snprintf(meta,sizeof(meta),"packages/%s/claro.package",pkg); mt=read_file_text(meta); if(mt&&!package_manifest_version_value_matches(mt)){ printf("  BAD package version: %s\n",pkg); ok=0; } else if(mt&&!package_manifest_source_matches(mt)){ printf("  BAD package source: %s\n",pkg); ok=0; } else if(mt&&!package_manifest_version_matches(mt)){ printf("  BAD package manifest version: %s. Keep exactly one manifest-version: 1 line in packages/%s/claro.package.\n",pkg,pkg); ok=0; } else if(mt&&strstr(mt,"checksum:")){ if(!package_manifest_name_matches(mt,pkg)){ printf("  BAD package manifest name: %s\n",pkg); ok=0; } else { printf("  OK package manifest: %s\n",pkg); package_checksum(pkg,sum,sizeof(sum)); if(package_manifest_checksum_matches(mt,sum)) printf("  OK package checksum: %s\n",pkg); else { printf("  BAD package checksum: %s\n",pkg); ok=0; } if(package_lock_checksum_ok(pkg)) printf("  OK lock checksum: %s\n",pkg); else { printf("  BAD lock checksum: %s\n",pkg); ok=0; } } } else { printf("  MISSING package manifest: %s\n",pkg); ok=0; } free(mt); } } } } if(save) p++; while(*p=='\n'||*p=='\r') p++; } free(txt); } if(!lock_packages_match_project()) ok=0; free(mainfile); printf("%s\n",ok?"Package/project files look ready.":"Package/project files need attention."); return ok?0:1; }
-static int run_package_cmd(int argc,char **argv,int arg){ if(arg>=argc){ printf("Package commands:\n  claro package init\n  claro package add NAME\n  claro package remove NAME\n  claro package list\n  claro package doctor\n  claro package lock\n"); return 0; } if(strcmp(argv[arg],"init")==0){ ensure_project_file(); if(!project_package_names_safe()) return 1; make_folder("packages"); if(!write_package_lock()) return 1; printf("Package project ready: claro.project, claro.lock, packages/\n"); return 0; } if(strcmp(argv[arg],"add")==0&&arg+1<argc){ const char *name=argv[arg+1]; int already; if(package_name_too_long(name)){ fprintf(stderr,"Package names must be 64 characters or fewer.\n"); return 1; } if(!package_name_safe(name)){ fprintf(stderr,"Package names may use only letters, numbers, dash, and underscore.\n"); return 1; } ensure_project_file(); if(!project_package_names_safe()) return 1; make_folder("packages"); already=package_has_name(name); if(!append_package_to_project(name)) return 1; create_package_folder(name); if(!write_package_lock()) return 1; if(!already) printf("Added package: %s\n",name); return 0; } if(strcmp(argv[arg],"remove")==0&&arg+1<argc){ const char *name=argv[arg+1]; int removed; removed=remove_package_from_project(name); if(removed<0) return 1; if(removed) printf("Removed package from project: %s\n",name); else printf("Package was not listed: %s\n",name); return 0; } if(strcmp(argv[arg],"list")==0) return list_project_packages(); if(strcmp(argv[arg],"doctor")==0) return package_doctor(); if(strcmp(argv[arg],"lock")==0||strcmp(argv[arg],"update")==0){ ensure_project_file(); make_folder("packages"); if(write_package_lock()){ printf("Updated claro.lock\n"); return 0; } fprintf(stderr,"Could not write claro.lock\n"); return 1; } printf("Unknown package command. Try: claro package init\n"); return 1; }
-static int print_ide_info(void){
- printf("{\n");
- printf("  \"language\": \"Claro\",\n");
- printf("  \"version\": \"v2026.10.20.155641\",\n");
- printf("  \"file_extensions\": [\".claro\"],\n");
- printf("  \"keywords\": [\"SAY\",\"ASK\",\"SET\",\"IF\",\"ELSE\",\"ENDIF\",\"END\",\"REPEAT\",\"UNTIL\",\"TEACH\",\"TAKES\",\"RETURNS\",\"CHECK\",\"TYPE\",\"LEARNED\",\"DO\",\"CALL\",\"WITH\",\"RETURN\",\"CLASS\",\"HAS\",\"NEW\",\"IMPORT\",\"TRY\",\"CATCH\",\"ENDTRY\",\"START TASK\",\"YIELD\",\"WAIT TASK\",\"TASK STATUS\",\"HTTP CHECK\",\"HTTP GET\",\"HTTP SAVE\",\"OPEN WINDOW\"],\n");
- printf("  \"types\": [\"NUMBER\",\"TEXT\",\"YESNO\",\"LIST\",\"LIST OF TEXT\",\"LIST OF NUMBER\",\"LIST OF YESNO\",\"MAP\",\"MAP OF TEXT\",\"MAP OF NUMBER\",\"MAP OF YESNO\",\"OBJECT\",\"ANY\"],\n");
- printf("  \"commands\": [\n");
- printf("    {\"name\": \"run\", \"usage\": \"claro run\", \"description\": \"Run main.claro or the project main script\"},\n");
- printf("    {\"name\": \"check\", \"usage\": \"claro check file.claro\", \"description\": \"Check beginner syntax and block mistakes\"},\n");
- printf("    {\"name\": \"typecheck\", \"usage\": \"claro typecheck file.claro\", \"description\": \"Check static types before running\"},\n");
- printf("    {\"name\": \"fmt\", \"usage\": \"claro fmt file.claro\", \"description\": \"Print a formatted version of a script\"},\n");
- printf("    {\"name\": \"test\", \"usage\": \"claro test\", \"description\": \"Run golden tests\"}\n");
- printf("  ],\n");
- printf("  \"snippets\": [\n");
- printf("    {\"name\": \"hello\", \"prefix\": \"say\", \"body\": \"SAY \\\"Hello!\\\"\"},\n");
- printf("    {\"name\": \"if_else\", \"prefix\": \"if\", \"body\": \"IF condition\\n    SAY \\\"Yes\\\"\\nELSE\\n    SAY \\\"No\\\"\\nENDIF\"},\n");
- printf("    {\"name\": \"function\", \"prefix\": \"teach\", \"body\": \"TEACH name item\\n    SAY item\\nLEARNED\"},\n");
- printf("    {\"name\": \"typed_list\", \"prefix\": \"listof\", \"body\": \"SET names AS LIST OF TEXT TO LIST\\nADD \\\"Ada\\\" TO names\"},\n");
- printf("    {\"name\": \"task\", \"prefix\": \"task\", \"body\": \"START TASK helloTask\\n    SAY \\\"Inside task\\\"\\n    YIELD\\nENDTASK\\nTASK STATUS helloTask AS status\\nSAY status\\nWAIT TASK helloTask\"}\n");
- printf("  ],\n");
- printf("  \"diagnostics\": [\n");
- printf("    {\"source\": \"claro check\", \"format\": \"path:line: message\", \"description\": \"Syntax and block-structure diagnostics\"},\n");
- printf("    {\"source\": \"claro typecheck\", \"format\": \"path:line: message\", \"description\": \"Static type diagnostics for variables and containers\"}\n");
- printf("  ]\n");
- printf("}\n");
- return 0;
+static void package_checksum(const char *name, char *out, size_t n) {
+    unsigned long h = 5381;
+    const char *p = name ? name : "";
+    while (*p) {
+        h = ((h << 5) + h) + (unsigned char)(*p++);
+    }
+    p = "|local|1|claro";
+    while (*p) {
+        h = ((h << 5) + h) + (unsigned char)(*p++);
+    }
+    claro_snprintf(out, n, "%08lx", h);
 }
-static void print_help(void){
- printf("%s\n",CLARO_VERSION);
- printf("Usage:\n");
- printf("  claro file.claro              Run a Claro script\n");
- printf("  claro run                     Run main.claro in this folder\n");
- printf("  claro test                    Run the built-in tests\n");
- printf("  claro check file.claro        Check a script for beginner mistakes\n");
- printf("  claro typecheck file.claro    Check simple static types\n");
- printf("  claro fmt file.claro          Print a formatted version\n");
- printf("  claro repl                    Try one line at a time\n");
- printf("  claro new MyProject           Create a starter project\n");
- printf("  claro examples                List included examples\n");
- printf("  claro doctor                  Check this Claro folder\n");
- printf("  claro validate                Run stable package validation\n");
- printf("  claro package init|add|remove|list|doctor   Manage Claro packages\n");
- printf("  claro ide                     Print editor keyword metadata\n");
+static void ensure_project_file(void) {
+    if (!file_exists_simple("claro.project"))
+        write_text_file_simple("claro.project",
+                               "manifest-version: 1\nname: ClaroProject\nmain: "
+                               "main.claro\nversion: v2026.10.20.160950\npackages:\n");
 }
-static int show_examples(void){ const char *items[]={"hello.claro","name_input.claro","quiz.claro","calculator.claro","guessing_game.claro","shopping_list.claro","save_and_load_file.claro","simple_functions.claro","text_and_lists.claro","text_polish.claro","practical_scripting.claro","type_hardening.claro","typed_ask.claro","objects_classes.claro","networking.claro",NULL}; int i; printf("Included beginner examples:\n"); for(i=0;items[i];i++) printf("  examples/%s\n",items[i]); printf("\nRun one with: claro examples/hello.claro\n"); return 0; }
-static int file_exists_simple(const char *path){ FILE *f=fopen(path,"rb"); if(f){ fclose(f); return 1; } return 0; }
-static int run_doctor(void){ int ok=1; const char *files[]={"src/claro.c","README.md","assets/Claro_Logo.jpg","lessons/01_hello.claro","examples/hello.claro","tests/01_hello.claro",NULL}; int i; printf("%s\n",CLARO_VERSION); printf("Doctor check:\n"); for(i=0;files[i];i++){ int has=file_exists_simple(files[i]); printf("  %s %s\n",has?"OK":"MISSING",files[i]); if(!has) ok=0; } printf("%s\n",ok?"Claro folder looks ready.":"Some Claro files are missing."); return ok?0:1; }
-static int run_validate(void){ int fails=0, i; const char *checks[]={"lessons/01_hello.claro","lessons/02_ask_name.claro","lessons/03_variables.claro","lessons/04_math.claro","lessons/05_if_else.claro","lessons/06_loops.claro","lessons/07_lists.claro","lessons/08_functions.claro","lessons/09_files.claro","lessons/10_final_quiz.claro","examples/hello.claro","examples/name_input.claro","examples/quiz.claro","examples/calculator.claro","examples/guessing_game.claro","examples/shopping_list.claro","examples/save_and_load_file.claro","examples/simple_functions.claro","examples/text_and_lists.claro","examples/text_polish.claro","examples/practical_scripting.claro","examples/type_hardening.claro","examples/objects_classes.claro","examples/networking.claro",NULL}; printf("%s\n",CLARO_VERSION); printf("Stable package validation:\n"); fails+=run_doctor(); fails+=run_tests(); printf("Checking lessons and main examples:\n"); for(i=0;checks[i];i++){ printf("  %s\n",checks[i]); fails+=check_file(checks[i]); } { const char *typecheck_good[] = {"tests/typecheck_function_branch_complete_good.claro","tests/typecheck_function_nested_branch_complete_good.claro","tests/typecheck_function_compat_branch_complete_good.claro","tests/typecheck_function_return_expression_good.claro","tests/typecheck_function_return_multiplication_good.claro","tests/typecheck_method_call_good.claro","tests/typecheck_method_field_assignment_good.claro","tests/typecheck_method_text_concat_good.claro","tests/typecheck_method_compat_text_concat_good.claro","tests/typecheck_method_text_field_assignment_good.claro","tests/typecheck_method_compat_text_field_assignment_good.claro","tests/typecheck_method_compat_yesno_field_assignment_good.claro","tests/typecheck_method_inline_field_annotation_as_to_good.claro","tests/typecheck_method_compat_inline_field_annotation_as_to_good.claro","tests/typecheck_method_field_check_type_good.claro","tests/typecheck_method_compat_field_check_type_good.claro","tests/typecheck_method_compat_return_good.claro","tests/typecheck_method_compat_lowercase_return_good.claro","tests/typecheck_method_compat_return_multiplication_good.claro","tests/typecheck_method_compat_return_addition_good.claro","tests/typecheck_method_nested_branch_complete_good.claro","tests/typecheck_method_return_expression_good.claro","tests/typecheck_method_return_addition_good.claro","tests/typecheck_method_return_good.claro","tests/typecheck_nested_container_good.claro","tests/typecheck_object_alias_method_call_good.claro","tests/typecheck_object_alias_method_do_good.claro","tests/typecheck_object_field_alias_good.claro","tests/typecheck_object_field_check_type_chained_alias_text_good.claro","tests/typecheck_object_field_check_type_yesno_good.claro","tests/typecheck_object_field_division_good.claro","tests/typecheck_object_field_multiplication_good.claro","tests/typecheck_object_field_text_concat_good.claro","tests/typecheck_object_field_text_concat_reverse_good.claro","tests/typecheck_object_field_subtraction_good.claro",NULL}; const char *typecheck_bad[] = {"tests/typecheck_function_branch_missing_return_bad.claro","tests/typecheck_function_call_missing_unchecked_arg_bad.claro","tests/typecheck_function_call_unknown_bad.claro","tests/typecheck_function_extra_arg_bad.claro","tests/typecheck_function_missing_arg_bad.claro","tests/typecheck_function_missing_return_bad.claro","tests/typecheck_function_compat_missing_return_bad.claro","tests/typecheck_function_return_expression_bad.claro","tests/typecheck_function_return_arithmetic_bad.claro","tests/typecheck_invalid_expected_type_bad.claro","tests/typecheck_missing_expression_bad.claro","tests/typecheck_missing_expression_with_is_bad.claro","tests/typecheck_invalid_return_type_bad.claro","tests/typecheck_method_call_bad.claro","tests/typecheck_method_call_unknown_method_bad.claro","tests/typecheck_method_call_unknown_object_bad.claro","tests/typecheck_method_call_unknown_object_unknown_method_bad.claro","tests/typecheck_method_compat_return_bad.claro","tests/typecheck_method_compat_return_multiplication_bad.claro","tests/typecheck_method_duplicate_name_bad.claro","tests/typecheck_duplicate_field_bad.claro","tests/typecheck_duplicate_class_bad.claro","tests/typecheck_method_extra_arg_bad.claro","tests/typecheck_method_invalid_return_type_bad.claro","tests/typecheck_method_missing_arg_bad.claro","tests/typecheck_method_missing_return_bad.claro","tests/typecheck_method_missing_unchecked_arg_bad.claro","tests/typecheck_method_return_bad.claro","tests/typecheck_method_return_addition_bad.claro","tests/typecheck_method_return_expression_bad.claro","tests/typecheck_method_second_method_bad.claro","tests/typecheck_method_second_method_extra_arg_bad.claro","tests/typecheck_method_unknown_method_bad.claro","tests/typecheck_method_field_assignment_bad.claro","tests/typecheck_method_short_field_missing_value_bad.claro","tests/typecheck_method_compat_short_field_missing_value_bad.claro","tests/typecheck_method_compat_unknown_field_bad.claro","tests/typecheck_method_unknown_field_typed_bad.claro","tests/typecheck_method_compat_unknown_field_typed_bad.claro","tests/typecheck_method_unknown_field_expression_bad.claro","tests/typecheck_method_text_field_assignment_bad.claro","tests/typecheck_method_compat_text_field_assignment_bad.claro","tests/typecheck_method_yesno_field_assignment_bad.claro","tests/typecheck_method_compat_yesno_field_assignment_bad.claro","tests/typecheck_method_field_check_type_bad.claro","tests/typecheck_method_compat_field_check_type_bad.claro","tests/typecheck_method_unknown_object_bad.claro","tests/typecheck_object_alias_method_bad.claro","tests/typecheck_object_alias_method_call_bad.claro","tests/typecheck_object_field_addition_bad.claro","tests/typecheck_object_field_after_method_bad.claro","tests/typecheck_object_field_alias_bad.claro","tests/typecheck_object_field_chained_alias_bad.claro","tests/typecheck_object_field_division_bad.claro","tests/typecheck_object_field_multiplication_bad.claro","tests/typecheck_object_field_subtraction_bad.claro","tests/typecheck_object_field_typed_bad.claro","tests/typecheck_object_field_missing_value_bad.claro","tests/typecheck_object_field_unknown_object_bad.claro","tests/typecheck_object_field_unknown_typed_bad.claro","tests/typecheck_missing_field_type_bad.claro","tests/typecheck_extra_class_tokens_bad.claro","tests/typecheck_extra_new_tokens_bad.claro","tests/typecheck_extra_field_tokens_bad.claro",NULL}; for(i=0;typecheck_good[i];i++) fails+=typecheck_file(typecheck_good[i]); for(i=0;typecheck_bad[i];i++) if(typecheck_file(typecheck_bad[i])==0) fails++; } fails+=typecheck_file("tests/typecheck_good.claro"); fails+=typecheck_file("tests/typecheck_container_good.claro"); fails+=typecheck_file("tests/typecheck_function_good.claro"); fails+=typecheck_file("tests/typecheck_function_return_good.claro"); fails+=typecheck_file("tests/typecheck_function_compat_return_good.claro"); fails+=typecheck_file("tests/typecheck_function_multi_good.claro"); fails+=typecheck_file("tests/typecheck_method_good.claro"); fails+=typecheck_file("tests/typecheck_object_field_good.claro"); fails+=typecheck_file("tests/typecheck_object_field_expression_good.claro"); fails+=typecheck_file("tests/typecheck_object_field_compound_good.claro"); fails+=typecheck_file("tests/typecheck_object_field_subtraction_good.claro"); fails+=typecheck_file("tests/typecheck_object_field_text_good.claro"); fails+=typecheck_file("tests/typecheck_object_field_text_concat_fields_good.claro"); fails+=typecheck_file("tests/typecheck_object_field_yesno_good.claro"); fails+=typecheck_file("tests/typecheck_object_field_check_type_number_good.claro"); fails+=typecheck_file("tests/typecheck_object_field_check_type_text_good.claro"); fails+=typecheck_file("tests/typecheck_object_field_check_type_text_yesno_good.claro"); fails+=typecheck_file("tests/typecheck_object_field_check_type_chained_alias_good.claro"); fails+=typecheck_file("tests/37_object_field_types.claro"); if(typecheck_file("tests/typecheck_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_container_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_function_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_function_duplicate_param_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_function_return_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_function_return_extra_tokens_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_function_compat_return_extra_tokens_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_function_compat_empty_return_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_function_compat_return_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_function_empty_return_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_function_multi_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_function_missing_unchecked_arg_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_function_unknown_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_method_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_method_branch_missing_return_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_object_field_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_object_field_text_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_object_field_yesno_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_object_field_unknown_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_object_field_unknown_text_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_object_field_unknown_yesno_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_object_field_unknown_expression_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_object_field_expression_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_object_field_compound_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_object_field_text_expression_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_object_field_check_type_text_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_object_field_check_type_yesno_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_object_field_check_type_number_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_object_field_check_type_unknown_number_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_object_field_check_type_unknown_text_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_object_field_check_type_unknown_yesno_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_object_field_check_type_unknown_object_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_object_field_check_type_alias_bad.claro")==0) fails++; if(typecheck_file("tests/typecheck_object_field_check_type_chained_alias_bad.claro")==0) fails++; printf("%s\n",fails?"Validation found problems.":"Validation passed. Claro v2026.10.20.155641 foundation checks are ready for use."); return fails?1:0; }
+static char *project_value(const char *key) {
+    char *txt = read_file_text("claro.project");
+    size_t kn = strlen(key);
+    char *p, *out = NULL;
+    if (!txt)
+        return NULL;
+    p = txt;
+    while (*p) {
+        char *line = p;
+        char save;
+        while (*p && *p != '\n' && *p != '\r')
+            p++;
+        save = *p;
+        *p = 0;
+        {
+            char *t = trim_inplace(line);
+            if (strnicmp2(t, key, kn) == 0 && t[kn] == ':') {
+                out = xstrdup(trim_inplace(t + kn + 1));
+                break;
+            }
+        }
+        if (save)
+            p++;
+        while (*p == '\n' || *p == '\r')
+            p++;
+    }
+    free(txt);
+    return out;
+}
+static int package_has_name(const char *name) {
+    char *txt = read_file_text("claro.project");
+    char *p;
+    int found = 0;
+    if (!txt)
+        return 0;
+    p = txt;
+    while (*p) {
+        char *line = p;
+        char save;
+        while (*p && *p != '\n' && *p != '\r')
+            p++;
+        save = *p;
+        *p = 0;
+        {
+            char *t = trim_inplace(line);
+            if (strnicmp2(t, "package:", 8) == 0) {
+                char *pkg = trim_inplace(t + 8);
+                if (strcmp(pkg, name) == 0) {
+                    found = 1;
+                    break;
+                }
+            }
+        }
+        if (save)
+            p++;
+        while (*p == '\n' || *p == '\r')
+            p++;
+    }
+    free(txt);
+    return found;
+}
+static int project_package_names_safe(void) {
+    char *txt = read_file_text("claro.project");
+    char *p;
+    char seen[128][65];
+    int seen_count = 0;
+    if (!txt)
+        return 1;
+    p = txt;
+    while (*p) {
+        char *line = p;
+        char save;
+        while (*p && *p != '\n' && *p != '\r')
+            p++;
+        save = *p;
+        *p = 0;
+        {
+            char *t = trim_inplace(line);
+            if (strnicmp2(t, "package:", 8) == 0) {
+                char *pkg = trim_inplace(t + 8);
+                int i;
+                if (*pkg && !package_name_safe(pkg)) {
+                    printf("BAD package name: %s\n", pkg);
+                    free(txt);
+                    return 0;
+                }
+                if (*pkg) {
+                    for (i = 0; i < seen_count; i++) {
+                        if (strcmp(seen[i], pkg) == 0) {
+                            printf("DUPLICATE package: %s\n", pkg);
+                            free(txt);
+                            return 0;
+                        }
+                    }
+                    if (seen_count < 128)
+                        claro_snprintf(seen[seen_count++], sizeof(seen[0]), "%s", pkg);
+                }
+            }
+        }
+        if (save) {
+            *p = save;
+            p++;
+        }
+        while (*p == '\n' || *p == '\r')
+            p++;
+    }
+    free(txt);
+    return 1;
+}
+static int write_package_lock(void) {
+    char *txt = read_file_text("claro.project");
+    FILE *f;
+    char *p;
+    if (!txt)
+        return 0;
+    if (!project_package_names_safe()) {
+        free(txt);
+        return 0;
+    }
+    f = fopen("claro.lock", "wb");
+    if (!f) {
+        free(txt);
+        return 0;
+    }
+    fputs("# Claro package lock\nlock-version: 1\nversion: v2026.10.20.160950\n", f);
+    p = txt;
+    while (*p) {
+        char *line = p;
+        char save;
+        while (*p && *p != '\n' && *p != '\r')
+            p++;
+        save = *p;
+        *p = 0;
+        {
+            char *t = trim_inplace(line);
+            if (strnicmp2(t, "package:", 8) == 0) {
+                char *pkg = trim_inplace(t + 8);
+                if (*pkg) {
+                    char sum[32];
+                    package_checksum(pkg, sum, sizeof(sum));
+                    fprintf(f, "package: %s\nchecksum: %s\n", pkg, sum);
+                }
+            }
+        }
+        if (save)
+            p++;
+        while (*p == '\n' || *p == '\r')
+            p++;
+    }
+    fclose(f);
+    free(txt);
+    return 1;
+}
+static int append_package_to_project(const char *name) {
+    FILE *f;
+    if (package_name_too_long(name)) {
+        fprintf(stderr, "Package names must be 64 characters or fewer.\n");
+        return 0;
+    }
+    if (!package_name_safe(name)) {
+        fprintf(stderr, "Package names may use only letters, numbers, dash, and underscore.\n");
+        return 0;
+    }
+    ensure_project_file();
+    if (package_has_name(name)) {
+        printf("Package already listed: %s\n", name);
+        return 1;
+    }
+    f = fopen("claro.project", "ab");
+    if (!f)
+        return 0;
+    fprintf(f, "package: %s\n", name);
+    fclose(f);
+    write_package_lock();
+    return 1;
+}
+static int remove_package_from_project(const char *name) {
+    char *txt = read_file_text("claro.project");
+    FILE *f;
+    char *p;
+    int removed = 0;
+    if (!txt)
+        return 0;
+    f = fopen("claro.project", "wb");
+    if (!f) {
+        free(txt);
+        return 0;
+    }
+    p = txt;
+    while (*p) {
+        char *line = p;
+        char save;
+        int skip = 0;
+        while (*p && *p != '\n' && *p != '\r')
+            p++;
+        save = *p;
+        *p = 0;
+        {
+            char *copy = xstrdup(line);
+            char *t = trim_inplace(copy);
+            if (strnicmp2(t, "package:", 8) == 0) {
+                char *pkg = trim_inplace(t + 8);
+                if (strcmp(pkg, name) == 0) {
+                    skip = 1;
+                    removed = 1;
+                }
+            }
+            free(copy);
+        }
+        if (!skip)
+            fprintf(f, "%s\n", line);
+        if (save)
+            p++;
+        while (*p == '\n' || *p == '\r')
+            p++;
+    }
+    fclose(f);
+    free(txt);
+    if (!write_package_lock())
+        return -1;
+    return removed;
+}
+static void create_package_folder(const char *name) {
+    char path[1024], meta[1280], readme[1280], sum[32];
+    make_folder("packages");
+    claro_snprintf(path, sizeof(path), "packages/%s", name);
+    make_folder(path);
+    claro_snprintf(meta, sizeof(meta), "%s/claro.package", path);
+    package_checksum(name, sum, sizeof(sum));
+    {
+        char text[1024];
+        claro_snprintf(text, sizeof(text),
+                       "manifest-version: 1\nname: %s\nversion: 1\nsource: local\nchecksum: %s\n",
+                       name, sum);
+        write_text_file_simple(meta, text);
+    }
+    claro_snprintf(readme, sizeof(readme), "%s/README.md", path);
+    if (!file_exists_simple(readme)) {
+        char text[512];
+        claro_snprintf(text, sizeof(text), "# %s\n\nThis is a local Claro package folder.\n", name);
+        write_text_file_simple(readme, text);
+    }
+}
+static int list_project_packages(void) {
+    char *txt = read_file_text("claro.project");
+    char *p;
+    int count = 0;
+    printf("Packages in claro.project:\n");
+    if (!txt) {
+        printf("  (no claro.project yet)\n");
+        return 0;
+    }
+    if (!project_package_names_safe()) {
+        free(txt);
+        return 1;
+    }
+    p = txt;
+    while (*p) {
+        char *line = p;
+        char save;
+        while (*p && *p != '\n' && *p != '\r')
+            p++;
+        save = *p;
+        *p = 0;
+        {
+            char *t = trim_inplace(line);
+            if (strnicmp2(t, "package:", 8) == 0) {
+                char *pkg = trim_inplace(t + 8);
+                if (*pkg) {
+                    printf("  %s\n", pkg);
+                    count++;
+                }
+            }
+        }
+        if (save)
+            p++;
+        while (*p == '\n' || *p == '\r')
+            p++;
+    }
+    if (!count)
+        printf("  (none)\n");
+    free(txt);
+    return 0;
+}
+static int package_lock_checksum_ok(const char *name) {
+    char *txt = read_file_text("claro.lock");
+    char *p;
+    int in_pkg = 0, fields = 0, matches = 0;
+    char expected[32];
+    if (!txt)
+        return 0;
+    package_checksum(name, expected, sizeof(expected));
+    p = txt;
+    while (*p) {
+        char *line = p;
+        char save;
+        while (*p && *p != '\n' && *p != '\r')
+            p++;
+        save = *p;
+        *p = 0;
+        {
+            char *t = trim_inplace(line);
+            if (strnicmp2(t, "package:", 8) == 0) {
+                char *pkg = trim_inplace(t + 8);
+                in_pkg = (strcmp(pkg, name) == 0);
+            } else if (in_pkg && strnicmp2(t, "checksum:", 9) == 0) {
+                char *sum = trim_inplace(t + 9);
+                fields++;
+                if (strcmp(sum, expected) == 0)
+                    matches++;
+            }
+        }
+        if (save) {
+            *p = save;
+            p++;
+        }
+        while (*p == '\n' || *p == '\r')
+            p++;
+    }
+    free(txt);
+    return fields == 1 && matches == 1;
+}
+static int lock_packages_match_project(void) {
+    char *txt = read_file_text("claro.lock");
+    char *p;
+    char seen[128][65];
+    int seen_count = 0;
+    int ok = 1;
+    if (!txt)
+        return 1;
+    p = txt;
+    while (*p) {
+        char *line = p;
+        char save;
+        while (*p && *p != '\n' && *p != '\r')
+            p++;
+        save = *p;
+        *p = 0;
+        {
+            char *t = trim_inplace(line);
+            if (strnicmp2(t, "package:", 8) == 0) {
+                char *pkg = trim_inplace(t + 8);
+                int i;
+                if (*pkg && !package_name_safe(pkg)) {
+                    printf("  BAD lock package name: %s\n", pkg);
+                    ok = 0;
+                } else if (*pkg) {
+                    for (i = 0; i < seen_count; i++) {
+                        if (strcmp(seen[i], pkg) == 0) {
+                            printf("  DUPLICATE lock package: %s\n", pkg);
+                            ok = 0;
+                            break;
+                        }
+                    }
+                    if (seen_count < 128)
+                        claro_snprintf(seen[seen_count++], sizeof(seen[0]), "%s", pkg);
+                    if (!package_has_name(pkg)) {
+                        printf("  BAD lock package not in claro.project: %s\n", pkg);
+                        ok = 0;
+                    }
+                }
+            }
+        }
+        if (save) {
+            *p = save;
+            p++;
+        }
+        while (*p == '\n' || *p == '\r')
+            p++;
+    }
+    free(txt);
+    return ok;
+}
+static int package_manifest_version_matches(const char *text) {
+    const char *p = text;
+    int fields = 0;
+    int matches = 0;
+    while (p && *p) {
+        const char *line = p;
+        const char *end;
+        while (*p && *p != '\n' && *p != '\r')
+            p++;
+        end = p;
+        if ((size_t)(end - line) >= 17 && strncmp(line, "manifest-version:", 17) == 0) {
+            const char *value = line + 17;
+            fields++;
+            while (value < end && isspace((unsigned char)*value))
+                value++;
+            while (end > value && isspace((unsigned char)end[-1]))
+                end--;
+            if ((size_t)(end - value) == 1 && value[0] == '1')
+                matches++;
+        }
+        while (*p == '\n' || *p == '\r')
+            p++;
+    }
+    return fields == 1 && matches == 1;
+}
+static int package_project_name_valid(const char *text) {
+    const char *p = text;
+    int fields = 0;
+    int nonempty = 0;
+    while (p && *p) {
+        const char *line = p;
+        const char *end;
+        while (*p && *p != '\n' && *p != '\r')
+            p++;
+        end = p;
+        if ((size_t)(end - line) >= 5 && strncmp(line, "name:", 5) == 0) {
+            const char *value = line + 5;
+            fields++;
+            while (value < end && isspace((unsigned char)*value))
+                value++;
+            while (end > value && isspace((unsigned char)end[-1]))
+                end--;
+            if (value < end)
+                nonempty++;
+        }
+        while (*p == '\n' || *p == '\r')
+            p++;
+    }
+    return fields == 1 && nonempty == 1;
+}
+static int package_manifest_name_matches(const char *text, const char *name) {
+    const char *p = text;
+    size_t n = strlen(name);
+    int fields = 0;
+    int matches = 0;
+    while (p && *p) {
+        const char *line = p;
+        const char *end;
+        while (*p && *p != '\n' && *p != '\r')
+            p++;
+        end = p;
+        if ((size_t)(end - line) >= 5 && strncmp(line, "name:", 5) == 0) {
+            const char *value = line + 5;
+            fields++;
+            while (value < end && isspace((unsigned char)*value))
+                value++;
+            while (end > value && isspace((unsigned char)end[-1]))
+                end--;
+            if ((size_t)(end - value) == n && strncmp(value, name, n) == 0)
+                matches++;
+        }
+        while (*p == '\n' || *p == '\r')
+            p++;
+    }
+    return fields == 1 && matches == 1;
+}
+static int package_manifest_version_value_matches(const char *text) {
+    const char *p = text;
+    int fields = 0;
+    int matches = 0;
+    while (p && *p) {
+        const char *line = p;
+        const char *end;
+        while (*p && *p != '\n' && *p != '\r')
+            p++;
+        end = p;
+        if ((size_t)(end - line) >= 8 && strncmp(line, "version:", 8) == 0) {
+            const char *value = line + 8;
+            fields++;
+            while (value < end && isspace((unsigned char)*value))
+                value++;
+            while (end > value && isspace((unsigned char)end[-1]))
+                end--;
+            if ((size_t)(end - value) == 1 && value[0] == '1')
+                matches++;
+        }
+        while (*p == '\n' || *p == '\r')
+            p++;
+    }
+    return fields == 1 && matches == 1;
+}
+static int package_manifest_source_matches(const char *text) {
+    const char *p = text;
+    int fields = 0;
+    int matches = 0;
+    while (p && *p) {
+        const char *line = p;
+        const char *end;
+        while (*p && *p != '\n' && *p != '\r')
+            p++;
+        end = p;
+        if ((size_t)(end - line) >= 7 && strncmp(line, "source:", 7) == 0) {
+            const char *value = line + 7;
+            fields++;
+            while (value < end && isspace((unsigned char)*value))
+                value++;
+            while (end > value && isspace((unsigned char)end[-1]))
+                end--;
+            if ((size_t)(end - value) == 5 && strncmp(value, "local", 5) == 0)
+                matches++;
+        }
+        while (*p == '\n' || *p == '\r')
+            p++;
+    }
+    return fields == 1 && matches == 1;
+}
+static int package_manifest_checksum_matches(const char *text, const char *expected) {
+    const char *p = text;
+    size_t n = strlen(expected);
+    int fields = 0;
+    int matches = 0;
+    while (p && *p) {
+        const char *line = p;
+        const char *end;
+        while (*p && *p != '\n' && *p != '\r')
+            p++;
+        end = p;
+        if ((size_t)(end - line) >= 9 && strncmp(line, "checksum:", 9) == 0) {
+            const char *value = line + 9;
+            fields++;
+            while (value < end && isspace((unsigned char)*value))
+                value++;
+            while (end > value && isspace((unsigned char)end[-1]))
+                end--;
+            if ((size_t)(end - value) == n && strncmp(value, expected, n) == 0)
+                matches++;
+        }
+        while (*p == '\n' || *p == '\r')
+            p++;
+    }
+    return fields == 1 && matches == 1;
+}
+static int package_lock_version_matches(const char *text) {
+    const char *p = text;
+    int fields = 0, matches = 0;
+    while (p && *p) {
+        const char *line = p, *end;
+        while (*p && *p != '\n' && *p != '\r')
+            p++;
+        end = p;
+        while (line < end && isspace((unsigned char)*line))
+            line++;
+        if ((size_t)(end - line) >= 13 && strnicmp2(line, "lock-version:", 13) == 0) {
+            const char *value = line + 13;
+            fields++;
+            while (value < end && isspace((unsigned char)*value))
+                value++;
+            while (end > value && isspace((unsigned char)end[-1]))
+                end--;
+            if ((size_t)(end - value) == 1 && value[0] == '1')
+                matches++;
+        }
+        while (*p == '\n' || *p == '\r')
+            p++;
+    }
+    return fields == 1 && matches == 1;
+}
+static int package_lock_release_version_matches(const char *text) {
+    const char *p = text;
+    int fields = 0, matches = 0;
+    while (p && *p) {
+        const char *line = p, *end;
+        while (*p && *p != '\n' && *p != '\r')
+            p++;
+        end = p;
+        while (line < end && isspace((unsigned char)*line))
+            line++;
+        if ((size_t)(end - line) >= 8 && strncmp(line, "version:", 8) == 0) {
+            const char *value = line + 8;
+            fields++;
+            while (value < end && isspace((unsigned char)*value))
+                value++;
+            while (end > value && isspace((unsigned char)end[-1]))
+                end--;
+            if ((size_t)(end - value) == strlen(CLARO_VERSION + 6) &&
+                strncmp(value, CLARO_VERSION + 6, strlen(CLARO_VERSION + 6)) == 0)
+                matches++;
+        }
+        while (*p == '\n' || *p == '\r')
+            p++;
+    }
+    return fields == 1 && matches == 1;
+}
+static int package_doctor(void) {
+    int ok = 1;
+    char *mainfile;
+    char *txt;
+    printf("%s\n", CLARO_VERSION);
+    printf("Package/project doctor:\n");
+    printf("  %s claro.project\n", file_exists_simple("claro.project") ? "OK" : "MISSING");
+    if (!file_exists_simple("claro.project"))
+        ok = 0;
+    mainfile = project_value("main");
+    if (mainfile && *mainfile) {
+        printf("  %s main script: %s\n", file_exists_simple(mainfile) ? "OK" : "MISSING", mainfile);
+        if (!file_exists_simple(mainfile))
+            ok = 0;
+    } else {
+        printf("  MISSING main setting\n");
+        ok = 0;
+    }
+    printf("  %s packages folder\n", path_exists_simple("packages") ? "OK" : "MISSING");
+    if (!path_exists_simple("packages"))
+        ok = 0;
+    printf("  %s claro.lock\n", file_exists_simple("claro.lock") ? "OK" : "MISSING");
+    if (!file_exists_simple("claro.lock"))
+        ok = 0;
+    txt = read_file_text("claro.lock");
+    if (txt && !package_lock_version_matches(txt)) {
+        printf("  BAD lock version: expected exactly one lock-version: 1 line\n");
+        ok = 0;
+    }
+    if (txt && !package_lock_release_version_matches(txt)) {
+        printf(
+            "  BAD lock release version: expected exactly one version: v2026.10.20.160950 line\n");
+        ok = 0;
+    }
+    free(txt);
+    txt = read_file_text("claro.project");
+    if (txt && !project_package_names_safe()) {
+        ok = 0;
+    }
+    if (txt && !package_manifest_version_matches(txt)) {
+        printf("  BAD project manifest version: expected 1\n");
+        ok = 0;
+    }
+    if (txt && !package_project_name_valid(txt)) {
+        printf("  BAD project manifest name: expected a non-empty name\n");
+        ok = 0;
+    }
+    if (txt) {
+        char *p = txt;
+        while (*p) {
+            char *line = p;
+            char save;
+            while (*p && *p != '\n' && *p != '\r')
+                p++;
+            save = *p;
+            *p = 0;
+            {
+                char *t = trim_inplace(line);
+                if (strnicmp2(t, "package:", 8) == 0) {
+                    char *pkg = trim_inplace(t + 8);
+                    if (*pkg) {
+                        char meta[512], *mt, sum[32];
+                        if (!package_name_safe(pkg)) {
+                            printf("  BAD package name: %s\n", pkg);
+                            ok = 0;
+                        } else {
+                            claro_snprintf(meta, sizeof(meta), "packages/%s/claro.package", pkg);
+                            mt = read_file_text(meta);
+                            if (mt && !package_manifest_version_value_matches(mt)) {
+                                printf("  BAD package version: %s\n", pkg);
+                                ok = 0;
+                            } else if (mt && !package_manifest_source_matches(mt)) {
+                                printf("  BAD package source: %s\n", pkg);
+                                ok = 0;
+                            } else if (mt && !package_manifest_version_matches(mt)) {
+                                printf("  BAD package manifest version: %s. Keep exactly one "
+                                       "manifest-version: 1 line in packages/%s/claro.package.\n",
+                                       pkg, pkg);
+                                ok = 0;
+                            } else if (mt && strstr(mt, "checksum:")) {
+                                if (!package_manifest_name_matches(mt, pkg)) {
+                                    printf("  BAD package manifest name: %s\n", pkg);
+                                    ok = 0;
+                                } else {
+                                    printf("  OK package manifest: %s\n", pkg);
+                                    package_checksum(pkg, sum, sizeof(sum));
+                                    if (package_manifest_checksum_matches(mt, sum))
+                                        printf("  OK package checksum: %s\n", pkg);
+                                    else {
+                                        printf("  BAD package checksum: %s\n", pkg);
+                                        ok = 0;
+                                    }
+                                    if (package_lock_checksum_ok(pkg))
+                                        printf("  OK lock checksum: %s\n", pkg);
+                                    else {
+                                        printf("  BAD lock checksum: %s\n", pkg);
+                                        ok = 0;
+                                    }
+                                }
+                            } else {
+                                printf("  MISSING package manifest: %s\n", pkg);
+                                ok = 0;
+                            }
+                            free(mt);
+                        }
+                    }
+                }
+            }
+            if (save)
+                p++;
+            while (*p == '\n' || *p == '\r')
+                p++;
+        }
+        free(txt);
+    }
+    if (!lock_packages_match_project())
+        ok = 0;
+    free(mainfile);
+    printf("%s\n",
+           ok ? "Package/project files look ready." : "Package/project files need attention.");
+    return ok ? 0 : 1;
+}
+static int run_package_cmd(int argc, char **argv, int arg) {
+    if (arg >= argc) {
+        printf("Package commands:\n  claro package init\n  claro package add NAME\n  claro package "
+               "remove NAME\n  claro package list\n  claro package doctor\n  claro package lock\n");
+        return 0;
+    }
+    if (strcmp(argv[arg], "init") == 0) {
+        ensure_project_file();
+        if (!project_package_names_safe())
+            return 1;
+        make_folder("packages");
+        if (!write_package_lock())
+            return 1;
+        printf("Package project ready: claro.project, claro.lock, packages/\n");
+        return 0;
+    }
+    if (strcmp(argv[arg], "add") == 0 && arg + 1 < argc) {
+        const char *name = argv[arg + 1];
+        int already;
+        if (package_name_too_long(name)) {
+            fprintf(stderr, "Package names must be 64 characters or fewer.\n");
+            return 1;
+        }
+        if (!package_name_safe(name)) {
+            fprintf(stderr, "Package names may use only letters, numbers, dash, and underscore.\n");
+            return 1;
+        }
+        ensure_project_file();
+        if (!project_package_names_safe())
+            return 1;
+        make_folder("packages");
+        already = package_has_name(name);
+        if (!append_package_to_project(name))
+            return 1;
+        create_package_folder(name);
+        if (!write_package_lock())
+            return 1;
+        if (!already)
+            printf("Added package: %s\n", name);
+        return 0;
+    }
+    if (strcmp(argv[arg], "remove") == 0 && arg + 1 < argc) {
+        const char *name = argv[arg + 1];
+        int removed;
+        removed = remove_package_from_project(name);
+        if (removed < 0)
+            return 1;
+        if (removed)
+            printf("Removed package from project: %s\n", name);
+        else
+            printf("Package was not listed: %s\n", name);
+        return 0;
+    }
+    if (strcmp(argv[arg], "list") == 0)
+        return list_project_packages();
+    if (strcmp(argv[arg], "doctor") == 0)
+        return package_doctor();
+    if (strcmp(argv[arg], "lock") == 0 || strcmp(argv[arg], "update") == 0) {
+        ensure_project_file();
+        make_folder("packages");
+        if (write_package_lock()) {
+            printf("Updated claro.lock\n");
+            return 0;
+        }
+        fprintf(stderr, "Could not write claro.lock\n");
+        return 1;
+    }
+    printf("Unknown package command. Try: claro package init\n");
+    return 1;
+}
+static int print_ide_info(void) {
+    printf("{\n");
+    printf("  \"language\": \"Claro\",\n");
+    printf("  \"version\": \"v2026.10.20.160950\",\n");
+    printf("  \"file_extensions\": [\".claro\"],\n");
+    printf("  \"keywords\": "
+           "[\"SAY\",\"ASK\",\"SET\",\"IF\",\"ELSE\",\"ENDIF\",\"END\",\"REPEAT\",\"UNTIL\","
+           "\"TEACH\",\"TAKES\",\"RETURNS\",\"CHECK\",\"TYPE\",\"LEARNED\",\"DO\",\"CALL\","
+           "\"WITH\",\"RETURN\",\"CLASS\",\"HAS\",\"NEW\",\"IMPORT\",\"TRY\",\"CATCH\",\"ENDTRY\","
+           "\"START TASK\",\"YIELD\",\"WAIT TASK\",\"TASK STATUS\",\"HTTP CHECK\",\"HTTP "
+           "GET\",\"HTTP SAVE\",\"OPEN WINDOW\"],\n");
+    printf("  \"types\": [\"NUMBER\",\"TEXT\",\"YESNO\",\"LIST\",\"LIST OF TEXT\",\"LIST OF "
+           "NUMBER\",\"LIST OF YESNO\",\"MAP\",\"MAP OF TEXT\",\"MAP OF NUMBER\",\"MAP OF "
+           "YESNO\",\"OBJECT\",\"ANY\"],\n");
+    printf("  \"commands\": [\n");
+    printf("    {\"name\": \"run\", \"usage\": \"claro run\", \"description\": \"Run main.claro or "
+           "the project main script\"},\n");
+    printf("    {\"name\": \"check\", \"usage\": \"claro check file.claro\", \"description\": "
+           "\"Check beginner syntax and block mistakes\"},\n");
+    printf("    {\"name\": \"typecheck\", \"usage\": \"claro typecheck file.claro\", "
+           "\"description\": \"Check static types before running\"},\n");
+    printf("    {\"name\": \"fmt\", \"usage\": \"claro fmt file.claro\", \"description\": \"Print "
+           "a formatted version of a script\"},\n");
+    printf("    {\"name\": \"test\", \"usage\": \"claro test\", \"description\": \"Run golden "
+           "tests\"}\n");
+    printf("  ],\n");
+    printf("  \"snippets\": [\n");
+    printf("    {\"name\": \"hello\", \"prefix\": \"say\", \"body\": \"SAY \\\"Hello!\\\"\"},\n");
+    printf("    {\"name\": \"if_else\", \"prefix\": \"if\", \"body\": \"IF condition\\n    SAY "
+           "\\\"Yes\\\"\\nELSE\\n    SAY \\\"No\\\"\\nENDIF\"},\n");
+    printf("    {\"name\": \"function\", \"prefix\": \"teach\", \"body\": \"TEACH name item\\n    "
+           "SAY item\\nLEARNED\"},\n");
+    printf("    {\"name\": \"typed_list\", \"prefix\": \"listof\", \"body\": \"SET names AS LIST "
+           "OF TEXT TO LIST\\nADD \\\"Ada\\\" TO names\"},\n");
+    printf("    {\"name\": \"task\", \"prefix\": \"task\", \"body\": \"START TASK helloTask\\n    "
+           "SAY \\\"Inside task\\\"\\n    YIELD\\nENDTASK\\nTASK STATUS helloTask AS status\\nSAY "
+           "status\\nWAIT TASK helloTask\"}\n");
+    printf("  ],\n");
+    printf("  \"diagnostics\": [\n");
+    printf("    {\"source\": \"claro check\", \"format\": \"path:line: message\", \"description\": "
+           "\"Syntax and block-structure diagnostics\"},\n");
+    printf("    {\"source\": \"claro typecheck\", \"format\": \"path:line: message\", "
+           "\"description\": \"Static type diagnostics for variables and containers\"}\n");
+    printf("  ]\n");
+    printf("}\n");
+    return 0;
+}
+static void print_help(void) {
+    printf("%s\n", CLARO_VERSION);
+    printf("Usage:\n");
+    printf("  claro file.claro              Run a Claro script\n");
+    printf("  claro run                     Run main.claro in this folder\n");
+    printf("  claro test                    Run the built-in tests\n");
+    printf("  claro check file.claro        Check a script for beginner mistakes\n");
+    printf("  claro typecheck file.claro    Check simple static types\n");
+    printf("  claro fmt file.claro          Print a formatted version\n");
+    printf("  claro repl                    Try one line at a time\n");
+    printf("  claro new MyProject           Create a starter project\n");
+    printf("  claro examples                List included examples\n");
+    printf("  claro doctor                  Check this Claro folder\n");
+    printf("  claro validate                Run stable package validation\n");
+    printf("  claro package init|add|remove|list|doctor   Manage Claro packages\n");
+    printf("  claro ide                     Print editor keyword metadata\n");
+}
+static int show_examples(void) {
+    const char *items[] = {"hello.claro",
+                           "name_input.claro",
+                           "quiz.claro",
+                           "calculator.claro",
+                           "guessing_game.claro",
+                           "shopping_list.claro",
+                           "save_and_load_file.claro",
+                           "simple_functions.claro",
+                           "text_and_lists.claro",
+                           "text_polish.claro",
+                           "practical_scripting.claro",
+                           "type_hardening.claro",
+                           "typed_ask.claro",
+                           "objects_classes.claro",
+                           "networking.claro",
+                           NULL};
+    int i;
+    printf("Included beginner examples:\n");
+    for (i = 0; items[i]; i++)
+        printf("  examples/%s\n", items[i]);
+    printf("\nRun one with: claro examples/hello.claro\n");
+    return 0;
+}
+static int file_exists_simple(const char *path) {
+    FILE *f = fopen(path, "rb");
+    if (f) {
+        fclose(f);
+        return 1;
+    }
+    return 0;
+}
+static int run_doctor(void) {
+    int ok = 1;
+    const char *files[] = {"src/claro.c",
+                           "README.md",
+                           "assets/Claro_Logo.jpg",
+                           "lessons/01_hello.claro",
+                           "examples/hello.claro",
+                           "tests/01_hello.claro",
+                           NULL};
+    int i;
+    printf("%s\n", CLARO_VERSION);
+    printf("Doctor check:\n");
+    for (i = 0; files[i]; i++) {
+        int has = file_exists_simple(files[i]);
+        printf("  %s %s\n", has ? "OK" : "MISSING", files[i]);
+        if (!has)
+            ok = 0;
+    }
+    printf("%s\n", ok ? "Claro folder looks ready." : "Some Claro files are missing.");
+    return ok ? 0 : 1;
+}
+static int run_validate(void) {
+    int fails = 0, i;
+    const char *checks[] = {"lessons/01_hello.claro",
+                            "lessons/02_ask_name.claro",
+                            "lessons/03_variables.claro",
+                            "lessons/04_math.claro",
+                            "lessons/05_if_else.claro",
+                            "lessons/06_loops.claro",
+                            "lessons/07_lists.claro",
+                            "lessons/08_functions.claro",
+                            "lessons/09_files.claro",
+                            "lessons/10_final_quiz.claro",
+                            "examples/hello.claro",
+                            "examples/name_input.claro",
+                            "examples/quiz.claro",
+                            "examples/calculator.claro",
+                            "examples/guessing_game.claro",
+                            "examples/shopping_list.claro",
+                            "examples/save_and_load_file.claro",
+                            "examples/simple_functions.claro",
+                            "examples/text_and_lists.claro",
+                            "examples/text_polish.claro",
+                            "examples/practical_scripting.claro",
+                            "examples/type_hardening.claro",
+                            "examples/objects_classes.claro",
+                            "examples/networking.claro",
+                            NULL};
+    printf("%s\n", CLARO_VERSION);
+    printf("Stable package validation:\n");
+    fails += run_doctor();
+    fails += run_tests();
+    printf("Checking lessons and main examples:\n");
+    for (i = 0; checks[i]; i++) {
+        printf("  %s\n", checks[i]);
+        fails += check_file(checks[i]);
+    }
+    {
+        const char *typecheck_good[] = {
+            "tests/typecheck_function_branch_complete_good.claro",
+            "tests/typecheck_function_nested_branch_complete_good.claro",
+            "tests/typecheck_function_compat_branch_complete_good.claro",
+            "tests/typecheck_function_return_expression_good.claro",
+            "tests/typecheck_function_return_multiplication_good.claro",
+            "tests/typecheck_method_call_good.claro",
+            "tests/typecheck_method_field_assignment_good.claro",
+            "tests/typecheck_method_text_concat_good.claro",
+            "tests/typecheck_method_compat_text_concat_good.claro",
+            "tests/typecheck_method_text_field_assignment_good.claro",
+            "tests/typecheck_method_compat_text_field_assignment_good.claro",
+            "tests/typecheck_method_compat_yesno_field_assignment_good.claro",
+            "tests/typecheck_method_inline_field_annotation_as_to_good.claro",
+            "tests/typecheck_method_compat_inline_field_annotation_as_to_good.claro",
+            "tests/typecheck_method_field_check_type_good.claro",
+            "tests/typecheck_method_compat_field_check_type_good.claro",
+            "tests/typecheck_method_compat_return_good.claro",
+            "tests/typecheck_method_compat_lowercase_return_good.claro",
+            "tests/typecheck_method_compat_return_multiplication_good.claro",
+            "tests/typecheck_method_compat_return_addition_good.claro",
+            "tests/typecheck_method_nested_branch_complete_good.claro",
+            "tests/typecheck_method_return_expression_good.claro",
+            "tests/typecheck_method_return_addition_good.claro",
+            "tests/typecheck_method_return_good.claro",
+            "tests/typecheck_nested_container_good.claro",
+            "tests/typecheck_object_alias_method_call_good.claro",
+            "tests/typecheck_object_alias_method_do_good.claro",
+            "tests/typecheck_object_field_alias_good.claro",
+            "tests/typecheck_object_field_check_type_chained_alias_text_good.claro",
+            "tests/typecheck_object_field_check_type_yesno_good.claro",
+            "tests/typecheck_object_field_division_good.claro",
+            "tests/typecheck_object_field_multiplication_good.claro",
+            "tests/typecheck_object_field_text_concat_good.claro",
+            "tests/typecheck_object_field_text_concat_reverse_good.claro",
+            "tests/typecheck_object_field_subtraction_good.claro",
+            NULL};
+        const char *typecheck_bad[] = {
+            "tests/typecheck_function_branch_missing_return_bad.claro",
+            "tests/typecheck_function_call_missing_unchecked_arg_bad.claro",
+            "tests/typecheck_function_call_unknown_bad.claro",
+            "tests/typecheck_function_extra_arg_bad.claro",
+            "tests/typecheck_function_missing_arg_bad.claro",
+            "tests/typecheck_function_missing_return_bad.claro",
+            "tests/typecheck_function_compat_missing_return_bad.claro",
+            "tests/typecheck_function_return_expression_bad.claro",
+            "tests/typecheck_function_return_arithmetic_bad.claro",
+            "tests/typecheck_invalid_expected_type_bad.claro",
+            "tests/typecheck_missing_expression_bad.claro",
+            "tests/typecheck_missing_expression_with_is_bad.claro",
+            "tests/typecheck_invalid_return_type_bad.claro",
+            "tests/typecheck_method_call_bad.claro",
+            "tests/typecheck_method_call_unknown_method_bad.claro",
+            "tests/typecheck_method_call_unknown_object_bad.claro",
+            "tests/typecheck_method_call_unknown_object_unknown_method_bad.claro",
+            "tests/typecheck_method_compat_return_bad.claro",
+            "tests/typecheck_method_compat_return_multiplication_bad.claro",
+            "tests/typecheck_method_duplicate_name_bad.claro",
+            "tests/typecheck_duplicate_field_bad.claro",
+            "tests/typecheck_duplicate_class_bad.claro",
+            "tests/typecheck_method_extra_arg_bad.claro",
+            "tests/typecheck_method_invalid_return_type_bad.claro",
+            "tests/typecheck_method_missing_arg_bad.claro",
+            "tests/typecheck_method_missing_return_bad.claro",
+            "tests/typecheck_method_missing_unchecked_arg_bad.claro",
+            "tests/typecheck_method_return_bad.claro",
+            "tests/typecheck_method_return_addition_bad.claro",
+            "tests/typecheck_method_return_expression_bad.claro",
+            "tests/typecheck_method_second_method_bad.claro",
+            "tests/typecheck_method_second_method_extra_arg_bad.claro",
+            "tests/typecheck_method_unknown_method_bad.claro",
+            "tests/typecheck_method_field_assignment_bad.claro",
+            "tests/typecheck_method_short_field_missing_value_bad.claro",
+            "tests/typecheck_method_compat_short_field_missing_value_bad.claro",
+            "tests/typecheck_method_compat_unknown_field_bad.claro",
+            "tests/typecheck_method_unknown_field_typed_bad.claro",
+            "tests/typecheck_method_compat_unknown_field_typed_bad.claro",
+            "tests/typecheck_method_unknown_field_expression_bad.claro",
+            "tests/typecheck_method_text_field_assignment_bad.claro",
+            "tests/typecheck_method_compat_text_field_assignment_bad.claro",
+            "tests/typecheck_method_yesno_field_assignment_bad.claro",
+            "tests/typecheck_method_compat_yesno_field_assignment_bad.claro",
+            "tests/typecheck_method_field_check_type_bad.claro",
+            "tests/typecheck_method_compat_field_check_type_bad.claro",
+            "tests/typecheck_method_unknown_object_bad.claro",
+            "tests/typecheck_object_alias_method_bad.claro",
+            "tests/typecheck_object_alias_method_call_bad.claro",
+            "tests/typecheck_object_field_addition_bad.claro",
+            "tests/typecheck_object_field_after_method_bad.claro",
+            "tests/typecheck_object_field_alias_bad.claro",
+            "tests/typecheck_object_field_chained_alias_bad.claro",
+            "tests/typecheck_object_field_division_bad.claro",
+            "tests/typecheck_object_field_multiplication_bad.claro",
+            "tests/typecheck_object_field_subtraction_bad.claro",
+            "tests/typecheck_object_field_typed_bad.claro",
+            "tests/typecheck_object_field_missing_value_bad.claro",
+            "tests/typecheck_object_field_unknown_object_bad.claro",
+            "tests/typecheck_object_field_unknown_typed_bad.claro",
+            "tests/typecheck_missing_field_type_bad.claro",
+            "tests/typecheck_extra_class_tokens_bad.claro",
+            "tests/typecheck_extra_new_tokens_bad.claro",
+            "tests/typecheck_extra_field_tokens_bad.claro",
+            NULL};
+        for (i = 0; typecheck_good[i]; i++)
+            fails += typecheck_file(typecheck_good[i]);
+        for (i = 0; typecheck_bad[i]; i++)
+            if (typecheck_file(typecheck_bad[i]) == 0)
+                fails++;
+    }
+    fails += typecheck_file("tests/typecheck_good.claro");
+    fails += typecheck_file("tests/typecheck_container_good.claro");
+    fails += typecheck_file("tests/typecheck_function_good.claro");
+    fails += typecheck_file("tests/typecheck_function_return_good.claro");
+    fails += typecheck_file("tests/typecheck_function_compat_return_good.claro");
+    fails += typecheck_file("tests/typecheck_function_multi_good.claro");
+    fails += typecheck_file("tests/typecheck_method_good.claro");
+    fails += typecheck_file("tests/typecheck_object_field_good.claro");
+    fails += typecheck_file("tests/typecheck_object_field_expression_good.claro");
+    fails += typecheck_file("tests/typecheck_object_field_compound_good.claro");
+    fails += typecheck_file("tests/typecheck_object_field_subtraction_good.claro");
+    fails += typecheck_file("tests/typecheck_object_field_text_good.claro");
+    fails += typecheck_file("tests/typecheck_object_field_text_concat_fields_good.claro");
+    fails += typecheck_file("tests/typecheck_object_field_yesno_good.claro");
+    fails += typecheck_file("tests/typecheck_object_field_check_type_number_good.claro");
+    fails += typecheck_file("tests/typecheck_object_field_check_type_text_good.claro");
+    fails += typecheck_file("tests/typecheck_object_field_check_type_text_yesno_good.claro");
+    fails += typecheck_file("tests/typecheck_object_field_check_type_chained_alias_good.claro");
+    fails += typecheck_file("tests/37_object_field_types.claro");
+    if (typecheck_file("tests/typecheck_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_container_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_function_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_function_duplicate_param_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_function_return_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_function_return_extra_tokens_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_function_compat_return_extra_tokens_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_function_compat_empty_return_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_function_compat_return_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_function_empty_return_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_function_multi_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_function_missing_unchecked_arg_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_function_unknown_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_method_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_method_branch_missing_return_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_object_field_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_object_field_text_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_object_field_yesno_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_object_field_unknown_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_object_field_unknown_text_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_object_field_unknown_yesno_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_object_field_unknown_expression_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_object_field_expression_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_object_field_compound_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_object_field_text_expression_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_object_field_check_type_text_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_object_field_check_type_yesno_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_object_field_check_type_number_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_object_field_check_type_unknown_number_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_object_field_check_type_unknown_text_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_object_field_check_type_unknown_yesno_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_object_field_check_type_unknown_object_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_object_field_check_type_alias_bad.claro") == 0)
+        fails++;
+    if (typecheck_file("tests/typecheck_object_field_check_type_chained_alias_bad.claro") == 0)
+        fails++;
+    printf(
+        "%s\n",
+        fails ? "Validation found problems."
+              : "Validation passed. Claro v2026.10.20.160950 foundation checks are ready for use.");
+    return fails ? 1 : 0;
+}
 
-int main(int argc,char **argv){ int arg=1, trace=0; if(argc<2){ print_help(); return 0;} if(strcmp(argv[arg],"--trace")==0||strcmp(argv[arg],"trace")==0){ trace=1; arg++; } if(arg>=argc) return 0; if(strcmp(argv[arg],"help")==0||strcmp(argv[arg],"--help")==0){ print_help(); return 0; } if(strcmp(argv[arg],"test")==0) return run_tests(); if(strcmp(argv[arg],"repl")==0) return run_repl(); if(strcmp(argv[arg],"examples")==0) return show_examples(); if(strcmp(argv[arg],"doctor")==0) return run_doctor(); if(strcmp(argv[arg],"validate")==0) return run_validate(); if(strcmp(argv[arg],"package")==0) return run_package_cmd(argc,argv,arg+1); if(strcmp(argv[arg],"ide")==0) return print_ide_info(); if(strcmp(argv[arg],"new")==0&&arg+1<argc) return create_new_project(argv[arg+1]); if(strcmp(argv[arg],"fmt")==0&&arg+1<argc) return fmt_file(argv[arg+1]); if(strcmp(argv[arg],"check")==0&&arg+1<argc) return check_file(argv[arg+1]); if(strcmp(argv[arg],"typecheck")==0&&arg+1<argc) return typecheck_file(argv[arg+1]); if(strcmp(argv[arg],"version")==0||strcmp(argv[arg],"--version")==0){ puts(CLARO_VERSION); return 0; } if(strcmp(argv[arg],"run")==0){ arg++; if(arg>=argc){ Runtime rt; int rc; char *mainfile=project_value("main"); if(!mainfile||!*mainfile){ if(mainfile) free(mainfile); mainfile=xstrdup("main.claro"); } rt_init(&rt); rt.trace=trace; rt.script_argc=0; rt.script_argv=NULL; rc=run_file(&rt,mainfile); free(mainfile); runtime_free(&rt); return rc; } } { Runtime rt; int rc; rt_init(&rt); rt.trace=trace; rt.script_argc=argc-arg-1; rt.script_argv=argv+arg+1; rc=run_file(&rt,argv[arg]); runtime_free(&rt); return rc; } }
+int main(int argc, char **argv) {
+    int arg = 1, trace = 0;
+    if (argc < 2) {
+        print_help();
+        return 0;
+    }
+    if (strcmp(argv[arg], "--trace") == 0 || strcmp(argv[arg], "trace") == 0) {
+        trace = 1;
+        arg++;
+    }
+    if (arg >= argc)
+        return 0;
+    if (strcmp(argv[arg], "help") == 0 || strcmp(argv[arg], "--help") == 0) {
+        print_help();
+        return 0;
+    }
+    if (strcmp(argv[arg], "test") == 0)
+        return run_tests();
+    if (strcmp(argv[arg], "repl") == 0)
+        return run_repl();
+    if (strcmp(argv[arg], "examples") == 0)
+        return show_examples();
+    if (strcmp(argv[arg], "doctor") == 0)
+        return run_doctor();
+    if (strcmp(argv[arg], "validate") == 0)
+        return run_validate();
+    if (strcmp(argv[arg], "package") == 0)
+        return run_package_cmd(argc, argv, arg + 1);
+    if (strcmp(argv[arg], "ide") == 0)
+        return print_ide_info();
+    if (strcmp(argv[arg], "new") == 0 && arg + 1 < argc)
+        return create_new_project(argv[arg + 1]);
+    if (strcmp(argv[arg], "fmt") == 0 && arg + 1 < argc)
+        return fmt_file(argv[arg + 1]);
+    if (strcmp(argv[arg], "check") == 0 && arg + 1 < argc)
+        return check_file(argv[arg + 1]);
+    if (strcmp(argv[arg], "typecheck") == 0 && arg + 1 < argc)
+        return typecheck_file(argv[arg + 1]);
+    if (strcmp(argv[arg], "version") == 0 || strcmp(argv[arg], "--version") == 0) {
+        puts(CLARO_VERSION);
+        return 0;
+    }
+    if (strcmp(argv[arg], "run") == 0) {
+        arg++;
+        if (arg >= argc) {
+            Runtime rt;
+            int rc;
+            char *mainfile = project_value("main");
+            if (!mainfile || !*mainfile) {
+                if (mainfile)
+                    free(mainfile);
+                mainfile = xstrdup("main.claro");
+            }
+            rt_init(&rt);
+            rt.trace = trace;
+            rt.script_argc = 0;
+            rt.script_argv = NULL;
+            rc = run_file(&rt, mainfile);
+            free(mainfile);
+            runtime_free(&rt);
+            return rc;
+        }
+    }
+    {
+        Runtime rt;
+        int rc;
+        rt_init(&rt);
+        rt.trace = trace;
+        rt.script_argc = argc - arg - 1;
+        rt.script_argv = argv + arg + 1;
+        rc = run_file(&rt, argv[arg]);
+        runtime_free(&rt);
+        return rc;
+    }
+}

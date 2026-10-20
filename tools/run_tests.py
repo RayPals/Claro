@@ -9,7 +9,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 CLARO = ROOT / ("claro.exe" if os.name == "nt" else "claro")
 
 if not CLARO.exists():
-    print("Build first: gcc -std=c99 src/claro.c -O0 -o " + ("claro.exe" if os.name == "nt" else "claro") + " -lm")
+    print("Build first: gcc -std=c89 -pedantic-errors src/claro.c -O0 -o " + ("claro.exe" if os.name == "nt" else "claro") + " -lm")
     raise SystemExit(2)
 
 raise SystemExit(subprocess.call([str(CLARO), "test"], cwd=str(ROOT)))

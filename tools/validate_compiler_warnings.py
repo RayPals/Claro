@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def main():
     with tempfile.TemporaryDirectory() as tmp:
         result = subprocess.run(
-            ["gcc", "-std=c99", "-O0", "-c", "src/claro.c", "-o", str(Path(tmp) / "claro.o")],
+            ["gcc", "-std=c89", "-pedantic-errors", "-Werror=implicit-function-declaration", "-O0", "-c", "src/claro.c", "-o", str(Path(tmp) / "claro.o")],
             cwd=ROOT,
             text=True,
             capture_output=True,

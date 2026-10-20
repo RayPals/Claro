@@ -22,7 +22,7 @@ def main() -> int:
         script.write_text((f'READ FILE "{quoted}" AS contents\n' * 2000) + 'SAY contents\n', encoding="utf-8")
         binary = tmp_path / "claro-asan"
         build = subprocess.run(
-            ["gcc", "-std=c99", "-O0", "-g", "-fsanitize=address,undefined",
+            ["gcc", "-std=c89", "-pedantic-errors", "-Werror=implicit-function-declaration", "-O0", "-g", "-fsanitize=address,undefined",
              "src/claro.c", "-o", str(binary), "-lm"],
             cwd=ROOT, text=True, capture_output=True,
         )

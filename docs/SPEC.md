@@ -1,6 +1,6 @@
 # Claro Language Specification
 
-Current package: **Claro v2026.10.20.155641**
+Current package: **Claro v2026.10.20.160950**
 Status: **Living v1 specification**
 
 This document defines the intended behavior of the Claro language. It is written to reduce breaking changes and keep the v1 line teachable and predictable.

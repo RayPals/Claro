@@ -2,7 +2,7 @@
 
 SDL 1.2 support is **not included in the current stable executable**.
 
-The `examples/experimental_sdl/` files are design experiments / future examples only. In Claro v2026.10.20.155641, running them with the included `claro.exe` will fail with:
+The `examples/experimental_sdl/` files are design experiments / future examples only. In Claro v2026.10.20.160950, running them with the included `claro.exe` will fail with:
 
 ```text
 Unknown command: SDL

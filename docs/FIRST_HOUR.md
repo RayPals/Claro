@@ -79,6 +79,12 @@ DO add 2 3
 SAY RESULT
 ```
 
+Expected output:
+
+```text
+5
+```
+
 Older examples may use `TEACH add TAKES a, b`, `LEARNED`, and `CALL add WITH 2, 3`; those forms still work.
 
 ## 9. Save and load text

@@ -23,10 +23,10 @@ def compiler_cmd():
     env_cc = os.environ.get("CLARO_CC")
     if env_cc:
         parts = env_cc.split()
-        return parts + ["-std=c99", "src/claro.c", "-O0", "-o", str(EXE), "-lm"]
+        return parts + ["-std=c89", "-pedantic-errors", "-Werror=implicit-function-declaration", "src/claro.c", "-O0", "-o", str(EXE), "-lm"]
     if ZIG_CC.exists():
-        return [str(ZIG_CC), "cc", "-std=c99", "src/claro.c", "-O0", "-o", str(EXE), "-lm"]
-    return ["gcc", "-std=c99", "src/claro.c", "-O0", "-o", str(EXE), "-lm"]
+        return [str(ZIG_CC), "cc", "-std=c89", "-pedantic-errors", "-Werror=implicit-function-declaration", "src/claro.c", "-O0", "-o", str(EXE), "-lm"]
+    return ["gcc", "-std=c89", "-pedantic-errors", "-Werror=implicit-function-declaration", "src/claro.c", "-O0", "-o", str(EXE), "-lm"]
 
 
 def build():
@@ -37,11 +37,13 @@ def build():
 
 def main():
     build()
+    run([sys.executable, "tools/validate_c89.py"])
     out = run([str(EXE), "--version"])
-    if "Claro v2026.10.20.155641" not in out:
+    if "Claro v2026.10.20.160950" not in out:
         raise SystemExit("Wrong version string")
     run([str(EXE), "test"])
     run([str(EXE), "validate"])
+    run([sys.executable, "tools/validate_first_hour.py"])
     run([sys.executable, "tools/validate_ide_metadata.py"])
     run([sys.executable, "tools/validate_lsp_helper.py"])
     run([sys.executable, "tools/validate_concurrency.py"])
@@ -55,7 +57,7 @@ def main():
     run([sys.executable, "tools/validate_write_file_expression_cleanup.py"])
     run([sys.executable, "tools/validate_version_convention.py"])
     run([str(EXE), "examples/networking.claro"])
-    print("v2026.10.20.155641 validation complete")
+    print("v2026.10.20.160950 validation complete")
 
 if __name__ == "__main__":
     main()

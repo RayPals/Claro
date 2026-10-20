@@ -43,7 +43,7 @@ def main() -> int:
         )
         binary = tmp_path / "claro-http"
         build = subprocess.run(
-            ["gcc", "-std=c99", "-O0", "src/claro.c", "-o", str(binary), "-lm"],
+            ["gcc", "-std=c89", "-pedantic-errors", "-Werror=implicit-function-declaration", "-O0", "src/claro.c", "-o", str(binary), "-lm"],
             cwd=ROOT, text=True, capture_output=True,
         )
         if build.returncode:

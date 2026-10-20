@@ -1,6 +1,6 @@
 # Classroom Readiness Checklist
 
-Claro v2026.10.20.155641 is suitable for beginner classroom-style testing of the stable console-language foundation. Advanced platform features should still be introduced carefully and only after the basics are comfortable.
+Claro v2026.10.20.160950 is suitable for beginner classroom-style testing of the stable console-language foundation. Advanced platform features should still be introduced carefully and only after the basics are comfortable.
 
 ## Ready to test
 
@@ -25,7 +25,7 @@ Claro v2026.10.20.155641 is suitable for beginner classroom-style testing of the
 ## Recommended testing session
 
 1. Build Claro or use the included executable.
-2. Run `claro --version` and confirm `Claro v2026.10.20.155641`.
+2. Run `claro --version` and confirm `Claro v2026.10.20.160950`.
 3. Run `claro test`.
 4. Run `claro validate`.
 5. Run `lessons/01_hello.claro`.

@@ -16,7 +16,7 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix="get-at-cleanup-") as tmp:
         binary = Path(tmp) / "claro-asan"
         build = subprocess.run(
-            ["gcc", "-std=c99", "-O0", "-g", "-fsanitize=address,undefined",
+            ["gcc", "-std=c89", "-pedantic-errors", "-Werror=implicit-function-declaration", "-O0", "-g", "-fsanitize=address,undefined",
              "src/claro.c", "-o", str(binary), "-lm"],
             cwd=ROOT, text=True, capture_output=True,
         )

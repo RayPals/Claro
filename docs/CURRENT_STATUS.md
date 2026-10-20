@@ -1,4 +1,4 @@
-# Claro v2026.10.20.155641 Current Status
+# Claro v2026.10.20.160950 Current Status
 
 This file is the beginner-safe status map for the current package. It separates what is ready to use from what is historical, experimental, or still planned.
 
@@ -11,7 +11,7 @@ This file is the beginner-safe status map for the current package. It separates 
 
 ## Security and correctness review progress
 
-The v2026.10.20.155641 review identified missing-argument reads in standard-library built-ins. The current runtime now validates required argument counts centrally before any builtin indexes `args[]`. Covered calls include `math.abs`, `math.clamp`, `random.seed`, `random.int`, text helpers, CSV helpers, path helpers, and collection helpers. Missing arguments produce a beginner-facing `needs N arguments` runtime error.
+The v2026.10.20.160950 review identified missing-argument reads in standard-library built-ins. The current runtime now validates required argument counts centrally before any builtin indexes `args[]`. Covered calls include `math.abs`, `math.clamp`, `random.seed`, `random.int`, text helpers, CSV helpers, path helpers, and collection helpers. Missing arguments produce a beginner-facing `needs N arguments` runtime error.
 
 Focused regression coverage: `tests/38_builtin_arity.claro`, `tests/39_random_inverted_range.claro`, and `tests/40_call_depth_guard.claro`.
 
@@ -197,7 +197,7 @@ Ready now:
 - `claro package doctor` compares the complete manifest `checksum:` value, so a valid checksum followed by extra text is rejected
 - `claro package doctor` requires the complete supported `manifest-version: 1` value in `claro.project`, so a prefix such as `manifest-version: 10` is rejected
 - `claro package doctor` requires the complete supported `version: 1` value in each local package manifest, so a prefix such as `version: 10` is rejected
-- `claro package doctor` requires exactly one current `version: v2026.10.20.155641` line in `claro.lock`, so stale, missing, blank, or duplicate lockfile release versions are rejected
+- `claro package doctor` requires exactly one current `version: v2026.10.20.160950` line in `claro.lock`, so stale, missing, blank, or duplicate lockfile release versions are rejected
 - `claro package doctor` requires the complete supported `source: local` value in each local package manifest, so a prefix such as `source: local-extra` is rejected
 - package project entries must be unique; `claro package doctor`, `list`, `add`, `init`, and `lock` reject duplicate names instead of generating ambiguous package or lockfile data
 - lockfile package entries must also be unique; `claro package doctor` reports duplicate lock entries instead of accepting ambiguous package/checksum data
@@ -301,7 +301,7 @@ Files named `RC*_NOTES.md`, `RC*_VALIDATION.md`, older `V1_*_VALIDATION.md`, and
 
 ## Which docs should a new learner trust first?
 
-For the current v2026.10.20.155641 package, read docs in this order:
+For the current v2026.10.20.160950 package, read docs in this order:
 
 1. `QUICK_START.md`, `FIRST_HOUR.md`, and `lessons/README.md` for first programs.
 2. `README.md` and this file for the current feature map.

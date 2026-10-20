@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -std=c99 -O0
+CFLAGS = -std=c89 -pedantic-errors -Werror=implicit-function-declaration -O0
 LDFLAGS = -lm
 
 all: claro claro.exe

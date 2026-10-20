@@ -19,7 +19,7 @@ def main() -> int:
         script = tmp_path / "tokens.claro"
         script.write_text('SAY "a repeated string literal"\n' * 2000, encoding="utf-8")
         build = subprocess.run(
-            ["gcc", "-std=c99", "-O0", "-g", "-fsanitize=address,undefined",
+            ["gcc", "-std=c89", "-pedantic-errors", "-Werror=implicit-function-declaration", "-O0", "-g", "-fsanitize=address,undefined",
              "src/claro.c", "-o", str(binary), "-lm"],
             cwd=ROOT, text=True, capture_output=True,
         )

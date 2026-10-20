@@ -1,31 +1,27 @@
 # Claro Versioning
 
-Claro uses visible versions in this format:
+Development/release runs use their current UTC date and time:
 
 ```text
-v1.xx.yy
+vYYYY.MM.DD.HHMMSS
 ```
 
-Meaning:
+For example, `v2026.10.20.155641` identifies a run started on
+2026-10-20 at 15:56:41 UTC. A timestamp identifies a run, not its maturity.
 
-```text
-v1 = overall major version
-xx = revision / release number
-yy = year
+At the start of a new development/release run:
+
+```bash
+python3 tools/stamp_version.py
+make -s all
 ```
 
-Example:
+The stamper updates current runtime, IDE metadata, generated project and
+lockfile versions, validators, and selected current documentation. Historical
+release records are preserved. Rebuilding or testing within the same run
+retains the stamp; do not stamp again before each validation command.
 
-```text
-Claro v1.15.26
-```
+Check the built version with `./claro --version`. Existing project lockfiles
+from older runs can be refreshed with `claro package lock`.
 
-That means:
-
-```text
-major version: 1
-revision:      10
-year:          2026
-```
-
-Normal Claro development should stay in the `v1` line. A future `Claro v2` should mean an entire rewrite many years later, not a normal feature update.
+Older `v1.xx.yy` labels describe historical releases, not the current convention.
