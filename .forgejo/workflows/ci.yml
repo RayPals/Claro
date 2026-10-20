@@ -27,6 +27,16 @@ jobs:
         run: python3 tools/validate_compiler_warnings.py
       - name: Validate trusted command documentation
         run: python3 tools/validate_trusted_command_docs.py
+      - name: Validate documentation and release status
+        run: python3 tools/validate_documentation_status.py
+      - name: Validate VC6 Windows 98 build settings
+        run: python3 tools/validate_msvc6_source.py
+      - name: Validate single-file C89 build
+        run: python3 tools/validate_c89.py
+      - name: Validate executable learning path
+        run: python3 tools/validate_learning_syntax.py
+      - name: Validate memory and malformed-input reliability
+        run: python3 tools/validate_reliability.py
       - name: Validate CI workflow coverage
         run: python3 tools/validate_ci_workflow.py
       - name: Check lessons

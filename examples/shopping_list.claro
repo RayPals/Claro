@@ -1,6 +1,6 @@
 SAY "Shopping List Example"
 
-SET items TO LIST
+SET items LIST
 ADD "milk" TO items
 ADD "bread" TO items
 ADD "apples" TO items
@@ -9,4 +9,4 @@ SAY "Items to buy:"
 
 FOR EACH item IN items
     SAY item
-DONE
+END

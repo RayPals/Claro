@@ -1,6 +1,6 @@
 SAY "Claro Calculator"
-ASK "First number?" AS a
-ASK "Second number?" AS b
+ASK "First number?" a
+ASK "Second number?" b
 
 SAY "Sum:"
 SAY a + b

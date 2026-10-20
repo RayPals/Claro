@@ -1,5 +1,5 @@
 SAY "Name Input Example"
 
-ASK "What is your name?" AS name
+ASK "What is your name?" name
 
 SAY "Hello " + name + "!"

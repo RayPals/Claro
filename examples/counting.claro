@@ -2,20 +2,19 @@
 # Shows how to use DO TIMES and REPEAT loops
 
 SAY "Counting with DO TIMES:"
-SET counter TO 1
+SET counter 1
 
 DO 5 TIMES
     SAY counter
-    SET counter TO counter + 1
-DONE
-
+    SET counter counter + 1
+END
 SAY ""
 SAY "Counting down with REPEAT:"
-SET n TO 5
+SET n 5
 
 REPEAT
     SAY n
-    SET n TO n - 1
+    SET n n - 1
 UNTIL n = 0
 
 SAY "Blastoff!"

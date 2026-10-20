@@ -1,0 +1,11 @@
+/nologo
+/TC
+/W3
+/ML
+/O1
+/DWINVER=0x0410
+/D_WIN32_WINDOWS=0x0410
+/Foclaro98.obj
+/Feclaro98.exe
+src\claro.c
+/link /MACHINE:I386 /SUBSYSTEM:CONSOLE,4.10 /STACK:16777216

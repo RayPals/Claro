@@ -1,6 +1,6 @@
 # Claro Web Server Plan
 
-Current release: **Claro v2026.10.20.160950**
+Current release: **Claro v2026.10.20.223203**
 
 Claro currently has beginner HTTP client commands and offline `claro://` test URLs. A web server API is not complete yet.
 

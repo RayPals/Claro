@@ -1,5 +1,5 @@
 SAY "Lesson 3: Variables"
-SET name TO "Alex"
-SET score TO 5
+SET name "Alex"
+SET score 5
 SAY name
 SAY score

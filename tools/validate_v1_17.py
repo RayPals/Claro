@@ -38,26 +38,24 @@ def build():
 def main():
     build()
     run([sys.executable, "tools/validate_c89.py"])
+    run([sys.executable, "tools/validate_msvc6_source.py"])
     out = run([str(EXE), "--version"])
-    if "Claro v2026.10.20.160950" not in out:
+    if "Claro v2026.10.20.223203" not in out:
         raise SystemExit("Wrong version string")
     run([str(EXE), "test"])
     run([str(EXE), "validate"])
     run([sys.executable, "tools/validate_first_hour.py"])
+    run([sys.executable, "tools/validate_learning_syntax.py"])
     run([sys.executable, "tools/validate_ide_metadata.py"])
     run([sys.executable, "tools/validate_lsp_helper.py"])
     run([sys.executable, "tools/validate_concurrency.py"])
     run([sys.executable, "tools/validate_package_security.py"])
     run([sys.executable, "tools/validate_typecheck_diagnostics.py"])
-    run([sys.executable, "tools/validate_runtime_error_cleanup.py"])
-    run([sys.executable, "tools/validate_get_argument_expression_cleanup.py"])
-    run([sys.executable, "tools/validate_get_env_expression_cleanup.py"])
-    run([sys.executable, "tools/validate_get_at_expression_cleanup.py"])
-    run([sys.executable, "tools/validate_read_file_expression_cleanup.py"])
-    run([sys.executable, "tools/validate_write_file_expression_cleanup.py"])
+    run([sys.executable, "tools/validate_reliability.py"])
     run([sys.executable, "tools/validate_version_convention.py"])
+    run([sys.executable, "tools/validate_documentation_status.py"])
     run([str(EXE), "examples/networking.claro"])
-    print("v2026.10.20.160950 validation complete")
+    print("v2026.10.20.223203 validation complete")
 
 if __name__ == "__main__":
     main()

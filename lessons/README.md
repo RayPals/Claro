@@ -2,6 +2,9 @@
 
 These are small lesson programs for the first hour of learning Claro.
 
+These lessons use short `ASK` and `SET`, `TEACH` with `DO`, and `END` for
+choices, loops, and functions. See [the syntax guide](../docs/SYNTAX.md).
+
 Recommended order:
 
 1. `01_hello.claro` - show text with `SAY`

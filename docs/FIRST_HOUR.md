@@ -2,6 +2,9 @@
 
 This is a simple first-hour lesson path for new learners. Keep each lesson short. Let the learner run the program after every change.
 
+Use the same short forms throughout this guide. See [the syntax rules](SYNTAX.md)
+for a small reference; older forms are kept in [compatibility syntax](COMPATIBILITY.md).
+
 ## 1. Say hello
 
 ```claro
@@ -14,8 +17,6 @@ SAY "Hello!"
 ASK "What is your name?" name
 SAY "Hello " + name
 ```
-
-Older examples may use `ASK "What is your name?" AS name`; that still works, but the shorter form is easier for new learners.
 
 ## 3. Store a variable
 
@@ -54,8 +55,6 @@ DO 3 TIMES
 END
 ```
 
-Older examples may use `DONE` for loop endings; that compatibility form still works.
-
 ## 7. Use a list
 
 ```claro
@@ -84,8 +83,6 @@ Expected output:
 ```text
 5
 ```
-
-Older examples may use `TEACH add TAKES a, b`, `LEARNED`, and `CALL add WITH 2, 3`; those forms still work.
 
 ## 9. Save and load text
 

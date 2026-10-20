@@ -1,0 +1,42 @@
+{
+  "hello.claro": [
+    "",
+    "Hello from Claro RC2!\n"
+  ],
+  "name_input.claro": [
+    "Ada\n",
+    "Name Input Example\nWhat is your name?\nHello Ada!\n"
+  ],
+  "quiz.claro": [
+    "Ada\n4\n10\n",
+    "Welcome to the Claro quiz!\nWhat is your name?\nHello Ada!\nWhat is 2 + 2?\nCorrect!\nWhat is 5 + 5?\nCorrect!\nYour final score is:\n2\nGreat job!\n"
+  ],
+  "calculator.claro": [
+    "2\n3\n",
+    "Claro Calculator\nFirst number?\nSecond number?\nSum:\n5\n"
+  ],
+  "guessing_game.claro": [
+    "7\n",
+    "Guess the Number Game\nGuess a number from 1 to 10:\nYou got it!\n"
+  ],
+  "shopping_list.claro": [
+    "",
+    "Shopping List Example\nItems to buy:\nmilk\nbread\napples\n"
+  ],
+  "save_and_load_file.claro": [
+    "",
+    "Save and Load Example\nThe file says:\nClaro saved this file.\n"
+  ],
+  "simple_functions.claro": [
+    "",
+    "Simple functions in Claro\nHello Jon\nHello Friend\n"
+  ],
+  "text_and_lists.claro": [
+    "",
+    "Jon\nJON\n"
+  ],
+  "counting.claro": [
+    "",
+    "Counting with DO TIMES:\n1\n2\n3\n4\n5\n\nCounting down with REPEAT:\n5\n4\n3\n2\n1\nBlastoff!\n"
+  ]
+}

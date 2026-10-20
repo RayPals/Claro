@@ -1,8 +1,7 @@
 SAY "Lesson 8: Functions with TEACH"
 
-TEACH greet TAKES name
+TEACH greet name
     RETURN "Hello " + name
-LEARNED
-
-CALL greet WITH "Alex"
+END
+DO greet "Alex"
 SAY RESULT

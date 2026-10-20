@@ -6,6 +6,17 @@ Programming Made Simple
 
 Claro is a small scripting language designed for beginners. It uses readable commands like `SAY`, `ASK`, `SET`, and `TEACH`.
 
+## Before you start
+
+Build Claro with `make` from the project folder, or use its C89 build command
+in the [README](../README.md). Save the first example below as `hello.claro`
+in that folder. Run the command shown beneath it. Try the later examples one
+at a time, saving your changes before running again.
+
+Use one spelling throughout these lessons: short `ASK` and `SET`, `TEACH`
+with `DO`, and `END` for choices, counted loops, and functions. The
+[syntax guide](SYNTAX.md) keeps these rules in one place.
+
 ## 1. Show a message
 
 ```claro
@@ -21,25 +32,27 @@ Run it:
 ## 2. Ask a question
 
 ```claro
-ASK "What is your name?" AS name
+ASK "What is your name?" name
 SAY "Hello " + name
 ```
 
 ## 3. Remember information
 
 ```claro
-SET score TO 10
+SET score 10
 SAY score
 ```
 
 ## 4. Make a choice
 
 ```claro
+SET score 8
+
 IF score >= 5
     SAY "Good job!"
 ELSE
     SAY "Try again."
-ENDIF
+END
 ```
 
 ## 5. Repeat something
@@ -47,29 +60,28 @@ ENDIF
 ```claro
 DO 3 TIMES
     SAY "Practice"
-DONE
+END
 ```
 
 ## 6. Use a list
 
 ```claro
-SET items TO LIST
+SET items LIST
 ADD "milk" TO items
 ADD "bread" TO items
 
 FOR EACH item IN items
     SAY item
-DONE
+END
 ```
 
 ## 7. Teach a function
 
 ```claro
-TEACH greet TAKES name
+TEACH greet name
     RETURN "Hello " + name
-LEARNED
-
-CALL greet WITH "Alex"
+END
+DO greet "Alex"
 SAY RESULT
 ```
 
@@ -85,13 +97,13 @@ SAY note
 
 ```claro
 SAY "Tiny Quiz"
-ASK "What is 2 + 2?" AS answer
+ASK "What is 2 + 2?" answer
 
 IF answer = 4
     SAY "Correct!"
 ELSE
     SAY "The answer is 4."
-ENDIF
+END
 ```
 
 ## Tips

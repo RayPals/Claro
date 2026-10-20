@@ -12,6 +12,11 @@ REQUIRED_COMMANDS = [
     "python3 tools/validate_version_convention.py",
     "python3 tools/validate_package_security.py",
     "python3 tools/validate_compiler_warnings.py",
+    "python3 tools/validate_reliability.py",
+    "python3 tools/validate_learning_syntax.py",
+    "python3 tools/validate_c89.py",
+    "python3 tools/validate_msvc6_source.py",
+    "python3 tools/validate_documentation_status.py",
     "python3 tools/validate_ci_workflow.py",
 ]
 

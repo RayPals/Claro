@@ -1,8 +1,8 @@
 SAY "Lesson 7: Lists"
-SET items TO LIST
+SET items LIST
 ADD "milk" TO items
 ADD "bread" TO items
 
 FOR EACH item IN items
     SAY item
-DONE
+END

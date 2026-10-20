@@ -8,7 +8,7 @@ import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
-EXE = ROOT / ("claro.exe" if os.name == "nt" else "claro")
+EXE = Path(os.environ.get("CLARO_EXE", str(ROOT / ("claro.exe" if os.name == "nt" else "claro")))).resolve()
 INPUTS = {2: "Ada\n", 5: "4\n"}
 EXPECTED = {
     1: "Hello!\n",
@@ -35,7 +35,7 @@ def main() -> int:
             script.write_text(block + "\n", encoding="utf-8")
             run = subprocess.run([str(EXE), str(script)], cwd=tmp,
                                  input=INPUTS.get(number, ""), text=True,
-                                 capture_output=True)
+                                 capture_output=True, timeout=10)
             if run.returncode or run.stdout != EXPECTED[number]:
                 print(f"FAIL: First Hour block {number}: exit={run.returncode}")
                 print(f"expected stdout: {EXPECTED[number]!r}")

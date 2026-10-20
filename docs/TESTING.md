@@ -1,47 +1,67 @@
 # Testing Claro
 
-Run the built-in regression suite:
+Run from the repository root. Rebuild rather than trusting an old executable.
+The developer gate below is exercised on Linux; Windows sanitizer checks may
+skip and do not establish native Windows or Win98 SE acceptance.
+
+## Full developer gate
 
 ```bash
+make -s all
+python3 tools/validate_v1_17.py
+python3 tools/validate_compiler_warnings.py
+python3 tools/validate_ci_workflow.py
+python3 tools/validate_documentation_status.py
+```
+
+`validate_v1_17.py` is the current full gate despite its historical filename.
+It compiles current source and runs strict C89, VC6 source/build settings, golden
+fixtures, built-in validation, First Hour, introductory syntax/behavior, editor
+metadata, deterministic task helpers, package security, typecheck diagnostics,
+reliability, version consistency and documentation-status checks.
+
+The [reliability runner](RELIABILITY.md) includes leak-enabled ASan/UBSan learning
+coverage. Read each exit status and skip; a disabled sanitizer or platform skip
+is not a pass for that boundary. No test suite proves arbitrary-program safety.
+
+## Small changes and teaching examples
+
+```bash
+./claro --version
 ./claro test
-```
-
-Expected result:
-
-```text
-PASS: 0 failure(s)
-```
-
-Check a lesson:
-
-```bash
-./claro check lessons/01_hello.claro
-```
-
-Validate the current v1.18.26 package after building:
-
-```bash
+./claro doctor
 ./claro validate
-python tools/validate_typecheck_diagnostics.py
-python tools/validate_version_convention.py
-python tools/validate_ci_workflow.py
+python3 tools/validate_learning_syntax.py
+python3 tools/validate_first_hour.py
 ```
 
-Useful focused validation scripts:
+A successful built-in golden run ends with `PASS: 0 failure(s)`. The learning
+checkers execute input-dependent examples with fixed input and compare output;
+a syntax-only check is not sufficient. `CLARO_EXE` can select a specific actual
+executable through a launcher, including a sanitizer or Wine build.
 
-```bash
-python tools/validate_v1_17.py
-python tools/validate_v1_16.py
-python tools/validate_v1_15.py
-python tools/validate_v1_14.py
-python tools/validate_concurrency.py
-python tools/validate_ide_metadata.py
-python tools/validate_lsp_helper.py
-python tools/validate_package_security.py
-```
+Run `./claro check lessons/01_hello.claro` for a focused syntax check. Still test
+interaction and recovery with learners using the [pilot checklist](CLASSROOM_READINESS.md).
 
-The Forgejo/Gitea CI workflow is expected to run the current release gates above, not only the older smoke tests. This includes `tools/validate_compiler_warnings.py`, which rebuilds the C source as an object file and rejects the known path-truncation warning class. `tools/validate_ci_workflow.py` checks that coverage so CI does not drift away from the documented package validation path.
+## Target and archive acceptance
 
-Older `validate_rc*.py` scripts are kept for historical release notes. They are not the recommended current package validation path.
+Use [distribution verification](PORTABILITY.md) for standard source/Linux x64/
+MinGW Windows x64 archives. It rebuilds or executes extracted payloads, checks
+manifests, and records exact artifact results. Source builds are not evidence
+that a shipped binary is correct.
 
-On Windows, after `build.bat` or `build.ps1`, run the same Python commands from the project root.
+For [VC6 / Windows 98 SE](WINDOWS98.md), `build98.bat` builds the x86 executable;
+run `claro98.exe test` and `claro98.exe validate`. Modern Python developer tooling
+is not a Windows 98 prerequisite. The legacy build ZIP uses its own checksum
+manifest and report rather than the generic distribution validator.
+
+Wine results must be labeled Wine results. Claim native Windows/Win98 support
+only after running the target tests there. [Release status](RELEASE_STATUS.md)
+records the dated scope; [the checklist](FINAL_RELEASE_CHECKLIST.md) governs publication.
+
+## Historical tools
+
+Older `validate_rc*.py` and versioned validators remain for history and focused
+compatibility checks. They are not alternative current release entry points.
+CI coverage is checked from executable `run` steps, not comments. Hosted CI
+success must be verified separately from these local commands.

@@ -1,5 +1,5 @@
 /*
-  Claro v2026.10.20.160950 - Networking Reliability Release
+  Claro v2026.10.20.223203 - Networking Reliability Release
 
   A compact, buildable Claro interpreter focused on the beginner-friendly
   teaching core: readable commands, simple expressions, functions, collections,
@@ -45,8 +45,10 @@ int pclose(FILE *stream);
 #define F_OK 0
 #endif
 
-#define CLARO_VERSION "Claro v2026.10.20.160950"
+#define CLARO_VERSION "Claro v2026.10.20.223203"
 #define CLARO_MAX_CALL_DEPTH 256
+#define CLARO_MAX_EXPR_DEPTH 128
+#define CLARO_MAX_BLOCK_DEPTH 128
 
 static void *xmalloc(size_t n) {
     void *p = malloc(n ? n : 1);
@@ -575,6 +577,7 @@ typedef struct Runtime {
     int returning;
     Value ret;
     int call_depth;
+    int range_depth;
     Program **programs;
     int pcount, pcap;
     char **import_stack;
@@ -758,11 +761,13 @@ static void type_key_for(const char *name, char *out, size_t n) {
     claro_snprintf(out, n, "__type_%s", name ? name : "");
 }
 static const char *runtime_type_for(Runtime *rt, const char *name, char *buf, size_t n) {
-    Value tv;
+    Var *entry;
     type_key_for(name, buf, n);
-    tv = rt_get(rt, buf);
-    if (tv.type == V_STR && tv.str && tv.str[0])
-        return tv.str;
+    entry = env_find(rt->locals, buf);
+    if (!entry)
+        entry = env_find(rt->globals, buf);
+    if (entry && entry->val.type == V_STR && entry->val.str && entry->val.str[0])
+        return entry->val.str;
     return NULL;
 }
 static int rt_set_checked(Runtime *rt, const char *file, int line, const char *name,
@@ -773,8 +778,11 @@ static int rt_set_checked(Runtime *rt, const char *file, int line, const char *n
     if (!name || !*name)
         return 0;
     if (type && *type) {
+        Value metadata;
         type_key_for(name, key, sizeof(key));
-        rt_set(rt, key, v_str(type));
+        metadata = v_str(type);
+        rt_set(rt, key, metadata);
+        value_free(metadata);
         oldtype = type;
     } else
         oldtype = runtime_type_for(rt, name, oldbuf, sizeof(oldbuf));
@@ -791,10 +799,13 @@ static int rt_set_checked(Runtime *rt, const char *file, int line, const char *n
         claro_snprintf(objname, sizeof(objname), "%.*s", (int)(dot - name), name);
         claro_snprintf(field, sizeof(field), "%s", dot + 1);
         obj = rt_get(rt, objname);
-        if (obj.type != V_MAP)
+        if (obj.type != V_MAP) {
+            value_free(obj);
             obj = v_map();
+        }
         map_put(obj.map, field, val);
         rt_set(rt, objname, obj);
+        value_free(obj);
     }
     rt_set(rt, name, val);
     return 1;
@@ -932,12 +943,13 @@ static void class_add_field(ClassDef *c, const char *name, const char *type) {
     c->fields = f;
 }
 static const char *object_class_name(Value obj) {
-    Value cv;
+    int index;
     if (obj.type != V_MAP || !obj.map)
         return NULL;
-    cv = map_get(obj.map, "class");
-    if (cv.type == V_STR && cv.str && cv.str[0])
-        return cv.str;
+    index = map_index(obj.map, "class");
+    if (index >= 0 && obj.map->vals[index].type == V_STR &&
+        obj.map->vals[index].str && obj.map->vals[index].str[0])
+        return obj.map->vals[index].str;
     return NULL;
 }
 
@@ -945,6 +957,8 @@ static const char *object_class_name(Value obj) {
 typedef struct {
     char **t;
     int n, cap, pos;
+    int depth;
+    const char *error;
 } Tokens;
 static void toks_add(Tokens *ts, const char *s, size_t n) {
     if (ts->n >= ts->cap) {
@@ -993,6 +1007,8 @@ static Tokens tokenize(const char *s) {
             }
             if (s[i] == '"')
                 i++;
+            else if (!ts.error)
+                ts.error = "Text is missing a closing quote. Add a double quote at the end.";
             str_ch(&q, '\001');
             str_add(&q, b.s ? b.s : "");
             toks_add(&ts, q.s ? q.s : "", strlen(q.s ? q.s : ""));
@@ -1010,7 +1026,9 @@ static Tokens tokenize(const char *s) {
             i += 2;
             continue;
         }
-        if (strchr("+-*/=<>", s[i])) {
+        if (strchr("!+-*/=<>", s[i])) {
+            if (s[i] == '!' && !ts.error)
+                ts.error = "Use NOT instead of ! to reverse a condition.";
             toks_add(&ts, s + i, 1);
             i++;
             continue;
@@ -1048,12 +1066,20 @@ static Value parse_expr(Runtime *rt, Tokens *ts);
 static Value parse_primary(Runtime *rt, Tokens *ts) {
     char *t = tok_next(ts);
     Value v;
-    if (!t)
+    if (!t) {
+        if (ts->n)
+            rt_error(rt, "", 0, "This expression needs a value after the operator.");
         return v_none();
+    }
     if (strcmp(t, "(") == 0) {
         v = parse_expr(rt, ts);
-        tok_match(ts, ")");
+        if (!tok_match(ts, ")"))
+            rt_error(rt, "", 0, "This expression needs a closing parenthesis: ).");
         return v;
+    }
+    if (strcmp(t, ")") == 0) {
+        rt_error(rt, "", 0, "This expression needs a value before the closing parenthesis.");
+        return v_none();
     }
     if (t[0] == '\001')
         return v_str(t + 1);
@@ -1088,19 +1114,24 @@ static Value parse_primary(Runtime *rt, Tokens *ts) {
     return v_str(t);
 }
 static Value parse_unary(Runtime *rt, Tokens *ts) {
+    Value v, out;
+    if (ts->depth >= CLARO_MAX_EXPR_DEPTH) {
+        rt_error(rt, "", 0, "Expression nesting exceeds the safe limit of 128. Simplify the expression.");
+        return v_none();
+    }
+    ts->depth++;
     if (tok_match(ts, "NOT")) {
-        Value v = parse_unary(rt, ts);
-        Value out = v_bool(!v_truth(v));
+        v = parse_unary(rt, ts);
+        out = v_bool(!v_truth(v));
         value_free(v);
-        return out;
-    }
-    if (tok_match(ts, "-")) {
-        Value v = parse_unary(rt, ts);
-        Value out = v_num(-v_number(v));
+    } else if (tok_match(ts, "-")) {
+        v = parse_unary(rt, ts);
+        out = v_num(-v_number(v));
         value_free(v);
-        return out;
-    }
-    return parse_primary(rt, ts);
+    } else
+        out = parse_primary(rt, ts);
+    ts->depth--;
+    return out;
 }
 static Value parse_mul(Runtime *rt, Tokens *ts) {
     Value v = parse_unary(rt, ts);
@@ -1225,7 +1256,14 @@ static Value parse_expr(Runtime *rt, Tokens *ts) {
 }
 static Value eval_expr(Runtime *rt, const char *expr) {
     Tokens ts = tokenize(expr);
-    Value v = parse_expr(rt, &ts);
+    Value v = v_none();
+    if (ts.error)
+        rt_error(rt, "", 0, "%s", ts.error);
+    else {
+        v = parse_expr(rt, &ts);
+        if (!rt->error && !tok_end(&ts))
+            rt_error(rt, "", 0, "Unexpected text after this expression: %s.", tok_peek(&ts));
+    }
     tokens_free(&ts);
     return v;
 }
@@ -2590,6 +2628,7 @@ static void scan_functions(Runtime *rt, Program *p, const char *prefix) {
                             add_function(rt, fname, params, pcnt, p, j + 1,
                                          mend < 0 ? (end < 0 ? p->count : end) : mend);
                     }
+                    split_args_free(params, pcnt);
                     if (mend >= 0)
                         j = mend;
                 }
@@ -2609,6 +2648,7 @@ static void scan_functions(Runtime *rt, Program *p, const char *prefix) {
             claro_snprintf(fname, sizeof(fname), "%s%s", prefix ? prefix : "", name);
             if (!find_function(rt, fname))
                 add_function(rt, fname, params, pcnt, p, i + 1, end < 0 ? p->count : end);
+            split_args_free(params, pcnt);
             if (end >= 0)
                 i = end;
         }
@@ -2825,21 +2865,27 @@ static void do_import(Runtime *rt, const char *path, const char *ns, const char 
 }
 static void create_object_value(Runtime *rt, const char *file, int line, const char *cls,
                                 const char *var) {
-    Value obj = v_map();
-    ClassDef *c = find_class(rt, cls);
+    Value obj, class_name;
+    ClassDef *c;
     FieldDef *fd;
     char fullname[256];
     if (!cls || !*cls || !var || !*var) {
         rt_error(rt, file, line, "NEW needs a class and a name. Try: NEW Player player");
         return;
     }
-    map_put(obj.map, "class", v_str(cls));
+    obj = v_map();
+    c = find_class(rt, cls);
+    class_name = v_str(cls);
+    map_put(obj.map, "class", class_name);
+    value_free(class_name);
     rt_set_checked(rt, file, line, var, "OBJECT", obj);
+    value_free(obj);
     if (c) {
         for (fd = c->fields; fd; fd = fd->next) {
             Value def = claro_default_for_type(fd->type);
             claro_snprintf(fullname, sizeof(fullname), "%s.%s", var, fd->name);
             rt_set_checked(rt, file, line, fullname, fd->type, def);
+            value_free(def);
         }
     }
 }
@@ -3088,7 +3134,10 @@ static void exec_line(Runtime *rt, Program *p, int *pcp, const char *raw) {
             char *var = xstrdup(trim_inplace((char *)as + 2));
             Value ov = eval_expr(rt, oe);
             const char *cn = object_class_name(ov);
-            rt_set_checked(rt, p->path, pc + 1, var, "TEXT", v_str(cn ? cn : ""));
+            Value class_name = v_str(cn ? cn : "");
+            rt_set_checked(rt, p->path, pc + 1, var, "TEXT", class_name);
+            value_free(class_name);
+            value_free(ov);
             free(oe);
             free(var);
         } else if (as && starts_ci(t + 6, " FIELDS")) {
@@ -3100,11 +3149,16 @@ static void exec_line(Runtime *rt, Program *p, int *pcp, const char *raw) {
             if (ov.type == V_MAP && ov.map) {
                 for (i = 0; i < ov.map->count; i++) {
                     if (strcmp(ov.map->keys[i], "class") != 0 &&
-                        !starts_ci(ov.map->keys[i], "__type_"))
-                        list_add(arr.list, v_str(ov.map->keys[i]));
+                        !starts_ci(ov.map->keys[i], "__type_")) {
+                        Value field_name = v_str(ov.map->keys[i]);
+                        list_add(arr.list, field_name);
+                        value_free(field_name);
+                    }
                 }
             }
             rt_set_checked(rt, p->path, pc + 1, var, "LIST", arr);
+            value_free(ov);
+            value_free(arr);
             free(oe);
             free(var);
         } else
@@ -3879,15 +3933,21 @@ static void exec_line(Runtime *rt, Program *p, int *pcp, const char *raw) {
                 char *txt = v_to_string(v);
                 if (!strcmp(restup, "UPPER")) {
                     char *r = text_upper_copy(txt);
-                    rt_set(rt, var, v_str(r));
+                    Value result = v_str(r);
+                    rt_set(rt, var, result);
+                    value_free(result);
                     free(r);
                 } else if (!strcmp(restup, "LOWER")) {
                     char *r = text_lower_copy(txt);
-                    rt_set(rt, var, v_str(r));
+                    Value result = v_str(r);
+                    rt_set(rt, var, result);
+                    value_free(result);
                     free(r);
                 } else if (!strcmp(restup, "TRIM")) {
                     char *r = text_trim_copy(txt);
-                    rt_set(rt, var, v_str(r));
+                    Value result = v_str(r);
+                    rt_set(rt, var, result);
+                    value_free(result);
                     free(r);
                 } else if (!strcmp(restup, "LENGTH")) {
                     rt_set(rt, var, v_num((double)strlen(txt)));
@@ -3918,6 +3978,7 @@ static void exec_line(Runtime *rt, Program *p, int *pcp, const char *raw) {
                     free(left);
                     free(right);
                 }
+                value_free(v);
                 free(txt);
                 free(ex);
             }
@@ -3985,6 +4046,7 @@ static void exec_line(Runtime *rt, Program *p, int *pcp, const char *raw) {
         Value v = rt_get(rt, name);
         value_list_sort(v);
         rt_set(rt, name, v);
+        value_free(v);
         free(name);
         return;
     }
@@ -4076,10 +4138,18 @@ static void exec_line(Runtime *rt, Program *p, int *pcp, const char *raw) {
 }
 static void exec_range(Runtime *rt, Program *p, int start, int end) {
     int pc;
+    /* Function calls have their own guard; count additional control-block frames. */
+    if (rt->range_depth - rt->call_depth > CLARO_MAX_BLOCK_DEPTH) {
+        rt_error(rt, p->path, start + 1,
+                 "Block nesting exceeds the safe limit of 128. Simplify the nested blocks.");
+        return;
+    }
+    rt->range_depth++;
     if (end < 0 || end > p->count)
         end = p->count;
     for (pc = start; pc < end && !rt->error && !rt->returning; pc++)
         exec_line(rt, p, &pc, p->lines[pc]);
+    rt->range_depth--;
 }
 static int run_file(Runtime *rt, const char *path) {
     Program *p = load_program(rt, path);
@@ -4284,6 +4354,18 @@ static int check_file(const char *path) {
             continue;
         }
 
+        if (sp >= CLARO_MAX_BLOCK_DEPTH &&
+            (!strcmp(up, "IF") || !strcmp(up, "TEACH") || !strcmp(up, "CLASS") ||
+             !strcmp(up, "FOR") || !strcmp(up, "TRY") || !strcmp(up, "COMMENT") ||
+             !strcmp(up, "REPEAT") || (!strcmp(up, "DO") && find_word_ci(t, "TIMES")) ||
+             (!strcmp(up, "START") && starts_ci(t + 5, " TASK")))) {
+            printf("%s:%d: Block nesting exceeds the safe limit of 128. Simplify the nested blocks.\n",
+                   path, line_no);
+            errs++;
+            sp = 0;
+            break;
+        }
+
         if (!strcmp(up, "IF")) {
             if (!*trim_inplace(t + 2)) {
                 printf("%s:%d: IF needs a condition. Try: IF score = 10\n", path, line_no);
@@ -4320,33 +4402,14 @@ static int check_file(const char *path) {
                        line_no);
                 errs++;
             } else {
-                const char *takes = find_word_ci(t, "TAKES");
-                const char *usingw = find_word_ci(t, "USING");
-                const char *params = takes ? takes + 5 : (usingw ? usingw + 5 : NULL);
-                if (!params) {
-                    char *after = t + 5;
-                    while (*after && isspace((unsigned char)*after))
-                        after++;
-                    while (*after && !isspace((unsigned char)*after))
-                        after++;
-                    params = after;
-                }
-                if (params) {
-                    char *pc = xstrdup(params);
-                    char *pp = pc;
-                    while (pp && *pp) {
-                        char *comma = strchr(pp, ',');
-                        if (comma) {
-                            *comma = 0;
-                            check_add_var(&vars, pp);
-                            pp = comma + 1;
-                        } else {
-                            check_add_var(&vars, pp);
-                            break;
-                        }
-                    }
-                    free(pc);
-                }
+                char *function_name = NULL;
+                char **parameters = NULL;
+                int count = 0, index;
+                parse_teach_parts(t, &function_name, &parameters, &count);
+                for (index = 0; index < count; index++)
+                    check_add_var(&vars, parameters[index]);
+                split_args_free(parameters, count);
+                /* function_name points into the borrowed line buffer. */
             }
             stack[sp++] = check_block("LEARNED", "TEACH", line_no);
         } else if (!strcmp(up, "DO")) {
@@ -4435,8 +4498,7 @@ static int check_file(const char *path) {
                 const char *pcur = t + 3;
                 char *name = unquote_token(&pcur);
                 if (!*trim_inplace(name) || !*trim_inplace((char *)pcur)) {
-                    printf("%s:%d: SET needs a name and a value. Try: SET name TO \"Alex\" or SET "
-                           "name \"Alex\"\n",
+                    printf("%s:%d: SET needs a name and a value. Try: SET name \"Alex\"\n",
                            path, line_no);
                     errs++;
                 } else
@@ -4445,7 +4507,7 @@ static int check_file(const char *path) {
             } else {
                 char *name = substr(t + 3, to);
                 if (!*trim_inplace(name)) {
-                    printf("%s:%d: SET needs a variable name. Try: SET score TO 0\n", path,
+                    printf("%s:%d: SET needs a variable name. Try: SET score 0\n", path,
                            line_no);
                     errs++;
                 } else
@@ -4536,6 +4598,10 @@ static int check_file(const char *path) {
             const char *expr = t + strlen(w);
             Tokens ts = tokenize(expr);
             int i;
+            if (ts.error) {
+                printf("%s:%d: %s\n", path, line_no, ts.error);
+                errs++;
+            }
             for (i = 0; i < ts.n; i++) {
                 char *tok = ts.t[i];
                 if (isalpha((unsigned char)tok[0]) && !ci_eq(tok, "YES") && !ci_eq(tok, "NO") &&
@@ -4569,7 +4635,11 @@ static int check_file(const char *path) {
     fclose(f);
     while (sp > 0) {
         CheckBlock b = stack[--sp];
-        printf("%s:%d: %s block opened here needs %s\n", path, b.line, b.open, b.expect);
+        const char *ending = b.expect;
+        if (!strcmp(b.open, "IF") || !strcmp(b.open, "TEACH") ||
+            !strcmp(b.open, "DO") || !strcmp(b.open, "FOR"))
+            ending = "END";
+        printf("%s:%d: %s block opened here needs %s\n", path, b.line, b.open, ending);
         errs++;
     }
     if (errs == 0)
@@ -4819,7 +4889,10 @@ static void parse_set_for_typecheck2(const char *t, char **name, char **type, ch
             if (isalpha((unsigned char)*q) && !isupper((unsigned char)*q))
                 uppercase_candidate = 0;
         *name = xstrdup(trim_inplace(var));
-        if (claro_is_type_word(mt)) {
+        if (!*remaining && (ci_eq(mt, "LIST") || ci_eq(mt, "MAP"))) {
+            /* A bare container word constructs a value, not an empty annotation. */
+            *expr = xstrdup(mt);
+        } else if (claro_is_type_word(mt)) {
             *type = xstrdup(mt);
             *expr = xstrdup(remaining);
         } else if (strchr(trim_inplace(var), '.') && *remaining && strchr(mt, ' ') == NULL &&
@@ -5070,6 +5143,7 @@ static TypeParamCheck *collect_function_param_type_checks(FILE *f) {
             else
                 claro_snprintf(full_name, sizeof(full_name), "%s", fname);
             collect_teach_param_checks_from_body(&checks, f, full_name, params, pcnt);
+            split_args_free(params, pcnt);
         }
     }
     rewind(f);
@@ -5114,6 +5188,7 @@ static TypeArityCheck *collect_function_arity_checks(FILE *f) {
             else
                 claro_snprintf(full_name, sizeof(full_name), "%s", fname);
             add_type_arity_check(&checks, full_name, pcnt);
+            split_args_free(params, pcnt);
             while (fgets(line, sizeof(line), f)) {
                 char inner[4096], iup[64], iw[128];
                 char *it;
@@ -5179,6 +5254,7 @@ static TypeReturnCheck *collect_function_return_type_checks(FILE *f) {
                     add_type_return_check(&checks, full_name, first_ret);
                 }
             }
+            split_args_free(params, pcnt);
             while (fgets(line, sizeof(line), f)) {
                 char inner[4096], iup[64], iw[128];
                 char *it;
@@ -5284,6 +5360,7 @@ static TypeMethodCheck *collect_class_method_type_checks(FILE *f) {
             teachline[sizeof(teachline) - 1] = 0;
             parse_teach_parts(teachline, &fname, &params, &pcnt);
             add_type_method_check(&checks, current_class, trim_inplace(fname));
+            split_args_free(params, pcnt);
             while (fgets(line, sizeof(line), f)) {
                 char inner[4096], iup[64], iw[128];
                 char *it;
@@ -5301,6 +5378,31 @@ static TypeMethodCheck *collect_class_method_type_checks(FILE *f) {
     }
     rewind(f);
     return checks;
+}
+static void type_checks_free(TypeParamCheck *params, TypeArityCheck *arities,
+                             TypeReturnCheck *returns, TypeFieldCheck *fields,
+                             TypeMethodCheck *methods) {
+    while (params) {
+        TypeParamCheck *next = params->next;
+        free(params->func); free(params->param); free(params->type); free(params);
+        params = next;
+    }
+    while (arities) {
+        TypeArityCheck *next = arities->next;
+        free(arities->func); free(arities); arities = next;
+    }
+    while (returns) {
+        TypeReturnCheck *next = returns->next;
+        free(returns->func); free(returns->type); free(returns); returns = next;
+    }
+    while (fields) {
+        TypeFieldCheck *next = fields->next;
+        free(fields->cls); free(fields->field); free(fields->type); free(fields); fields = next;
+    }
+    while (methods) {
+        TypeMethodCheck *next = methods->next;
+        free(methods->cls); free(methods->method); free(methods); methods = next;
+    }
 }
 static int typecheck_file(const char *path) {
     FILE *f = fopen(path, "rb");
@@ -5551,6 +5653,7 @@ static int typecheck_file(const char *path) {
                 } else if (declared_return)
                     claro_snprintf(current_func, sizeof(current_func), "%s", full_name);
             }
+            split_args_free(params, pcnt);
         } else if (!strcmp(up, "IF")) {
             if (in_teach) {
                 if (nested_blocks < 64) {
@@ -6165,7 +6268,7 @@ static int typecheck_file(const char *path) {
                 const char *pcur = t + 2;
                 fname = unquote_token(&pcur);
                 if (*trim_inplace((char *)pcur))
-                    ac = split_args(pcur, &parts);
+                    ac = split_simple_args(pcur, &parts);
             } else {
                 char *rest = t + 4;
                 const char *with = find_word_ci(rest, "WITH");
@@ -6265,6 +6368,7 @@ static int typecheck_file(const char *path) {
                     errs++;
                 }
             }
+            split_args_free(parts, ac);
             free(fname);
         } else if (!strcmp(up, "CHECK") && starts_ci(t, "CHECK TYPE")) {
             const char *is = find_word_ci(t, "IS");
@@ -6369,6 +6473,7 @@ static int typecheck_file(const char *path) {
         }
     }
     fclose(f);
+    type_checks_free(param_checks, arity_checks, return_checks, field_checks, method_checks);
     type_env_free(&types);
     if (errs == 0)
         printf("Type check OK\n");
@@ -6451,7 +6556,13 @@ static int run_tests(void) {
     closedir(d);
 #else
     struct _finddata_t fd;
-    intptr_t h = _findfirst("tests/*.claro", &fd);
+#if defined(_MSC_VER) && _MSC_VER < 1300
+    /* The VC6 CRT returns long here and does not define intptr_t. */
+    long h;
+#else
+    intptr_t h;
+#endif
+    h = _findfirst("tests/*.claro", &fd);
     if (h == -1) {
         fprintf(stderr, "No tests directory\n");
         return 1;
@@ -6512,19 +6623,19 @@ static int create_new_project(const char *name) {
     claro_snprintf(path, sizeof(path), "%s/main.claro", name);
     write_text_file_simple(
         path,
-        "SAY \"Welcome to Claro!\"\n\nSET name TO \"Learner\"\nSAY \"Hello \" + name\n\nTEACH "
+        "SAY \"Welcome to Claro!\"\n\nSET name \"Learner\"\nSAY \"Hello \" + name\n\nTEACH "
         "greet person\n    SAY \"Nice to meet you, \" + person\nEND\n\nDO greet \"Friend\"\n");
     claro_snprintf(path, sizeof(path), "%s/packages", name);
     make_folder(path);
     claro_snprintf(path, sizeof(path), "%s/claro.project", name);
     claro_snprintf(
         text, sizeof(text),
-        "manifest-version: 1\nname: %s\nmain: main.claro\nversion: v2026.10.20.160950\npackages:\n",
+        "manifest-version: 1\nname: %s\nmain: main.claro\nversion: v2026.10.20.223203\npackages:\n",
         name);
     write_text_file_simple(path, text);
     claro_snprintf(path, sizeof(path), "%s/claro.lock", name);
     write_text_file_simple(path,
-                           "# Claro package lock\nlock-version: 1\nversion: v2026.10.20.160950\n");
+                           "# Claro package lock\nlock-version: 1\nversion: v2026.10.20.223203\n");
     claro_snprintf(path, sizeof(path), "%s/README.md", name);
     write_text_file_simple(
         path, "# My Claro Project\n\nBuild Claro, then run this project with:\n\n```bash\nclaro "
@@ -6563,7 +6674,7 @@ static int run_repl(void) {
                 break;
             if (ci_eq(t, "HELP")) {
                 printf("Try: SAY \"Hello\"\n");
-                printf("Try: SET name TO \"Jon\"\n");
+                printf("Try: SET name \"Jon\"\n");
                 printf("Try: SAY name\n");
                 continue;
             }
@@ -6578,6 +6689,9 @@ static int run_repl(void) {
             }
         }
     }
+    runtime_free(&rt);
+    free(p.path);
+    free(p.lines);
     return 0;
 }
 
@@ -6618,7 +6732,7 @@ static void ensure_project_file(void) {
     if (!file_exists_simple("claro.project"))
         write_text_file_simple("claro.project",
                                "manifest-version: 1\nname: ClaroProject\nmain: "
-                               "main.claro\nversion: v2026.10.20.160950\npackages:\n");
+                               "main.claro\nversion: v2026.10.20.223203\npackages:\n");
 }
 static char *project_value(const char *key) {
     char *txt = read_file_text("claro.project");
@@ -6744,7 +6858,7 @@ static int write_package_lock(void) {
         free(txt);
         return 0;
     }
-    fputs("# Claro package lock\nlock-version: 1\nversion: v2026.10.20.160950\n", f);
+    fputs("# Claro package lock\nlock-version: 1\nversion: v2026.10.20.223203\n", f);
     p = txt;
     while (*p) {
         char *line = p;
@@ -7227,7 +7341,7 @@ static int package_doctor(void) {
     }
     if (txt && !package_lock_release_version_matches(txt)) {
         printf(
-            "  BAD lock release version: expected exactly one version: v2026.10.20.160950 line\n");
+            "  BAD lock release version: expected exactly one version: v2026.10.20.223203 line\n");
         ok = 0;
     }
     free(txt);
@@ -7391,7 +7505,7 @@ static int run_package_cmd(int argc, char **argv, int arg) {
 static int print_ide_info(void) {
     printf("{\n");
     printf("  \"language\": \"Claro\",\n");
-    printf("  \"version\": \"v2026.10.20.160950\",\n");
+    printf("  \"version\": \"v2026.10.20.223203\",\n");
     printf("  \"file_extensions\": [\".claro\"],\n");
     printf("  \"keywords\": "
            "[\"SAY\",\"ASK\",\"SET\",\"IF\",\"ELSE\",\"ENDIF\",\"END\",\"REPEAT\",\"UNTIL\","
@@ -7417,9 +7531,9 @@ static int print_ide_info(void) {
     printf("  \"snippets\": [\n");
     printf("    {\"name\": \"hello\", \"prefix\": \"say\", \"body\": \"SAY \\\"Hello!\\\"\"},\n");
     printf("    {\"name\": \"if_else\", \"prefix\": \"if\", \"body\": \"IF condition\\n    SAY "
-           "\\\"Yes\\\"\\nELSE\\n    SAY \\\"No\\\"\\nENDIF\"},\n");
+           "\\\"Yes\\\"\\nELSE\\n    SAY \\\"No\\\"\\nEND\"},\n");
     printf("    {\"name\": \"function\", \"prefix\": \"teach\", \"body\": \"TEACH name item\\n    "
-           "SAY item\\nLEARNED\"},\n");
+           "SAY item\\nEND\"},\n");
     printf("    {\"name\": \"typed_list\", \"prefix\": \"listof\", \"body\": \"SET names AS LIST "
            "OF TEXT TO LIST\\nADD \\\"Ada\\\" TO names\"},\n");
     printf("    {\"name\": \"task\", \"prefix\": \"task\", \"body\": \"START TASK helloTask\\n    "
@@ -7741,7 +7855,7 @@ static int run_validate(void) {
     printf(
         "%s\n",
         fails ? "Validation found problems."
-              : "Validation passed. Claro v2026.10.20.160950 foundation checks are ready for use.");
+              : "Validation passed. Claro v2026.10.20.223203 foundation checks are ready for use.");
     return fails ? 1 : 0;
 }
 

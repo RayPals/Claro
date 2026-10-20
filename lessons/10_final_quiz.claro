@@ -1,8 +1,8 @@
 SAY "Lesson 10: Tiny Quiz"
-ASK "What is 2 + 2?" AS answer
+ASK "What is 2 + 2?" answer
 
 IF answer = 4
     SAY "Correct!"
 ELSE
     SAY "The answer is 4."
-ENDIF
+END

@@ -8,7 +8,11 @@ Claro helps beginners learn programming through readable commands, simple rules,
 and small programs. Accessibility for people with learning disabilities is a
 core design goal; it still needs testing with learners.
 
-Current release: **v2026.10.20.160950**
+Development version: **v2026.10.20.223203**
+
+This is a development snapshot, not a newly published release. See
+[current status](docs/CURRENT_STATUS.md) and the dated
+[release ledger](docs/RELEASE_STATUS.md) for verified builds and limitations.
 
 ## Start here
 
@@ -37,6 +41,9 @@ Start with input/output, variables, basic math, decisions, loops, lists,
 simple functions, and saving text. You do not need classes, packages,
 networking, or advanced types to learn with Claro.
 
+The [beginner syntax guide](docs/SYNTAX.md) gives one recommended form per
+concept. Older forms remain supported in a separate compatibility reference.
+
 ## Find your way
 
 - `lessons/` — small, ordered lessons.
@@ -62,6 +69,13 @@ gcc -std=c89 -pedantic-errors src/claro.c -o claro -lm
 
 No generated source or project header is required. See [C89 build notes](docs/C89.md)
 for platform dependencies, testing, and limitations.
+
+## Downloads and portability
+
+Use the [distribution guide](docs/PORTABILITY.md) to build and verify clean
+source, Linux x86-64, and Windows x86-64 archives. Windows execution is tested
+under Wine, not yet on a native Windows machine. For VC6 / Windows 98 SE
+compilation, use [build98.bat and its guide](docs/WINDOWS98.md).
 
 ## License
 

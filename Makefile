@@ -1,6 +1,9 @@
 CC = gcc
 CFLAGS = -std=c89 -pedantic-errors -Werror=implicit-function-declaration -O0
 LDFLAGS = -lm
+ifeq ($(OS),Windows_NT)
+LDFLAGS += -Wl,--stack,16777216
+endif
 
 all: claro claro.exe
 

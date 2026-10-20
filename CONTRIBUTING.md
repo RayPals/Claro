@@ -57,3 +57,12 @@ The runtime must remain a single C89 implementation file. The full gate runs
 `python3 tools/validate_c89.py` to compile it independently with strict C89 flags
 and test formatting, numeric boundaries, and simple functions. Do not introduce
 C99 syntax or depend on generated project headers. See [C89 notes](docs/C89.md).
+
+
+## Beginner syntax consistency
+
+Follow [the syntax guide](docs/SYNTAX.md) in introductory teaching material.
+Keep older spellings in [compatibility reference](docs/COMPATIBILITY.md), not
+parallel first-lesson examples. `tools/validate_learning_syntax.py` enforces the
+policy and checks actual output; extend its explicit coverage when adding a
+lesson or recommended example. Preserve supported parser aliases.
