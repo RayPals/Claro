@@ -38,7 +38,7 @@ def build():
 def main():
     build()
     out = run([str(EXE), "--version"])
-    if "Claro v1.18.26" not in out:
+    if "Claro v2026.10.20.155641" not in out:
         raise SystemExit("Wrong version string")
     run([str(EXE), "test"])
     run([str(EXE), "validate"])
@@ -55,7 +55,7 @@ def main():
     run([sys.executable, "tools/validate_write_file_expression_cleanup.py"])
     run([sys.executable, "tools/validate_version_convention.py"])
     run([str(EXE), "examples/networking.claro"])
-    print("v1.18.26 validation complete")
+    print("v2026.10.20.155641 validation complete")
 
 if __name__ == "__main__":
     main()

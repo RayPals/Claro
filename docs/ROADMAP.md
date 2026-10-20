@@ -1,5 +1,10 @@
 # Claro Roadmap
 
+> **Current direction:** Follow [`LEARNING_FIRST.md`](LEARNING_FIRST.md) for
+> active priorities. The broader milestones below are historical planning
+> context, not a mandate to expand the language or a statement that features
+> have been removed.
+
 Current release: **Claro v1.18.26**
 
 Claro is now in the stable v1 development line. Older RC milestones are kept as historical notes in files such as `RC0_NOTES.md`, `RC3_NOTES.md`, and `RC9_VALIDATION.md`; they are not the current roadmap.

@@ -4,9 +4,29 @@
 
 **Claro** is a small, readable scripting language for beginners. It is designed to make programming approachable without requiring punctuation-heavy syntax, while still providing a path toward functions, types, objects, files, packages, and networking.
 
-Current release: **v1.18.26**
+Current release: **v2026.10.20.155641**
+
+## Versioning
+
+Development/release runs use their current UTC date and time: `vYYYY.MM.DD.HHMMSS`.
+Stamp once at the beginning of each run, then build:
+
+```bash
+python3 tools/stamp_version.py
+make
+```
+
+Ordinary rebuilds retain the run version. The stamp updates current runtime,
+IDE metadata, generated project/lockfile versions, validators, and current docs;
+historical release records remain unchanged. Existing lockfiles from a previous
+run can be refreshed with `claro package lock`.
 
 ## Quick start
+
+Claro's learning-first development charter and current priorities are in
+[`docs/LEARNING_FIRST.md`](docs/LEARNING_FIRST.md). It supersedes older
+feature-expansion priorities for current development; historical roadmaps remain
+available as project history.
 
 Build Claro with a C99 compiler and `make`:
 

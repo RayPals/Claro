@@ -1,6 +1,6 @@
 # Claro Final Release Checklist
 
-Before publishing `Claro v1.18.26` as the current stable release:
+Before publishing `Claro v2026.10.20.155641` as the current stable release:
 
 - Build from a clean unzip on Windows.
 - Build from a clean unzip on Linux or macOS.

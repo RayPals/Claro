@@ -43,4 +43,4 @@ with tempfile.TemporaryDirectory() as td:
     run([str(local), "package", "remove", "text"], cwd=proj)
     run([str(local), "run"], cwd=proj)
 
-print("Validation passed. Claro v1.18.26 networking reliability is ready for use.")
+print("Validation passed. Claro v2026.10.20.155641 networking reliability is ready for use.")

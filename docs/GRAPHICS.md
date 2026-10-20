@@ -1,6 +1,6 @@
 # Claro Graphics Status
 
-Current release: **Claro v1.18.26**
+Current release: **Claro v2026.10.20.155641**
 
 Graphics support is intentionally separated from the stable beginner console workflow.
 
