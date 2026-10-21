@@ -27,6 +27,17 @@ QUICK = [('', 'Hello!\n'), ('Ada\n', 'What is your name?\nHello Ada\n'),
          ('', '10\n'), ('', 'Good job!\n'), ('', 'Practice\n' * 3),
          ('', 'milk\nbread\n'), ('', 'Hello Alex\n'), ('', 'Hello from Claro\n'),
          ('4\n', 'Tiny Quiz\nWhat is 2 + 2?\nCorrect!\n')]
+FIRST_HOUR = [
+    ('', 'Hello!\n'),
+    ('Ada\n', 'What is your name?\nHello Ada\n'),
+    ('', '0\n'),
+    ('', '1\n'),
+    ('4\n', 'What is 2 + 2?\nCorrect!\n'),
+    ('', 'Practice helps\n' * 3),
+    ('', 'milk\nbread\n'),
+    ('', '5\n'),
+    ('', 'Hello\n'),
+]
 
 
 def blocks(path):
@@ -81,6 +92,12 @@ def main():
             assert result.returncode != 0 and hint in result.stdout, (label, result.returncode, result.stdout)
             assert not re.search(r'needs (?:ENDIF|DONE|LEARNED)|SET name TO', result.stdout), result.stdout
             print('PASS: beginner repair hint for', label)
+        first_hour = blocks(ROOT / 'docs/FIRST_HOUR.md')
+        assert len(first_hour) == len(FIRST_HOUR), 'First Hour block coverage changed'
+        for number, (code, (input_text, expected)) in enumerate(zip(first_hour, FIRST_HOUR), 1):
+            check_run(work, f'First Hour block {number}', code, input_text, expected)
+        check_run(work, 'First Hour quiz wrong answer', first_hour[4], '3\n',
+                  'What is 2 + 2?\nThe answer is 4.\n')
         check_run(work, 'quoted multi-argument function', 'TEACH greet first last\n    RETURN first + last\nEND\nDO greet "Hello " "Ada"\nSAY RESULT', '', 'Hello Ada\n')
         check_run(work, 'bare container constructors', 'SET items LIST\nSET pairs MAP\nSAY items\nSAY pairs', '', '[list]\n[map]\n')
         for name, (input_text, expected) in LESSONS.items():
