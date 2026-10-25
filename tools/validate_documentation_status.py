@@ -11,6 +11,9 @@ ACTIVE = (
     'docs/RELEASE_STATUS.md', 'docs/FINAL_RELEASE_CHECKLIST.md',
     'docs/CLASSROOM_READINESS.md', 'docs/TESTING.md', 'docs/HARDENING.md',
     'docs/PORTABILITY.md', 'docs/RELIABILITY.md',
+    'docs/ERRORS.md', 'docs/RUNTIME_LIMITS.md', 'docs/LEARNER_PILOT.md',
+    'docs/LEARNER_FEEDBACK_TEMPLATE.md', 'docs/NATIVE_WINDOWS_TESTING.md',
+    'docs/SIX_TRACK_STATUS.md',
     'docs/history/CURRENT_STATUS_BEFORE_STATUS_CLEANUP.md',
     'docs/history/HARDENING_BEFORE_STATUS_CLEANUP.md',
 )

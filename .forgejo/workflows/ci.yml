@@ -35,6 +35,12 @@ jobs:
         run: python3 tools/validate_c89.py
       - name: Validate executable learning path
         run: python3 tools/validate_learning_syntax.py
+      - name: Validate diagnostics, error guide and learner pilot code
+        run: |
+          python3 tools/validate_error_locations.py
+          python3 tools/validate_error_guide.py
+          python3 tools/validate_learner_pilot.py
+          python3 tools/validate_resource_guards.py
       - name: Validate memory and malformed-input reliability
         run: python3 tools/validate_reliability.py
       - name: Validate CI workflow coverage

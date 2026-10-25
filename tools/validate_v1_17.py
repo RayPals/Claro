@@ -40,12 +40,16 @@ def main():
     run([sys.executable, "tools/validate_c89.py"])
     run([sys.executable, "tools/validate_msvc6_source.py"])
     out = run([str(EXE), "--version"])
-    if "Claro v2026.10.20.223203" not in out:
+    if "Claro v2026.10.25.014405" not in out:
         raise SystemExit("Wrong version string")
     run([str(EXE), "test"])
     run([str(EXE), "validate"])
     run([sys.executable, "tools/validate_first_hour.py"])
     run([sys.executable, "tools/validate_learning_syntax.py"])
+    run([sys.executable, "tools/validate_error_locations.py"])
+    run([sys.executable, "tools/validate_error_guide.py"])
+    run([sys.executable, "tools/validate_learner_pilot.py"])
+    run([sys.executable, "tools/validate_resource_guards.py"])
     run([sys.executable, "tools/validate_ide_metadata.py"])
     run([sys.executable, "tools/validate_lsp_helper.py"])
     run([sys.executable, "tools/validate_concurrency.py"])
@@ -55,7 +59,7 @@ def main():
     run([sys.executable, "tools/validate_version_convention.py"])
     run([sys.executable, "tools/validate_documentation_status.py"])
     run([str(EXE), "examples/networking.claro"])
-    print("v2026.10.20.223203 validation complete")
+    print("v2026.10.25.014405 validation complete")
 
 if __name__ == "__main__":
     main()

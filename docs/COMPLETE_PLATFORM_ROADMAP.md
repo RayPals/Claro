@@ -1,6 +1,6 @@
 # Claro Complete Platform Roadmap
 
-Current release: **Claro v2026.10.20.223203**
+Current release: **Claro v2026.10.25.014405**
 
 This roadmap tracks the larger goal: Claro as a complete beginner-friendly programming platform, not only a toy scripting interpreter.
 

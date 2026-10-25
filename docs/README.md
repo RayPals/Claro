@@ -15,6 +15,10 @@
 - [Reliability](RELIABILITY.md) and [runtime guards](RUNTIME_LIMITS.md) — tested boundaries, not sandbox guarantees.
 - [Portability](PORTABILITY.md) and [Windows 98 / VC6](WINDOWS98.md) — compilation versus target execution.
 
+- [Learner pilot kit](LEARNER_PILOT.md) and [blank feedback](LEARNER_FEEDBACK_TEMPLATE.md)
+- [Native Windows acceptance kit](NATIVE_WINDOWS_TESTING.md)
+- [Six-track progress and blockers](SIX_TRACK_STATUS.md)
+
 ## Look something up
 
 - [Beginner syntax](SYNTAX.md) and [older compatibility forms](COMPATIBILITY.md)

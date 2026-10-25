@@ -41,6 +41,23 @@ fictional printed list representation. Five isolated ownership tests separate
 metadata, field storage and object construction so one leak cannot hide another.
 Malformed-expression and nesting tests check failure diagnostics and valid inputs.
 
+## Diagnostics, JSON and opt-in budgets
+
+Expression errors keep source origins across calls, imports and TRY/CATCH.
+The error guide is executable-verified. Malformed JSON now fails instead of
+hanging, nesting is bounded, control-character round trips are checked, and
+Unicode escapes/surrogate pairs are covered. JSON temporaries, serialization
+copies and popped import-stack entries have focused leak-enabled regressions.
+The optional step budget counts empty loop entries; READ FILE can enforce a
+per-read byte cap. These are not process isolation or wall-clock bounds.
+
+`validate_error_locations.py`, `validate_error_guide.py`, `validate_learner_pilot.py`
+and `validate_resource_guards.py` run in the full gate and inside the existing
+learning-ownership sanitizer check. The reliability runner still counts 35
+maintained top-level checks; subcase coverage has expanded, not been relabeled
+as 35 new independent platform tests. Human feedback and native Windows tests
+remain separate, blocked acceptance tracks.
+
 ## Scope
 
 A passing run establishes the exercised boundaries, not universal leak freedom,

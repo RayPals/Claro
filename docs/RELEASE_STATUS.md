@@ -19,6 +19,15 @@ A development timestamp is not a stable-release designation. Use
 [current status](CURRENT_STATUS.md) for the learning scope and
 [the release checklist](FINAL_RELEASE_CHECKLIST.md) before publishing.
 
+## Candidate continuation — 2026-10-21
+
+The last pushed source checkpoint is `d55507140660186e594303306647e0f0e9facf76`.
+The continuation candidate is a separate development run; see
+[six-track status](SIX_TRACK_STATUS.md) for scope and blocked acceptance.
+Gitea currently reports Actions disabled, and authenticated runs/release access
+was not available for this continuation. No hosted CI success or hosted release
+is claimed. Earlier artifact records below retain their original hashes/versions.
+
 ## Immutable artifact checkpoints
 
 These are verified build artifacts previously delivered for testing, **not a

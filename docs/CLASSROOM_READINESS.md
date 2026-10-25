@@ -5,6 +5,9 @@ Accessibility for learners with learning disabilities is a design goal and is
 **not yet validated** by intended learners. Passing tests does not establish it.
 Use [current status](CURRENT_STATUS.md) for scope, not older feature roadmaps.
 
+The [ready-to-run pilot kit](LEARNER_PILOT.md) includes short tasks and a
+[blank feedback form](LEARNER_FEEDBACK_TEMPLATE.md). No real session is implied.
+
 ## Before a session
 
 - Use a build whose platform was actually tested; check `claro --version`.

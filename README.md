@@ -8,7 +8,7 @@ Claro helps beginners learn programming through readable commands, simple rules,
 and small programs. Accessibility for people with learning disabilities is a
 core design goal; it still needs testing with learners.
 
-Development version: **v2026.10.20.223203**
+Development version: **v2026.10.25.014405**
 
 This is a development snapshot, not a newly published release. See
 [current status](docs/CURRENT_STATUS.md) and the dated
@@ -51,6 +51,7 @@ concept. Older forms remain supported in a separate compatibility reference.
 - [Documentation](docs/README.md) — learning guides and reference.
 - [Current roadmap](docs/ROADMAP.md) — the small set of active priorities.
 - [Learning-first rules](docs/LEARNING_FIRST.md) — how Claro is designed.
+- [Active learning-first roadmap](docs/ROADMAP.md) — current priorities; older platform plans are historical context.
 - [Contributing](CONTRIBUTING.md) — source layout, builds, and validation.
 
 Existing features and compatibility syntax remain supported; they are not

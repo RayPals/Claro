@@ -1,6 +1,6 @@
 # Claro current status
 
-Development version: **v2026.10.20.223203**
+Development version: **v2026.10.25.014405**
 
 Claro is a **learning tool first**. The development timestamp identifies source;
 it does not mean that a release was published or every platform was tested.
@@ -28,8 +28,9 @@ call depth and the learning path under leak-enabled sanitizers. See
 Earlier failure logs are history, not current unresolved findings.
 
 Claro runs trusted scripts with the user's permissions. It is **not a sandbox**.
-Intentional loops can run indefinitely, and global file/JSON/CPU budgets are not
-provided. See [actual runtime guards](RUNTIME_LIMITS.md).
+Loops can run indefinitely by default. Opt-in step and READ FILE budgets are
+available; parsed JSON nesting is capped. Global file/output/memory and CPU-time
+budgets are not provided. See [actual runtime guards](RUNTIME_LIMITS.md).
 
 ## Platforms — do not confuse compilation with OS acceptance
 
@@ -55,9 +56,12 @@ They are **not active expansion priorities** without a separate request.
 
 ## What is next
 
-1. Observe actual beginners and improve instructions/error recovery.
-2. Verify the Windows builds on their real target operating systems.
-3. Review the accumulated local changes and publish only when authorized.
+1. Use the [learner pilot kit](LEARNER_PILOT.md) with a willing person; code checks
+   are not human feedback. Source-located expression diagnostics now have regressions.
+2. Use the [native Windows kit](NATIVE_WINDOWS_TESTING.md) on an authorized target.
+   Wine is explicitly rejected by its OS evidence helper.
+3. Hosted CI/release delivery needs authenticated Gitea access and enabled Actions.
+   See the [six-track status](SIX_TRACK_STATUS.md) for current blockers.
 
 Follow the [small active roadmap](ROADMAP.md). The
 [previous detailed status](history/CURRENT_STATUS_BEFORE_STATUS_CLEANUP.md) and

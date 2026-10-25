@@ -17,7 +17,7 @@ def main():
         binary = Path(tmp) / 'claro-asan'
         subprocess.run(['gcc', '-std=c89', '-pedantic-errors', '-Werror=implicit-function-declaration', '-O0', '-g', '-fsanitize=address,undefined', str(ROOT / 'src/claro.c'), '-o', str(binary), '-lm'], check=True)
         env = dict(os.environ, ASAN_OPTIONS='detect_leaks=1:halt_on_error=1', UBSAN_OPTIONS='halt_on_error=1', CLARO_EXE=str(binary))
-        for checker in ['validate_learning_syntax.py', 'validate_first_hour.py']:
+        for checker in ['validate_learning_syntax.py', 'validate_first_hour.py', 'validate_error_locations.py', 'validate_error_guide.py', 'validate_learner_pilot.py', 'validate_resource_guards.py']:
             result = subprocess.run([sys.executable, str(ROOT / 'tools' / checker)], cwd=ROOT, env=env, capture_output=True, text=True, timeout=90)
             if result.returncode:
                 print(result.stdout + result.stderr)

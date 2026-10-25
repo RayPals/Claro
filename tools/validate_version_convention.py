@@ -7,7 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 EXE = ROOT / "claro.exe"
-EXPECTED = "Claro v2026.10.20.223203"
+EXPECTED = "Claro v2026.10.25.014405"
 
 
 def fail(message):
@@ -31,12 +31,12 @@ def main():
     if ide.returncode != 0:
         fail(ide.stdout)
     metadata = json.loads(ide.stdout)
-    if metadata.get("version") != "v2026.10.20.223203":
-        fail(f"Expected IDE metadata version 'v2026.10.20.223203', got {metadata.get('version')!r}")
+    if metadata.get("version") != "v2026.10.25.014405":
+        fail(f"Expected IDE metadata version 'v2026.10.25.014405', got {metadata.get('version')!r}")
     validator = ROOT / "tools" / "validate_v1_17.py"
     text = validator.read_text(encoding="utf-8")
-    if "Claro v2026.10.20.223203" not in text:
-        fail("tools/validate_v1_17.py must validate Claro v2026.10.20.223203")
+    if "Claro v2026.10.25.014405" not in text:
+        fail("tools/validate_v1_17.py must validate Claro v2026.10.25.014405")
     print("Version convention validation OK")
 
 

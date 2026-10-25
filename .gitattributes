@@ -1,3 +1,5 @@
 # Preserve DOS line endings for the Windows 98 COMMAND.COM build inputs.
 build98.bat -text whitespace=cr-at-eol
 build98.rsp -text whitespace=cr-at-eol
+test98.bat -text whitespace=cr-at-eol
+testwin.bat -text whitespace=cr-at-eol

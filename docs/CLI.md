@@ -1,6 +1,6 @@
 # Claro Command Line
 
-Claro v2026.10.20.223203 supports these main commands:
+Claro v2026.10.25.014405 supports these main commands:
 
 ```bash
 claro file.claro
@@ -58,7 +58,7 @@ claro package doctor
 claro package lock
 ```
 
-The v2026.10.20.223203 package command is a safer local project-file helper. It creates `claro.project`, `claro.lock`, and local folders under `packages/`. Package names may appear only once in `claro.project`; `claro package doctor` reports duplicate entries so the lockfile stays unambiguous. It also requires the project manifest to have exactly one non-empty `name:` field. It is not yet an online package registry.
+The v2026.10.25.014405 package command is a safer local project-file helper. It creates `claro.project`, `claro.lock`, and local folders under `packages/`. Package names may appear only once in `claro.project`; `claro package doctor` reports duplicate entries so the lockfile stays unambiguous. It also requires the project manifest to have exactly one non-empty `name:` field. It is not yet an online package registry.
 
 ## IDE metadata
 

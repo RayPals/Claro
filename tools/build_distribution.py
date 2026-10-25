@@ -14,7 +14,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 DIRECTORIES = ['.forgejo', 'src', 'docs', 'lessons', 'examples', 'lib', 'tests', 'tools', 'assets', 'support']
-FILES = ['README.md', 'LICENSE', 'CHANGELOG.md', 'CONTRIBUTING.md', 'Makefile', 'build.bat', 'build.ps1', 'build98.bat', 'build98.rsp', 'run_tests.bat']
+FILES = ['README.md', 'LICENSE', 'CHANGELOG.md', 'CONTRIBUTING.md', 'Makefile', 'build.bat', 'build.ps1', 'build98.bat', 'build98.rsp', 'test98.bat', 'testwin.bat', 'run_tests.bat']
 FLAGS = ['-std=c89', '-pedantic-errors', '-Werror=implicit-function-declaration', '-O2', '-static']
 
 

@@ -59,6 +59,18 @@ and test formatting, numeric boundaries, and simple functions. Do not introduce
 C99 syntax or depend on generated project headers. See [C89 notes](docs/C89.md).
 
 
+## Learning-first charter
+
+Claro is a learning tool first and a general-purpose language second. Keep the
+core small, predictable, and beginner-focused; prioritize executable lessons,
+useful diagnostics, and reliability over feature breadth. Teach one recommended
+spelling per concept while preserving supported compatibility forms. Do not
+claim accessibility validation without feedback from intended learners. The
+[learning-first charter](docs/LEARNING_FIRST.md) is the current product guidance.
+Older ambitious plans are retained as historical context, not active priorities;
+they do not imply that existing features are removed. See the current
+[learning-first roadmap](docs/ROADMAP.md).
+
 ## Beginner syntax consistency
 
 Follow [the syntax guide](docs/SYNTAX.md) in introductory teaching material.

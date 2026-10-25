@@ -1,5 +1,5 @@
 /*
-  Claro v2026.10.20.223203 - Networking Reliability Release
+  Claro v2026.10.25.014405 - Networking Reliability Release
 
   A compact, buildable Claro interpreter focused on the beginner-friendly
   teaching core: readable commands, simple expressions, functions, collections,
@@ -45,7 +45,7 @@ int pclose(FILE *stream);
 #define F_OK 0
 #endif
 
-#define CLARO_VERSION "Claro v2026.10.20.223203"
+#define CLARO_VERSION "Claro v2026.10.25.014405"
 #define CLARO_MAX_CALL_DEPTH 256
 #define CLARO_MAX_EXPR_DEPTH 128
 #define CLARO_MAX_BLOCK_DEPTH 128
@@ -574,6 +574,9 @@ typedef struct Runtime {
     char *err_msg;
     char *err_file;
     int err_line;
+    const char *active_file; /* borrowed while a source line executes */
+    int active_line;
+    unsigned long steps, step_limit, read_file_limit;
     int returning;
     Value ret;
     int call_depth;
@@ -585,10 +588,42 @@ typedef struct Runtime {
     int script_argc;
     char **script_argv;
 } Runtime;
+static void rt_error(Runtime *rt, const char *file, int line, const char *fmt, ...);
+static unsigned long rt_env_limit(Runtime *rt, const char *name) {
+    const char *text = getenv(name);
+    unsigned long value = 0;
+    if (!text || !*text) return 0;
+    while (*text) {
+        unsigned long digit;
+        if (*text < '0' || *text > '9') {
+            rt_error(rt, "<configuration>", 1, "%s needs a non-negative whole number.", name);
+            return 0;
+        }
+        digit = (unsigned long)(*text++ - '0');
+        if (value > (ULONG_MAX - digit) / 10) {
+            rt_error(rt, "<configuration>", 1, "%s is too large for this build.", name);
+            return 0;
+        }
+        value = value * 10 + digit;
+    }
+    return value;
+}
+static int rt_tick(Runtime *rt) {
+    if (rt->error) return 0;
+    if (!rt->step_limit) return 1;
+    if (rt->steps >= rt->step_limit) {
+        rt_error(rt, "", 0, "Execution reached its step limit. Check the loop or raise CLARO_STEP_LIMIT.");
+        return 0;
+    }
+    rt->steps++;
+    return 1;
+}
 static void rt_init(Runtime *rt) {
     memset(rt, 0, sizeof(*rt));
     str_init(&rt->captured);
     rt->ret = v_none();
+    rt->step_limit = rt_env_limit(rt, "CLARO_STEP_LIMIT");
+    rt->read_file_limit = rt_env_limit(rt, "CLARO_READ_FILE_LIMIT");
     srand(1);
 }
 static Var *env_find(Var *v, const char *name) {
@@ -825,6 +860,10 @@ static void rt_error(Runtime *rt, const char *file, int line, const char *fmt, .
     va_start(ap, fmt);
     claro_vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
+    if (!file || !*file)
+        file = rt->active_file;
+    if (line <= 0)
+        line = rt->active_line;
     nfile = normalize_path_copy(file ? file : "");
     rt->error = 1;
     rt->err_msg = xstrdup(buf);
@@ -1877,134 +1916,195 @@ static int find_done(Program *p, int start) {
 /* ---------- JSON ---------- */
 typedef struct {
     const char *s;
+    int depth;
+    const char *error;
 } JsonP;
+#define CLARO_MAX_JSON_DEPTH 128
 static void jp_ws(JsonP *j) {
     while (*j->s && isspace((unsigned char)*j->s))
         j->s++;
 }
+static unsigned long jp_hex4(JsonP *j) {
+    unsigned long value = 0;
+    int i, digit;
+    for (i = 0; i < 4; i++) {
+        char c = *j->s;
+        if (c >= '0' && c <= '9') digit = c - '0';
+        else if (c >= 'a' && c <= 'f') digit = c - 'a' + 10;
+        else if (c >= 'A' && c <= 'F') digit = c - 'A' + 10;
+        else { j->error = "JSON Unicode escapes need four hexadecimal digits."; return 0; }
+        value = value * 16 + (unsigned long)digit;
+        j->s++;
+    }
+    return value;
+}
+static void jp_utf8(JsonP *j, Str *b, unsigned long code) {
+    unsigned long low;
+    if (code >= 0xd800UL && code <= 0xdbffUL) {
+        if (j->s[0] != '\\' || j->s[1] != 'u') {
+            j->error = "JSON Unicode needs a matching low surrogate.";
+            return;
+        }
+        j->s += 2;
+        low = jp_hex4(j);
+        if (j->error) return;
+        if (low < 0xdc00UL || low > 0xdfffUL) {
+            j->error = "JSON Unicode needs a matching low surrogate.";
+            return;
+        }
+        code = 0x10000UL + (code - 0xd800UL) * 1024 + low - 0xdc00UL;
+    } else if (code >= 0xdc00UL && code <= 0xdfffUL) {
+        j->error = "JSON Unicode has an unmatched low surrogate.";
+        return;
+    }
+    if (!code) { j->error = "JSON text cannot contain a zero character."; return; }
+    if (code < 0x80UL) str_ch(b, (char)code);
+    else if (code < 0x800UL) {
+        str_ch(b, (char)(0xc0UL | (code >> 6)));
+        str_ch(b, (char)(0x80UL | (code & 63)));
+    } else if (code < 0x10000UL) {
+        str_ch(b, (char)(0xe0UL | (code >> 12)));
+        str_ch(b, (char)(0x80UL | ((code >> 6) & 63)));
+        str_ch(b, (char)(0x80UL | (code & 63)));
+    } else {
+        str_ch(b, (char)(0xf0UL | (code >> 18)));
+        str_ch(b, (char)(0x80UL | ((code >> 12) & 63)));
+        str_ch(b, (char)(0x80UL | ((code >> 6) & 63)));
+        str_ch(b, (char)(0x80UL | (code & 63)));
+    }
+}
 static char *jp_string(JsonP *j) {
     Str b;
+    char escaped;
     str_init(&b);
     jp_ws(j);
-    if (*j->s != '"')
-        return xstrdup("");
+    if (*j->s != '"') { j->error = "JSON object keys need double quotes."; return xstrdup(""); }
     j->s++;
-    while (*j->s && *j->s != '"') {
+    while (*j->s && *j->s != '"' && !j->error) {
         if (*j->s == '\\') {
             j->s++;
-            if (*j->s == 'n')
-                str_ch(&b, '\n');
-            else if (*j->s == 't')
-                str_ch(&b, '\t');
-            else if (*j->s == 'r')
-                str_ch(&b, '\r');
-            else if (*j->s)
-                str_ch(&b, *j->s);
-            if (*j->s)
-                j->s++;
-        } else
-            str_ch(&b, *j->s++);
+            if (!*j->s) { j->error = "JSON text is missing a closing quote."; break; }
+            escaped = *j->s++;
+            if (escaped == 'n') str_ch(&b, '\n');
+            else if (escaped == 't') str_ch(&b, '\t');
+            else if (escaped == 'r') str_ch(&b, '\r');
+            else if (escaped == 'b') str_ch(&b, '\b');
+            else if (escaped == 'f') str_ch(&b, '\f');
+            else if (escaped == 'u') {
+                unsigned long code = jp_hex4(j);
+                if (!j->error) jp_utf8(j, &b, code);
+            } else if (escaped == '"' || escaped == '\\' || escaped == '/') str_ch(&b, escaped);
+            else j->error = "JSON has an invalid text escape.";
+        } else if ((unsigned char)*j->s < 32) j->error = "JSON text contains an unescaped control character.";
+        else str_ch(&b, *j->s++);
     }
-    if (*j->s == '"')
-        j->s++;
+    if (*j->s == '"') j->s++;
+    else if (!j->error) j->error = "JSON text is missing a closing quote.";
     return str_take(&b);
 }
 static Value jp_value(JsonP *j);
 static Value jp_array(JsonP *j) {
     Value arr = v_list();
+    j->s++;
     jp_ws(j);
-    if (*j->s == '[')
-        j->s++;
-    jp_ws(j);
-    if (*j->s == ']') {
-        j->s++;
-        return arr;
-    }
-    while (*j->s) {
+    if (*j->s == ']') { j->s++; return arr; }
+    while (!j->error) {
         Value v = jp_value(j);
-        list_add(arr.list, v);
+        if (!j->error) list_add(arr.list, v);
+        value_free(v);
+        if (j->error) break;
         jp_ws(j);
-        if (*j->s == ',') {
-            j->s++;
-            continue;
-        }
-        if (*j->s == ']') {
-            j->s++;
-            break;
-        }
+        if (*j->s == ']') { j->s++; break; }
+        if (*j->s != ',') { j->error = "JSON list needs a comma or closing bracket."; break; }
+        j->s++;
     }
     return arr;
 }
 static Value jp_object(JsonP *j) {
     Value obj = v_map();
+    j->s++;
     jp_ws(j);
-    if (*j->s == '{')
-        j->s++;
-    jp_ws(j);
-    if (*j->s == '}') {
-        j->s++;
-        return obj;
-    }
-    while (*j->s) {
-        char *k = jp_string(j);
-        Value v;
+    if (*j->s == '}') { j->s++; return obj; }
+    while (!j->error) {
+        char *key = jp_string(j);
+        Value v = v_none();
         jp_ws(j);
-        if (*j->s == ':')
-            j->s++;
-        v = jp_value(j);
-        map_put(obj.map, k, v);
-        free(k);
+        if (!j->error && *j->s != ':') j->error = "JSON object needs a colon after its key.";
+        if (!j->error) { j->s++; v = jp_value(j); }
+        if (!j->error) map_put(obj.map, key, v);
+        value_free(v);
+        free(key);
+        if (j->error) break;
         jp_ws(j);
-        if (*j->s == ',') {
-            j->s++;
-            continue;
-        }
-        if (*j->s == '}') {
-            j->s++;
-            break;
-        }
+        if (*j->s == '}') { j->s++; break; }
+        if (*j->s != ',') { j->error = "JSON object needs a comma or closing brace."; break; }
+        j->s++;
     }
     return obj;
 }
 static Value jp_value(JsonP *j) {
+    const char *scan;
     char *end;
+    double number;
+    Value result;
     jp_ws(j);
     if (*j->s == '"') {
-        char *s = jp_string(j);
-        Value v = v_str(s);
-        free(s);
-        return v;
+        char *text = jp_string(j);
+        result = v_str(text);
+        free(text);
+        return result;
     }
-    if (*j->s == '{')
-        return jp_object(j);
-    if (*j->s == '[')
-        return jp_array(j);
-    if (!strncmp(j->s, "true", 4)) {
-        j->s += 4;
-        return v_bool(1);
+    if (*j->s == '[' || *j->s == '{') {
+        if (j->depth >= CLARO_MAX_JSON_DEPTH) {
+            j->error = "JSON nesting exceeds the safe limit of 128. Simplify the data.";
+            return v_none();
+        }
+        j->depth++;
+        result = *j->s == '[' ? jp_array(j) : jp_object(j);
+        j->depth--;
+        return result;
     }
-    if (!strncmp(j->s, "false", 5)) {
-        j->s += 5;
-        return v_bool(0);
+    if (!strncmp(j->s, "true", 4)) { j->s += 4; return v_bool(1); }
+    if (!strncmp(j->s, "false", 5)) { j->s += 5; return v_bool(0); }
+    if (!strncmp(j->s, "null", 4)) { j->s += 4; return v_none(); }
+    scan = j->s;
+    if (*scan == '-') scan++;
+    if (*scan == '0') scan++;
+    else if (*scan >= '1' && *scan <= '9') while (isdigit((unsigned char)*scan)) scan++;
+    else { j->error = "JSON needs a value here."; return v_none(); }
+    if (*scan == '.') {
+        scan++;
+        if (!isdigit((unsigned char)*scan)) { j->error = "JSON number needs digits after its decimal point."; return v_none(); }
+        while (isdigit((unsigned char)*scan)) scan++;
     }
-    if (!strncmp(j->s, "null", 4)) {
-        j->s += 4;
+    if (*scan == 'e' || *scan == 'E') {
+        scan++;
+        if (*scan == '+' || *scan == '-') scan++;
+        if (!isdigit((unsigned char)*scan)) { j->error = "JSON number needs exponent digits."; return v_none(); }
+        while (isdigit((unsigned char)*scan)) scan++;
+    }
+    number = strtod(j->s, &end);
+    if (end != scan || number > DBL_MAX || number < -DBL_MAX) {
+        j->error = "JSON number is outside the supported range.";
         return v_none();
     }
-    end = NULL;
-    {
-        double d = strtod(j->s, &end);
-        if (end && end != j->s) {
-            j->s = end;
-            return v_num(d);
-        }
-    }
-    return v_none();
+    j->s = scan;
+    return v_num(number);
 }
-static Value parse_json_text(const char *s) {
+static Value parse_json_text(Runtime *rt, const char *text) {
     JsonP j;
-    j.s = s;
-    return jp_value(&j);
+    Value result;
+    memset(&j, 0, sizeof(j));
+    j.s = text;
+    result = jp_value(&j);
+    jp_ws(&j);
+    if (!j.error && *j.s) j.error = "JSON has unexpected text after its value.";
+    if (j.error) {
+        value_free(result);
+        rt_error(rt, "", 0, "%s", j.error);
+        return v_none();
+    }
+    return result;
 }
 static void json_escape(Str *b, const char *s) {
     str_ch(b, '"');
@@ -2015,6 +2115,12 @@ static void json_escape(Str *b, const char *s) {
             str_add(b, "\\\\");
         } else if (*s == '\n') {
             str_add(b, "\\n");
+        } else if ((unsigned char)*s < 32) {
+            static const char hex[] = "0123456789abcdef";
+            unsigned char c = (unsigned char)*s;
+            str_add(b, "\\u00");
+            str_ch(b, hex[c >> 4]);
+            str_ch(b, hex[c & 15]);
         } else
             str_ch(b, *s);
         s++;
@@ -2861,6 +2967,9 @@ static void do_import(Runtime *rt, const char *path, const char *ns, const char 
         exec_range(rt, p, 0, p->count);
     }
     rt->import_depth--;
+    free(rt->import_stack[rt->import_depth]);
+    rt->import_stack[rt->import_depth] = NULL;
+    split_args_free(exports, ec);
     free(prefix);
 }
 static void create_object_value(Runtime *rt, const char *file, int line, const char *cls,
@@ -2889,7 +2998,7 @@ static void create_object_value(Runtime *rt, const char *file, int line, const c
         }
     }
 }
-static void exec_line(Runtime *rt, Program *p, int *pcp, const char *raw) {
+static void exec_line_body(Runtime *rt, Program *p, int *pcp, const char *raw) {
     char buf[4096], up[64], w[128];
     char *t;
     int pc = *pcp;
@@ -3461,12 +3570,25 @@ static void exec_line(Runtime *rt, Program *p, int *pcp, const char *raw) {
     }
     if (strcmp(up, "REPEAT") == 0) {
         int end = match_block(p, pc, "REPEAT", "UNTIL", NULL, NULL);
-        char *cond = p->lines[end] + 5;
+        char *cond;
+        int again = 0;
+        if (end < 0) {
+            rt_error(rt, p->path, pc + 1, "REPEAT needs UNTIL and a stopping condition.");
+            return;
+        }
+        cond = p->lines[end] + 5;
         do {
             exec_range(rt, p, pc + 1, end);
             if (rt->error || rt->returning)
                 break;
-        } while (!v_truth(eval_expr(rt, cond)));
+            rt->active_file = p->path;
+            rt->active_line = end + 1;
+            {
+                Value condition = eval_expr(rt, cond);
+                again = !v_truth(condition);
+                value_free(condition);
+            }
+        } while (again && !rt->error);
         *pcp = end < 0 ? pc : end;
         return;
     }
@@ -3717,12 +3839,21 @@ static void exec_line(Runtime *rt, Program *p, int *pcp, const char *raw) {
                 Str b;
                 int c;
                 Value contents;
+                unsigned long bytes = 0;
                 str_init(&b);
-                while ((c = fgetc(f)) != EOF)
+                while ((c = fgetc(f)) != EOF) {
+                    if (rt->read_file_limit && bytes >= rt->read_file_limit) {
+                        rt_error(rt, p->path, pc + 1,
+                                 "READ FILE exceeded the configured file limit. Raise CLARO_READ_FILE_LIMIT if needed.");
+                        break;
+                    }
                     str_ch(&b, (char)c);
+                    if (rt->read_file_limit) bytes++;
+                }
+                if (ferror(f)) rt_error(rt, p->path, pc + 1, "Could not finish reading the file.");
                 fclose(f);
                 contents = v_str(b.s ? b.s : "");
-                rt_set(rt, var, contents);
+                if (!rt->error) rt_set(rt, var, contents);
                 value_free(contents);
                 free(b.s);
             }
@@ -3844,7 +3975,10 @@ static void exec_line(Runtime *rt, Program *p, int *pcp, const char *raw) {
             char *var = xstrdup(trim_inplace((char *)as + 2));
             Value s = eval_expr(rt, ex);
             char *txt = v_to_string(s);
-            rt_set(rt, var, parse_json_text(txt));
+            Value parsed = parse_json_text(rt, txt);
+            if (!rt->error) rt_set(rt, var, parsed);
+            value_free(parsed);
+            value_free(s);
             free(txt);
             free(ex);
             free(var);
@@ -3860,7 +3994,10 @@ static void exec_line(Runtime *rt, Program *p, int *pcp, const char *raw) {
             char *var = xstrdup(trim_inplace((char *)as + 2));
             Value v = eval_expr(rt, ex);
             char *js = make_json(v, pretty);
-            rt_set(rt, var, v_str(js));
+            Value encoded = v_str(js);
+            rt_set(rt, var, encoded);
+            value_free(encoded);
+            value_free(v);
             free(js);
             free(ex);
             free(var);
@@ -4136,6 +4273,16 @@ static void exec_line(Runtime *rt, Program *p, int *pcp, const char *raw) {
     }
     rt_error(rt, p->path, pc + 1, "Unknown command: %s", w);
 }
+static void exec_line(Runtime *rt, Program *p, int *pcp, const char *raw) {
+    const char *saved_file = rt->active_file;
+    int saved_line = rt->active_line;
+    rt->active_file = p->path;
+    rt->active_line = *pcp + 1;
+    if (rt_tick(rt))
+        exec_line_body(rt, p, pcp, raw);
+    rt->active_file = saved_file;
+    rt->active_line = saved_line;
+}
 static void exec_range(Runtime *rt, Program *p, int start, int end) {
     int pc;
     /* Function calls have their own guard; count additional control-block frames. */
@@ -4144,6 +4291,7 @@ static void exec_range(Runtime *rt, Program *p, int start, int end) {
                  "Block nesting exceeds the safe limit of 128. Simplify the nested blocks.");
         return;
     }
+    if (!rt_tick(rt)) return;
     rt->range_depth++;
     if (end < 0 || end > p->count)
         end = p->count;
@@ -6630,12 +6778,12 @@ static int create_new_project(const char *name) {
     claro_snprintf(path, sizeof(path), "%s/claro.project", name);
     claro_snprintf(
         text, sizeof(text),
-        "manifest-version: 1\nname: %s\nmain: main.claro\nversion: v2026.10.20.223203\npackages:\n",
+        "manifest-version: 1\nname: %s\nmain: main.claro\nversion: v2026.10.25.014405\npackages:\n",
         name);
     write_text_file_simple(path, text);
     claro_snprintf(path, sizeof(path), "%s/claro.lock", name);
     write_text_file_simple(path,
-                           "# Claro package lock\nlock-version: 1\nversion: v2026.10.20.223203\n");
+                           "# Claro package lock\nlock-version: 1\nversion: v2026.10.25.014405\n");
     claro_snprintf(path, sizeof(path), "%s/README.md", name);
     write_text_file_simple(
         path, "# My Claro Project\n\nBuild Claro, then run this project with:\n\n```bash\nclaro "
@@ -6732,7 +6880,7 @@ static void ensure_project_file(void) {
     if (!file_exists_simple("claro.project"))
         write_text_file_simple("claro.project",
                                "manifest-version: 1\nname: ClaroProject\nmain: "
-                               "main.claro\nversion: v2026.10.20.223203\npackages:\n");
+                               "main.claro\nversion: v2026.10.25.014405\npackages:\n");
 }
 static char *project_value(const char *key) {
     char *txt = read_file_text("claro.project");
@@ -6858,7 +7006,7 @@ static int write_package_lock(void) {
         free(txt);
         return 0;
     }
-    fputs("# Claro package lock\nlock-version: 1\nversion: v2026.10.20.223203\n", f);
+    fputs("# Claro package lock\nlock-version: 1\nversion: v2026.10.25.014405\n", f);
     p = txt;
     while (*p) {
         char *line = p;
@@ -7341,7 +7489,7 @@ static int package_doctor(void) {
     }
     if (txt && !package_lock_release_version_matches(txt)) {
         printf(
-            "  BAD lock release version: expected exactly one version: v2026.10.20.223203 line\n");
+            "  BAD lock release version: expected exactly one version: v2026.10.25.014405 line\n");
         ok = 0;
     }
     free(txt);
@@ -7505,7 +7653,7 @@ static int run_package_cmd(int argc, char **argv, int arg) {
 static int print_ide_info(void) {
     printf("{\n");
     printf("  \"language\": \"Claro\",\n");
-    printf("  \"version\": \"v2026.10.20.223203\",\n");
+    printf("  \"version\": \"v2026.10.25.014405\",\n");
     printf("  \"file_extensions\": [\".claro\"],\n");
     printf("  \"keywords\": "
            "[\"SAY\",\"ASK\",\"SET\",\"IF\",\"ELSE\",\"ENDIF\",\"END\",\"REPEAT\",\"UNTIL\","
@@ -7855,7 +8003,7 @@ static int run_validate(void) {
     printf(
         "%s\n",
         fails ? "Validation found problems."
-              : "Validation passed. Claro v2026.10.20.223203 foundation checks are ready for use.");
+              : "Validation passed. Claro v2026.10.25.014405 foundation checks are ready for use.");
     return fails ? 1 : 0;
 }
 

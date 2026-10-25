@@ -1,6 +1,6 @@
-# Claro v2026.10.20.223203 - Packages and Projects
+# Claro v2026.10.25.014405 - Packages and Projects
 
-Claro v2026.10.20.223203 makes projects and packages safer and more useful while keeping the beginner syntax simple.
+Claro v2026.10.25.014405 makes projects and packages safer and more useful while keeping the beginner syntax simple.
 
 ## Create a project
 
@@ -28,7 +28,7 @@ README.md
 manifest-version: 1
 name: MyProject
 main: main.claro
-version: v2026.10.20.223203
+version: v2026.10.25.014405
 packages:
 package: text
 package: net_tools
@@ -77,10 +77,10 @@ If `package doctor` reports `BAD lock checksum: math-tools`, check the `math-too
 BAD lock version: expected exactly one lock-version: 1 line
 ```
 
-The lockfile must also contain exactly one current release line, `version: v2026.10.20.223203`. A missing, stale, blank, or duplicate release line fails with:
+The lockfile must also contain exactly one current release line, `version: v2026.10.25.014405`. A missing, stale, blank, or duplicate release line fails with:
 
 ```text
-BAD lock release version: expected exactly one version: v2026.10.20.223203 line
+BAD lock release version: expected exactly one version: v2026.10.25.014405 line
 ```
 
 The doctor leaves your files unchanged. After reviewing your project and package manifests, run `claro package lock` to regenerate the lockfile, then run `claro package doctor` again. Spaces around values and capitalization of the lock-format field name are accepted, as with other lockfile fields. Valid generated lockfiles continue to work unchanged; this check does not add registry downloads or verify package content hashes.

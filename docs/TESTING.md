@@ -59,6 +59,22 @@ Wine results must be labeled Wine results. Claim native Windows/Win98 support
 only after running the target tests there. [Release status](RELEASE_STATUS.md)
 records the dated scope; [the checklist](FINAL_RELEASE_CHECKLIST.md) governs publication.
 
+## New focused checks
+
+```bash
+python3 tools/validate_error_locations.py
+python3 tools/validate_error_guide.py
+python3 tools/validate_learner_pilot.py
+python3 tools/validate_resource_guards.py
+```
+
+They are also part of the full gate. `validate_learning_ownership.py` runs them
+with leak detection enabled, including negative paths. Pilot code checks are
+not learner observations. [Native acceptance](NATIVE_WINDOWS_TESTING.md) requires
+real target logs; the Wine-rejecting probe prevents silently substituting a
+compatibility-layer result. Current [six-track status](SIX_TRACK_STATUS.md)
+separates implemented work from blocked human/hosted acceptance.
+
 ## Historical tools
 
 Older `validate_rc*.py` and versioned validators remain for history and focused

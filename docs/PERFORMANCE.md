@@ -1,6 +1,6 @@
 # Claro Performance and Optimization Notes
 
-Current release: **Claro v2026.10.20.223203**
+Current release: **Claro v2026.10.25.014405**
 
 Performance work should come after language behavior is stable and measured. Do not optimize blindly.
 

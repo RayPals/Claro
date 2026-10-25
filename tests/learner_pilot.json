@@ -1,0 +1,44 @@
+[
+  {
+    "name": "Say hello",
+    "code": "SAY \"Hello!\"\n",
+    "input": "",
+    "output": "Hello!\n",
+    "task": "Run this once. Change the message to something you choose and run it again."
+  },
+  {
+    "name": "Ask a name",
+    "code": "ASK \"Name? \" name\nSAY \"Hello \" + name\n",
+    "input": "Sam\n",
+    "output": "Name? \nHello Sam\n",
+    "task": "Run it and type a pretend name. Explain where that name is remembered."
+  },
+  {
+    "name": "Change a number",
+    "code": "SET score 2\nSAY score + 1\n",
+    "input": "",
+    "output": "3\n",
+    "task": "Predict the result, run it, then change 2 to another small number."
+  },
+  {
+    "name": "Make a choice",
+    "code": "SET score 2\nIF score > 1\n    SAY \"More than one\"\nELSE\n    SAY \"One or less\"\nEND\n",
+    "input": "",
+    "output": "More than one\n",
+    "task": "Optional: change score to 0. Predict which message appears."
+  },
+  {
+    "name": "Repeat",
+    "code": "DO 3 TIMES\n    SAY \"Again\"\nEND\n",
+    "input": "",
+    "output": "Again\nAgain\nAgain\n",
+    "task": "Optional: change how many times the message appears. Ask how to stop a stuck run."
+  },
+  {
+    "name": "Save a file",
+    "code": "WRITE FILE \"practice.txt\" WITH \"My first file\"\nREAD FILE \"practice.txt\" AS text\nSAY text\n",
+    "input": "",
+    "output": "My first file\n",
+    "task": "Optional: use a new writable practice folder. Find the file after running it."
+  }
+]

@@ -6,7 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 EXE = ROOT / ("claro.exe" if os.name == "nt" else "claro")
-EXPECTED_VERSION = "Claro v2026.10.20.223203"
+EXPECTED_VERSION = "Claro v2026.10.25.014405"
 
 
 def fail(message):
@@ -57,11 +57,11 @@ def main():
             fail(out)
         starter = work / "StarterApp"
         starter_project = read(starter / "claro.project")
-        for phrase in ["manifest-version: 1", "name: StarterApp", "main: main.claro", "version: v2026.10.20.223203", "packages:"]:
+        for phrase in ["manifest-version: 1", "name: StarterApp", "main: main.claro", "version: v2026.10.25.014405", "packages:"]:
             if phrase not in starter_project:
                 fail(f"claro new project file missing {phrase!r}:\n{starter_project}")
         starter_lock = read(starter / "claro.lock")
-        for phrase in ["lock-version: 1", "version: v2026.10.20.223203"]:
+        for phrase in ["lock-version: 1", "version: v2026.10.25.014405"]:
             if phrase not in starter_lock:
                 fail(f"claro new lockfile missing {phrase!r}:\n{starter_lock}")
 
@@ -71,7 +71,7 @@ def main():
         if rc != 0:
             fail(out)
         project = read(work / "claro.project")
-        for phrase in ["manifest-version: 1", "name: ClaroProject", "main: main.claro", "version: v2026.10.20.223203", "packages:"]:
+        for phrase in ["manifest-version: 1", "name: ClaroProject", "main: main.claro", "version: v2026.10.25.014405", "packages:"]:
             if phrase not in project:
                 fail(f"claro.project missing {phrase!r}:\n{project}")
 
@@ -100,7 +100,7 @@ def main():
             fail(f"Package checksum should be a stable non-placeholder value, got {checksum!r}")
 
         lock = read(work / "claro.lock")
-        for phrase in ["lock-version: 1", "version: v2026.10.20.223203", "package: math-tools", "checksum:"]:
+        for phrase in ["lock-version: 1", "version: v2026.10.25.014405", "package: math-tools", "checksum:"]:
             if phrase not in lock:
                 fail(f"claro.lock missing {phrase!r}:\n{lock}")
 
@@ -127,12 +127,12 @@ def main():
                 fail(f"Lock format-version diagnostic was unclear:\n{out}")
             if read(work / "claro.lock") != invalid_lock:
                 fail("package doctor must not rewrite an invalid lock format version")
-        invalid_release_lock = lock.replace("version: v2026.10.20.223203", "version: v1.18.25", 1)
+        invalid_release_lock = lock.replace("version: v2026.10.25.014405", "version: v1.18.25", 1)
         (work / "claro.lock").write_text(invalid_release_lock, encoding="utf-8")
         rc, out = run([str(EXE), "package", "doctor"], work)
         if rc == 0:
             fail("package doctor must reject a lockfile for a different Claro release")
-        if "BAD lock release version: expected exactly one version: v2026.10.20.223203 line" not in out:
+        if "BAD lock release version: expected exactly one version: v2026.10.25.014405 line" not in out:
             fail(f"Lock release-version diagnostic was unclear:\n{out}")
         if read(work / "claro.lock") != invalid_release_lock:
             fail("package doctor must not rewrite an invalid lock release version")
@@ -343,7 +343,7 @@ def main():
             fail("Long package name should not create a package folder")
 
         (work / "claro.project").write_text(
-            "manifest-version: 1\nname: ClaroProject\nmain: main.claro\nversion: v2026.10.20.223203\npackages:\npackage: ../bad\n",
+            "manifest-version: 1\nname: ClaroProject\nmain: main.claro\nversion: v2026.10.25.014405\npackages:\npackage: ../bad\n",
             encoding="utf-8",
         )
         rc, out = run([str(EXE), "package", "doctor"], work)
@@ -382,7 +382,7 @@ def main():
             fail("package add should not create a package folder while unsafe names remain in claro.project")
 
         (work / "claro.project").write_text(
-            "manifest-version: 1\nname: ClaroProject\nmain: main.claro\nversion: v2026.10.20.223203\npackages:\npackage: math-tools\npackage: ../bad\n",
+            "manifest-version: 1\nname: ClaroProject\nmain: main.claro\nversion: v2026.10.25.014405\npackages:\npackage: math-tools\npackage: ../bad\n",
             encoding="utf-8",
         )
         rc, out = run([str(EXE), "package", "remove", "math-tools"], work)
