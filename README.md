@@ -80,4 +80,9 @@ compilation, use [build98.bat and its guide](docs/WINDOWS98.md).
 
 ## License
 
-See [LICENSE](LICENSE).
+Claro is free and unencumbered software released into the **public domain**
+under [The Unlicense](LICENSE) (SPDX: `Unlicense`). You may use, modify, and
+redistribute it for any purpose, including commercially, without attribution
+or royalties. The software is provided without warranty.
+
+Third-party dependencies retain their respective licenses.
